@@ -1,0 +1,70 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Item do pedido',
+                typeNamePlural: 'Itens do pedido',
+                title:          { type: #STANDARD, value: 'NomeItem' },
+                description:    { type: #STANDARD, value: 'Sku' } }
+}
+annotate entity ZC_PC_ITEM_PEDIDO_APP with
+{
+  @UI.facet: [
+    { id: 'DadosItem', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Item', position: 10 }
+  ]
+
+  @UI.hidden: true
+  ItemPedidoUUID;
+
+  @UI.hidden: true
+  PedidoUUID;
+
+  @UI: { lineItem:       [{ position: 10, label: 'Item', importance: #HIGH }],
+         identification: [{ position: 10, label: 'Item' }] }
+  @EndUserText.label: 'Item'
+  ItemUUID;
+
+  @UI: { lineItem:       [{ position: 20, label: 'SKU' }],
+         identification: [{ position: 20, label: 'SKU' }] }
+  @EndUserText.label: 'SKU'
+  Sku;
+
+  @UI.hidden: true
+  NomeItem;
+
+  @UI: { lineItem:       [{ position: 30, label: 'Disponível agora' }],
+         identification: [{ position: 30, label: 'Qtde disponível agora (informativo)' }] }
+  @EndUserText.label: 'Disponível agora'
+  QtdeDisponivelAtual;
+
+  @UI: { lineItem:       [{ position: 40, label: 'Quantidade', importance: #HIGH }],
+         identification: [{ position: 40, label: 'Quantidade' }] }
+  @EndUserText.label: 'Quantidade'
+  QtdeItemPedido;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem:       [{ position: 50, label: 'Preço unitário' }],
+         identification: [{ position: 50, label: 'Preço unitário (fixado na confirmação)' }] }
+  @EndUserText.label: 'Preço unitário'
+  PrecoUnitarioSnapshot;
+
+  @UI: { lineItem:       [{ position: 60, label: 'Total', importance: #HIGH }],
+         identification: [{ position: 60, label: 'Total do item' }] }
+  @EndUserText.label: 'Total do item'
+  ValorTotal;
+
+  @UI: { identification: [{ position: 70, label: 'Observação' }] }
+  @EndUserText.label: 'Observação'
+  Observacao;
+
+  @UI.hidden: true
+  CreatedBy;
+  @UI.hidden: true
+  CreatedAt;
+  @UI.hidden: true
+  LastChangedBy;
+  @UI.hidden: true
+  LastChangedAt;
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

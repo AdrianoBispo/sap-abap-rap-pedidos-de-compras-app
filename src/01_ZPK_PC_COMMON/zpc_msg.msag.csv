@@ -1,0 +1,42 @@
+Numero;Constante ZCX_PC_MSG;Texto (max. 73 caracteres)
+001;CLIENTE_CPF_INVALIDO;CPF inválido. Verifique o número informado.
+002;CLIENTE_CPF_DUPLICADO;Já existe um cliente cadastrado com este CPF.
+003;CLIENTE_INATIVO;Cliente inativo não pode realizar pedido.
+004;CLIENTE_COM_PEDIDO;Cliente não pode ser excluído pois possui pedido vinculado.
+005;CLIENTE_SEM_ENDERECO_PRINCIPAL;Cliente selecionado não possui endereço principal válido.
+006;CEP_INDISPONIVEL;Não foi possível validar o CEP agora. Tente novamente em instantes.
+007;CEP_INVALIDO;CEP inválido ou não encontrado. Verifique o número informado.
+008;ENDERECO_NUMERO_OBRIGATORIO;Número do endereço é obrigatório.
+009;FOTO_FORMATO_INVALIDO;Formato de imagem inválido. Utilize JPEG ou PNG.
+010;ITEM_SKU_DUPLICADO;Já existe item cadastrado com este SKU.
+011;ITEM_ESTOQUE_INSUFICIENTE;Estoque insuficiente para o item &1 (disponível: &2).
+012;ITEM_ESTOQUE_CONCORRENTE;Estoque do item &1 alterado por outra operação. Atualize e tente de novo.
+013;ITEM_INATIVO;Item &1 inativo não pode ser usado em novo pedido.
+014;ITEM_INATIVACAO_BLOQUEADA;Item possui estoque disponível ou pedido ativo. Inativação bloqueada.
+015;PEDIDO_STATUS_INVALIDO;Transição de status não permitida (status atual: &1).
+016;PEDIDO_PAGAMENTO_PENDENTE;Pagamento pendente. O pedido não pode ser finalizado.
+017;PEDIDO_FINALIZADO_IMUTAVEL;Pedido finalizado não pode ser alterado.
+018;PEDIDO_CANCELADO_IMUTAVEL;Pedido cancelado não pode ser alterado.
+019;PEDIDO_MOTIVO_CANCEL_OBRIG;Informe o motivo do cancelamento.
+020;PAGAMENTO_APROVADO;Pagamento aprovado com sucesso.
+021;PAGAMENTO_RECUSADO;Pagamento recusado. O pedido permanecerá aguardando pagamento.
+022;SNAPSHOT_EXISTENTE;Snapshot do pedido já foi gerado e não pode ser recriado.
+023;CAMPO_OBRIGATORIO;Campo &1 é obrigatório.
+024;EMAIL_INVALIDO;E-mail em formato inválido.
+025;DATA_NASCIMENTO_FUTURA;Data de nascimento não pode ser futura.
+026;TELEFONE_INVALIDO;Telefone deve conter 10 ou 11 dígitos (DDD + número).
+027;PEDIDO_SEM_ITENS;Pedido deve possuir ao menos um item.
+028;ITEM_QTDE_INVALIDA;Quantidade do item deve ser maior que zero.
+029;ITEM_PRECO_INVALIDO;Preço unitário deve ser maior ou igual a zero.
+030;ITEM_QTDE_ESTOQUE_INVALIDA;Qtde em estoque não pode ser negativa nem menor que a reservada (&1).
+031;ITEM_EXCLUSAO_BLOQUEADA;Item não pode ser excluído pois está vinculado a pedido ou reserva.
+032;CARTAO_DADOS_INVALIDOS;Dados do cartão inválidos: &1.
+033;PEDIDO_CONFIRMADO;Pedido &1 confirmado. Estoque reservado.
+034;PEDIDO_FINALIZADO;Pedido &1 finalizado com sucesso.
+035;PEDIDO_CANCELADO;Pedido &1 cancelado.
+036;NUMERACAO_ERRO;Erro ao obter numeração (&1). Verifique o intervalo de numeração.
+037;SEM_AUTORIZACAO;Usuário sem autorização para esta operação.
+038;ITEM_RESERVA_INCONSISTENTE;Reserva do item &1 inconsistente com o pedido.
+039;PEDIDO_EDICAO_BLOQUEADA;Pedido só pode ser editado ou excluído no status CRIADO.
+040;ITEM_DIMENSAO_INVALIDA;Peso e dimensões não podem ser negativos.
+041;VALOR_INVALIDO;Valor inválido para o campo &1.
