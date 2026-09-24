@@ -132,7 +132,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
     " Pedidos ainda em draft (ainda não ativados)
     SELECT clienteuuid
-      FROM zd_pc_pedido
+      FROM zta_pc_pedido_d
       FOR ALL ENTRIES IN @it_clientes
       WHERE clienteuuid = @it_clientes-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -224,7 +224,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
       " Unicidade: nenhum outro cliente ativo com o mesmo CPF
       SELECT SINGLE @abap_true
-        FROM za_pc_cliente
+        FROM zta_pc_cliente
         WHERE cpf          =  @ls_cliente-Cpf
           AND cliente_uuid <> @ls_cliente-ClienteUUID
         INTO @DATA(lv_existe).

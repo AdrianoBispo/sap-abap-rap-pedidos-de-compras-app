@@ -2,7 +2,7 @@
 "! Executar no ADT com F9 (Run as ABAP Application - Console) DEPOIS de
 "! ativar todos os objetos. Pode ser executada mais de uma vez.
 "!  1. Cria os intervalos 01 (pedido) e 02 (SKU) do objeto ZPC_NR
-"!  2. Recarrega a tabela ZA_PC_CODELIST
+"!  2. Recarrega a tabela ZTA_PC_CODELIST
 "!  3. Insere dados de demonstração se as tabelas estiverem vazias
 CLASS zcl_pc_setup DEFINITION
   PUBLIC
@@ -76,7 +76,7 @@ CLASS zcl_pc_setup IMPLEMENTATION.
 
 
   METHOD carregar_codelists.
-    DATA lt_codelist TYPE STANDARD TABLE OF za_pc_codelist WITH EMPTY KEY.
+    DATA lt_codelist TYPE STANDARD TABLE OF zta_pc_codelist WITH EMPTY KEY.
 
     lt_codelist = VALUE #(
       " Gênero
@@ -111,8 +111,8 @@ CLASS zcl_pc_setup IMPLEMENTATION.
       ( lista = 'METODO_PAGAMENTO' codigo = 'CARTAO_CREDITO' descricao = 'Cartão de crédito' ordem = 1 )
       ( lista = 'METODO_PAGAMENTO' codigo = 'CARTAO_DEBITO'  descricao = 'Cartão de débito'  ordem = 2 ) ).
 
-    DELETE FROM za_pc_codelist.
-    INSERT za_pc_codelist FROM TABLE @lt_codelist.
+    DELETE FROM zta_pc_codelist.
+    INSERT zta_pc_codelist FROM TABLE @lt_codelist.
     io_out->write( |CodeLists carregadas: { lines( lt_codelist ) } registros.| ).
   ENDMETHOD.
 
@@ -129,12 +129,12 @@ CLASS zcl_pc_setup IMPLEMENTATION.
     ENDTRY.
 
     " ---------------------------------------------------------------- Clientes
-    SELECT COUNT( * ) FROM za_pc_cliente INTO @DATA(lv_qtd_clientes).
+    SELECT COUNT( * ) FROM zta_pc_cliente INTO @DATA(lv_qtd_clientes).
     IF lv_qtd_clientes = 0.
       DATA(lv_cli1) = cl_system_uuid=>create_uuid_x16_static( ).
       DATA(lv_cli2) = cl_system_uuid=>create_uuid_x16_static( ).
 
-      DATA lt_clientes TYPE STANDARD TABLE OF za_pc_cliente WITH EMPTY KEY.
+      DATA lt_clientes TYPE STANDARD TABLE OF zta_pc_cliente WITH EMPTY KEY.
       lt_clientes = VALUE #(
         ( cliente_uuid = lv_cli1 cpf = zcl_pc_util=>calcular_dv_cpf( '529982247' )
           nome = 'Maria Aparecida Souza' email = 'maria.souza@example.com' telefone = '11987654321'
@@ -146,9 +146,9 @@ CLASS zcl_pc_setup IMPLEMENTATION.
           genero = 'MASCULINO' data_nascimento = '19851120' cliente_ativo = abap_true score_cliente = '72.00'
           created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
           last_changed_at = lv_agora local_last_changed_at = lv_agora ) ).
-      INSERT za_pc_cliente FROM TABLE @lt_clientes.
+      INSERT zta_pc_cliente FROM TABLE @lt_clientes.
 
-      DATA lt_enderecos TYPE STANDARD TABLE OF za_pc_endereco WITH EMPTY KEY.
+      DATA lt_enderecos TYPE STANDARD TABLE OF zta_pc_endereco WITH EMPTY KEY.
       lt_enderecos = VALUE #(
         ( endereco_uuid = cl_system_uuid=>create_uuid_x16_static( ) cliente_uuid = lv_cli1
           cep = '01001000' logradouro = 'Praça da Sé' numero = '100' complemento = 'Sala 1'
@@ -160,24 +160,24 @@ CLASS zcl_pc_setup IMPLEMENTATION.
           bairro = 'Bela Vista' cidade = 'São Paulo' uf = 'SP' estado = 'São Paulo' endereco_principal = abap_true
           created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
           last_changed_at = lv_agora local_last_changed_at = lv_agora ) ).
-      INSERT za_pc_endereco FROM TABLE @lt_enderecos.
+      INSERT zta_pc_endereco FROM TABLE @lt_enderecos.
 
       io_out->write( `Clientes e endereços de demonstração criados.` ).
     ENDIF.
 
     " ------------------------------------------------------------------ Itens
-    SELECT COUNT( * ) FROM za_pc_item INTO @DATA(lv_qtd_itens).
+    SELECT COUNT( * ) FROM zta_pc_item INTO @DATA(lv_qtd_itens).
     IF lv_qtd_itens = 0.
       TYPES:
         BEGIN OF ty_demo,
-          nome      TYPE za_pc_item-nome,
-          descricao TYPE za_pc_item-descricao,
-          categoria TYPE za_pc_item-categoria,
+          nome      TYPE zta_pc_item-nome,
+          descricao TYPE zta_pc_item-descricao,
+          categoria TYPE zta_pc_item-categoria,
           estoque   TYPE i,
-          preco     TYPE za_pc_item-preco_unitario,
+          preco     TYPE zta_pc_item-preco_unitario,
         END OF ty_demo.
       DATA lt_demo TYPE STANDARD TABLE OF ty_demo WITH EMPTY KEY.
-      DATA lt_itens TYPE STANDARD TABLE OF za_pc_item WITH EMPTY KEY.
+      DATA lt_itens TYPE STANDARD TABLE OF zta_pc_item WITH EMPTY KEY.
 
       lt_demo = VALUE #(
         ( nome = 'Notebook 14 polegadas' descricao = 'Notebook para uso educacional' categoria = 'INFORMATICA' estoque = 25 preco = '3499.90' )
@@ -202,7 +202,7 @@ CLASS zcl_pc_setup IMPLEMENTATION.
                         last_changed_by = lv_usuario last_changed_at = lv_agora
                         local_last_changed_at = lv_agora ) TO lt_itens.
       ENDLOOP.
-      INSERT za_pc_item FROM TABLE @lt_itens.
+      INSERT zta_pc_item FROM TABLE @lt_itens.
 
       io_out->write( `Itens de estoque de demonstração criados.` ).
     ENDIF.

@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table za_pc_pagamento {
+define table zta_pc_pagamento {
 
   key client            : abap.clnt not null;
   key pagamento_uuid    : sysuuid_x16 not null;

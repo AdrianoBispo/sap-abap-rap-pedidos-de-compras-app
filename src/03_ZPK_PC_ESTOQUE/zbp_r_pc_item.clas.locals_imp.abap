@@ -164,13 +164,13 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK it_itens IS NOT INITIAL.
 
     SELECT item_uuid
-      FROM za_pc_item_ped
+      FROM zta_pc_item_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE item_uuid = @it_itens-table_line
       INTO TABLE @DATA(lt_ativos).
 
     SELECT itemuuid
-      FROM zd_pc_item_ped
+      FROM zta_pc_item_d_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -188,8 +188,8 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK it_itens IS NOT INITIAL.
 
     SELECT ip~item_uuid
-      FROM za_pc_item_ped AS ip
-      INNER JOIN za_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
+      FROM zta_pc_item_ped AS ip
+      INNER JOIN zta_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
       FOR ALL ENTRIES IN @it_itens
       WHERE ip~item_uuid = @it_itens-table_line
         AND p~status_pedido IN ( @zif_pc_constants=>c_status_pedido-criado,
@@ -199,7 +199,7 @@ CLASS lhc_item IMPLEMENTATION.
 
     " Pedidos em draft (ainda não ativados) também contam como ativos
     SELECT itemuuid
-      FROM zd_pc_item_ped
+      FROM zta_pc_item_d_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -617,7 +617,7 @@ CLASS lhc_item IMPLEMENTATION.
       ENDIF.
 
       SELECT SINGLE @abap_true
-        FROM za_pc_item
+        FROM zta_pc_item
         WHERE sku       =  @ls_item-Sku
           AND item_uuid <> @ls_item-ItemUUID
         INTO @DATA(lv_duplicado).

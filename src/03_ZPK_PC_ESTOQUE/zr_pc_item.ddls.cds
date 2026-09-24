@@ -2,7 +2,7 @@
 @EndUserText.label: 'Item de estoque - BO root'
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZR_PC_ITEM
-  as select from za_pc_item
+  as select from zta_pc_item
   association [0..1] to ZR_PC_CODELIST as _CategoriaTxt on  _CategoriaTxt.Lista  = 'CATEGORIA'
                                                        and _CategoriaTxt.Codigo = $projection.Categoria
   association [0..1] to ZR_PC_CODELIST as _StatusEstoqueTxt on  _StatusEstoqueTxt.Lista  = 'STATUS_ESTOQUE'

@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table zd_pc_item_ped {
+define table zta_pc_item_d_ped {
 
   key client            : abap.clnt not null;
   key itempedidouuid    : sysuuid_x16 not null;
@@ -11,9 +11,9 @@ define table zd_pc_item_ped {
   itemuuid              : sysuuid_x16;
   qtdeitempedido        : abap.int4;
   currency              : abap.cuky;
-  @Semantics.amount.currencyCode : 'zd_pc_item_ped.currency'
+  @Semantics.amount.currencyCode : 'zta_pc_item_d_ped.currency'
   precounitariosnapshot : abap.curr(15,2);
-  @Semantics.amount.currencyCode : 'zd_pc_item_ped.currency'
+  @Semantics.amount.currencyCode : 'zta_pc_item_d_ped.currency'
   valortotal            : abap.curr(15,2);
   observacao            : abap.char(500);
   createdby             : abp_creation_user;

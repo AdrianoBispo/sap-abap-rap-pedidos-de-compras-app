@@ -2,7 +2,7 @@
 @EndUserText.label: 'Snapshot do cliente - BO child'
 @Metadata.ignorePropagatedAnnotations: true
 define view entity ZR_PC_PED_CLI_SNAP
-  as select from za_pc_snap_cli
+  as select from zta_pc_snap_cli
   association to parent ZR_PC_PEDIDO as _Pedido on $projection.PedidoUUID = _Pedido.PedidoUUID
 {
   key snapshot_uuid         as SnapshotUUID,

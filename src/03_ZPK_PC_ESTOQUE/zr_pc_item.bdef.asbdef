@@ -13,8 +13,8 @@ with draft;
      LUW e sob o lock do item (controle de concorrência)
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_ITEM alias Item
-persistent table za_pc_item
-draft table zd_pc_item
+persistent table zta_pc_item
+draft table zta_pc_item_d
 etag master LocalLastChangedAt
 lock master total etag LastChangedAt
 authorization master ( global )
@@ -59,7 +59,7 @@ authorization master ( global )
     field QtdeEstoque affects field QtdeDisponivel, field StatusEstoque;
   }
 
-  mapping for za_pc_item
+  mapping for zta_pc_item
   {
     ItemUUID           = item_uuid;
     FotoItem           = foto_item;

@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table za_pc_endereco {
+define table zta_pc_endereco {
 
   key client            : abap.clnt not null;
   key endereco_uuid     : sysuuid_x16 not null;

@@ -2,7 +2,7 @@
 @EndUserText.label: 'Cliente - BO root'
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZR_PC_CLIENTE
-  as select from za_pc_cliente
+  as select from zta_pc_cliente
   composition [0..*] of ZR_PC_ENDERECO as _Endereco
   association [0..1] to ZR_PC_ENDERECO as _EnderecoPrincipal on  _EnderecoPrincipal.ClienteUUID       = $projection.ClienteUUID
                                                              and _EnderecoPrincipal.EnderecoPrincipal = 'X'

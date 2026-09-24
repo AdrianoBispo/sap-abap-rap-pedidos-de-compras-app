@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table za_pc_snap_itm {
+define table zta_pc_snap_itm {
 
   key client             : abap.clnt not null;
   key snapshot_item_uuid : sysuuid_x16 not null;
@@ -16,9 +16,9 @@ define table za_pc_snap_itm {
   categoria              : abap.char(30);
   quantidade             : abap.int4;
   currency               : abap.cuky;
-  @Semantics.amount.currencyCode : 'za_pc_snap_itm.currency'
+  @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
   preco_unitario         : abap.curr(15,2);
-  @Semantics.amount.currencyCode : 'za_pc_snap_itm.currency'
+  @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
   valor_total            : abap.curr(15,2);
   peso                   : abap.dec(15,3);
   altura                 : abap.dec(15,3);
