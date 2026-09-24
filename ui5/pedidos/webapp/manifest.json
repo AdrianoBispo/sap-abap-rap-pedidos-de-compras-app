@@ -1,0 +1,235 @@
+{
+  "_version": "2.0.0",
+  "sap.app": {
+    "id": "zpc.pedidos",
+    "type": "application",
+    "i18n": {
+      "bundleName": "zpc.pedidos.i18n.i18n",
+      "supportedLocales": [
+        "",
+        "en"
+      ],
+      "fallbackLocale": ""
+    },
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata4/sap/zui_pc_pedidos_compras_o4/srvd/sap/zui_pc_pedidos_compras/0001/",
+        "type": "OData",
+        "settings": {
+          "annotations": [
+            "annotation"
+          ],
+          "odataVersion": "4.0"
+        }
+      },
+      "annotation": {
+        "type": "ODataAnnotation",
+        "uri": "annotations/annotation.xml",
+        "settings": {
+          "localUri": "annotations/annotation.xml"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "ZPCPedidoCompra-manage": {
+          "semanticObject": "ZPCPedidoCompra",
+          "action": "manage",
+          "title": "{{flpTitle}}",
+          "subTitle": "{{flpSubtitle}}",
+          "icon": "sap-icon://sales-order",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "sap-icon://sales-order"
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.136.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "zpc.pedidos.i18n.i18n",
+          "supportedLocales": [
+            "",
+            "en"
+          ],
+          "fallbackLocale": ""
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "zpc.pedidos.i18n.i18n",
+          "supportedLocales": [
+            "",
+            "en"
+          ],
+          "fallbackLocale": ""
+        }
+      }
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "PedidoList",
+          "target": "PedidoList"
+        },
+        {
+          "pattern": "Pedido({key}):?query:",
+          "name": "PedidoObjectPage",
+          "target": "PedidoObjectPage"
+        },
+        {
+          "pattern": "Pedido({key})/_Itens({key2}):?query:",
+          "name": "ItemPedidoObjectPage",
+          "target": "ItemPedidoObjectPage"
+        },
+        {
+          "pattern": "Pedido({key})/_ItensSnapshot({key2}):?query:",
+          "name": "ItemSnapshotObjectPage",
+          "target": "ItemSnapshotObjectPage"
+        }
+      ],
+      "targets": {
+        "PedidoList": {
+          "type": "Component",
+          "id": "PedidoList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Pedido",
+              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "navigation": {
+                "Pedido": {
+                  "detail": {
+                    "route": "PedidoObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Auto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "PedidoObjectPage": {
+          "type": "Component",
+          "id": "PedidoObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Pedido",
+              "editableHeaderContent": false,
+              "navigation": {
+                "_Itens": {
+                  "detail": {
+                    "route": "ItemPedidoObjectPage"
+                  }
+                },
+                "_ItensSnapshot": {
+                  "detail": {
+                    "route": "ItemSnapshotObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "_Itens/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Auto",
+                    "creationMode": {
+                      "name": "Inline",
+                      "createAtEnd": true
+                    }
+                  }
+                },
+                "_ItensSnapshot/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Auto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ItemPedidoObjectPage": {
+          "type": "Component",
+          "id": "ItemPedidoObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Pedido/_Itens",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "ItemSnapshotObjectPage": {
+          "type": "Component",
+          "id": "ItemSnapshotObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Pedido/_ItensSnapshot",
+              "editableHeaderContent": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  }
+}

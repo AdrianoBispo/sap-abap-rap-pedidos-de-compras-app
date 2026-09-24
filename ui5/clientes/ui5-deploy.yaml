@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+# Deploy no ABAP Repository do SAP BTP ABAP Environment (npm run deploy).
+# O deploy cria a aplicação BSP ZPC_CLIENTES e o IAM App ZPC_CLIENTES_UI5R no pacote ZPK_PC_CLIENTES.
+# Pacotes do software component ZLOCAL (trial) não usam transporte: deixe "transport" vazio.
+
+specVersion: "4.0"
+metadata:
+  name: zpc.clientes
+type: application
+builder:
+  resources:
+    excludes:
+      - /test/**
+      - /localService/**
+  customTasks:
+    - name: deploy-to-abap
+      afterTask: generateCachebusterInfo
+      configuration:
+        ignoreCertErrors: false
+        target:
+          url: https://SEU-SISTEMA.abap.us10.hana.ondemand.com
+          authenticationType: reentranceTicket
+        app:
+          name: ZPC_CLIENTES
+          description: Gestão de Clientes
+          package: ZPK_PC_CLIENTES
+          transport: ""
+        exclude:
+          - /test/
