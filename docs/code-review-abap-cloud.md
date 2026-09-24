@@ -118,7 +118,7 @@ ENDIF.
 ---
 
 ### B4 — Unicidade de CPF e SKU sem índice único no banco
-**Objetos:** `ZA_PC_CLIENTE` (campo `cpf`), `ZA_PC_ITEM` (campo `sku`).
+**Objetos:** `ZTA_PC_CLIENTE` (campo `cpf`), `ZTA_PC_ITEM` (campo `sku`).
 Validações em `zbp_r_pc_cliente.clas.locals_imp.abap:227` e `zbp_r_pc_item.clas.locals_imp.abap:620`.
 
 **Impacto:** a unicidade hoje é garantida apenas por `SELECT SINGLE` dentro da validation. Duas ativações
@@ -127,7 +127,7 @@ gravam — duplicidade em produção. É a mesma classe de problema que o docume
 mas sem a proteção do lock.
 
 **Remediação:** criar índice secundário **único** no ADT para os dois campos
-(`ZA_PC_CLIENTE~CPF`, `ZA_PC_ITEM~SKU`), mantendo a validation para a mensagem amigável e tratando
+(`ZTA_PC_CLIENTE~CPF`, `ZTA_PC_ITEM~SKU`), mantendo a validation para a mensagem amigável e tratando
 o `DUPLICATE_KEY` como erro técnico. O índice é o que realmente garante a regra.
 
 ---
@@ -220,8 +220,8 @@ Captura genérica engole erros de programação (`cx_sy_*`) e dificulta o diagn�
 **Remediação:** limitar o tamanho (ex.: 100 entradas, descarte FIFO) ou restringir o cache à LUW.
 
 ### R8 — Carga de dados de demonstração grava direto nas tabelas
-`ZCL_PC_SETUP` (`INSERT za_pc_cliente`, `za_pc_endereco`, `za_pc_item`) ignora determinations e validations
-do BO; os dados nascem sem passar pelas regras. Há também `DELETE FROM za_pc_codelist` sem `WHERE` e
+`ZCL_PC_SETUP` (`INSERT zta_pc_cliente`, `zta_pc_endereco`, `zta_pc_item`) ignora determinations e validations
+do BO; os dados nascem sem passar pelas regras. Há também `DELETE FROM zta_pc_codelist` sem `WHERE` e
 `COMMIT WORK` sem avaliação de `sy-subrc`.
 **Remediação:** usar EML (`MODIFY ENTITIES ... COMMIT ENTITIES RESPONSE OF ...`) para os dados de
 demonstração e avaliar o response; manter o `INSERT` direto apenas para a tabela de CodeList.
@@ -234,8 +234,8 @@ Lembrar que `if_oo_adt_classrun` é ferramenta de desenvolvimento — não deve 
 `line_exists( )`/tabelas com chave secundária.
 
 ### R10 — Ausência de índices secundários nos acessos mais frequentes
-`za_pc_item_ped~item_uuid` (usado em `itens_em_pedidos`), `za_pc_pedido~cliente_uuid`,
-`za_pc_endereco~cliente_uuid`. Sem índice, cada feature control da lista faz full scan.
+`zta_pc_item_ped~item_uuid` (usado em `itens_em_pedidos`), `zta_pc_pedido~cliente_uuid`,
+`zta_pc_endereco~cliente_uuid`. Sem índice, cada feature control da lista faz full scan.
 
 ---
 
@@ -305,9 +305,9 @@ método, B3 em um padrão repetido de chamadas EML, B4 em dois índices de DDIC 
 | ID | Status | O que mudou |
 |---|---|---|
 | **B1** | Corrigido | `ZCL_PC_VIACEP` não usa mais `/ui2/cl_json`. O JSON plano do ViaCEP é lido por `FIND PCRE ... SUBMATCHES` em `extrair_campo( )`; o cabeçalho da classe documenta a alternativa `xco_cp_json` para quem preferir a API XCO. |
-| **B2** | Corrigido | Novo campo `CepStatus` (`V` validado / `I` inválido / `X` indisponível) em `ZA_PC_ENDERECO`. A determination `PreencherEnderecoViaCep` (fase de interação) é a **única** que chama o ViaCEP e grava o status; `ValidarCep` passou a ser puramente local. Nenhuma chamada remota na fase de save. |
+| **B2** | Corrigido | Novo campo `CepStatus` (`V` validado / `I` inválido / `X` indisponível) em `ZTA_PC_ENDERECO`. A determination `PreencherEnderecoViaCep` (fase de interação) é a **única** que chama o ViaCEP e grava o status; `ValidarCep` passou a ser puramente local. Nenhuma chamada remota na fase de save. |
 | **B3** | Corrigido | Todas as chamadas EML avaliam retorno. Novo helper `propagar( )` em `lhc_pedido`; compensação de reserva e criação de snapshots propagam erro (snapshot com falha marca o pedido como `failed`); determinations repassam mensagens com `APPEND CORRESPONDING`. Verificação automatizada: nenhuma `MODIFY ENTITIES` sem `FAILED`/`REPORTED`. |
-| **B4** | Documentado | Índices adicionados à seção 2.9 do README (únicos em `ZA_PC_CLIENTE~CPF` e `ZA_PC_ITEM~SKU`; de desempenho em `ZA_PC_ITEM_PED~ITEM_UUID`, `ZA_PC_PEDIDO~CLIENTE_UUID`, `ZA_PC_ENDERECO~CLIENTE_UUID`). São objetos de DDIC criados no ADT — não há fonte a entregar. |
+| **B4** | Documentado | Índices adicionados à seção 2.9 do README (únicos em `ZTA_PC_CLIENTE~CPF` e `ZTA_PC_ITEM~SKU`; de desempenho em `ZTA_PC_ITEM_PED~ITEM_UUID`, `ZTA_PC_PEDIDO~CLIENTE_UUID`, `ZTA_PC_ENDERECO~CLIENTE_UUID`). São objetos de DDIC criados no ADT — não há fonte a entregar. |
 | **B5** | Corrigido | `c_modo_trial` agora nasce `abap_false`. `ZCL_PC_AUTH` foi reescrita com verificação por atividade: `admin_pode_criar/alterar/excluir` (01/02/06) e `pedido_pode_criar/alterar/excluir/executar` (01/02/06/16); os três `get_global_authorizations` usam o método correspondente a cada operação. |
 | R4, R6, R7 | Corrigidos | Cliente HTTP fechado também em erro; `CATCH cx_root` eliminado; cache do ViaCEP limitado a 100 entradas com descarte FIFO. |
 | R1, R2, R3, R5, R8–R10 | Em aberto | Backlog de estabilização (ver seção 3). |

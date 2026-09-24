@@ -64,11 +64,11 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
    | Tabela | Campos | Único |
    |---|---|:--:|
-   | `ZA_PC_CLIENTE` | `CPF` | sim |
-   | `ZA_PC_ITEM` | `SKU` | sim |
-   | `ZA_PC_ITEM_PED` | `ITEM_UUID` | não |
-   | `ZA_PC_PEDIDO` | `CLIENTE_UUID` | não |
-   | `ZA_PC_ENDERECO` | `CLIENTE_UUID` | não |
+   | `ZTA_PC_CLIENTE` | `CPF` | sim |
+   | `ZTA_PC_ITEM` | `SKU` | sim |
+   | `ZTA_PC_ITEM_PED` | `ITEM_UUID` | não |
+   | `ZTA_PC_PEDIDO` | `CLIENTE_UUID` | não |
+   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID` | não |
 
    No ADT: abrir a tabela → *Add Index* (ou *New → ABAP Dictionary → Database Index*, conforme o
    release). Os três últimos são de desempenho (feature control e checagens de vínculo).
@@ -77,7 +77,7 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
 1. Pacotes e objetos manuais 1–4.
 2. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
-3. **Todas** as tabelas ativas `ZA_*` (inclusive `ZA_PC_CODELIST`).
+3. **Todas** as tabelas ativas `ZA_*` (inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as 5 views `ZR_PC_*` do pedido (ativar juntas).
 5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`.
@@ -131,7 +131,7 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → *
 | # | Correção | Objetos |
 |---|---|---|
 | B1 | `/UI2/CL_JSON` (API não liberada) substituída por extração via PCRE; alternativa XCO documentada no cabeçalho | `ZCL_PC_VIACEP` |
-| B2 | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
+| B2 | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
 | B3 | Toda chamada EML avalia `FAILED`/`REPORTED`; compensação de reserva e snapshots propagam erro | 3 behavior pools |
 | B4 | Índices únicos de `CPF` e `SKU` documentados como objeto manual (seção 2.9) | README |
 | B5 | `c_modo_trial` passa a `abap_false`; verificação por atividade (01/02/06/16) | `ZIF_PC_CONSTANTS`, `ZCL_PC_AUTH`, 3 behavior pools |

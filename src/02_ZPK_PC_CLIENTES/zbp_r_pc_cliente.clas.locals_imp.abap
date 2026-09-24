@@ -239,7 +239,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
       " Unicidade: nenhum outro cliente ativo com o mesmo CPF
       SELECT SINGLE @abap_true
-        FROM za_pc_cliente
+        FROM zta_pc_cliente
         WHERE cpf          =  @ls_cliente-Cpf
           AND cliente_uuid <> @ls_cliente-ClienteUUID
         INTO @DATA(lv_existe).

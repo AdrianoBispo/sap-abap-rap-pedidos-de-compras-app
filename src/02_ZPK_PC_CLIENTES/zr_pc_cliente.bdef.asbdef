@@ -9,7 +9,7 @@ with draft;
    - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_CLIENTE alias Cliente
-persistent table za_pc_cliente
+persistent table zta_pc_cliente
 draft table zd_pc_cliente
 etag master LocalLastChangedAt
 lock master total etag LastChangedAt
@@ -53,7 +53,7 @@ authorization master ( global )
     validation Endereco~ValidarCep;
   }
 
-  mapping for za_pc_cliente
+  mapping for zta_pc_cliente
   {
     ClienteUUID        = cliente_uuid;
     FotoCliente        = foto_cliente;
@@ -76,7 +76,7 @@ authorization master ( global )
 }
 
 define behavior for ZR_PC_ENDERECO alias Endereco
-persistent table za_pc_endereco
+persistent table zta_pc_endereco
 draft table zd_pc_endereco
 etag master LocalLastChangedAt
 lock dependent by _Cliente
@@ -108,7 +108,7 @@ authorization dependent by _Cliente
               field CepGeral, field CepStatus;
   }
 
-  mapping for za_pc_endereco
+  mapping for zta_pc_endereco
   {
     EnderecoUUID       = endereco_uuid;
     ClienteUUID        = cliente_uuid;

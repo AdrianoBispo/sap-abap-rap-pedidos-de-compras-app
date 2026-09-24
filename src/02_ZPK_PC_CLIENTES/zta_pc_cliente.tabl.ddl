@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table za_pc_cliente {
+define table zta_pc_cliente {
 
   key client            : abap.clnt not null;
   key cliente_uuid      : sysuuid_x16 not null;
