@@ -30,17 +30,17 @@ ZPK_PC_PEDIDOS_COMPRAS                 (pacote principal, software component ZLO
 
 Convenção de arquivos (um arquivo por objeto ADT):
 
-| Extensão | Objeto no ADT |
-|---|---|
-| `*.tabl.ddl` | Database Table (editor DDL) |
-| `*.ddls.cds` | Data Definition (CDS view entity / projection / abstract entity) |
-| `*.ddlx.cds` | Metadata Extension |
-| `*.bdef.asbdef` | Behavior Definition |
-| `*.srvd.srvdsrv` | Service Definition |
-| `*.clas.abap` | Classe global (aba *Global Class*) |
-| `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
-| `*.intf.abap` | Interface |
-| `zpc_msg.msag.csv` | Conteúdo da Message Class ZPC_MSG (criar manualmente) |
+| Extensão                 | Objeto no ADT                                                    |
+| ------------------------ | ---------------------------------------------------------------- |
+| `*.tabl.ddl`             | Database Table (editor DDL)                                      |
+| `*.ddls.cds`             | Data Definition (CDS view entity / projection / abstract entity) |
+| `*.ddlx.cds`             | Metadata Extension                                               |
+| `*.bdef.asbdef`          | Behavior Definition                                              |
+| `*.srvd.srvdsrv`         | Service Definition                                               |
+| `*.clas.abap`            | Classe global (aba *Global Class*)                               |
+| `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools)               |
+| `*.intf.abap`            | Interface                                                        |
+| `zpc_msg.msag.csv`       | Conteúdo da Message Class ZPC_MSG (criar manualmente)            |
 
 ## 2. Objetos criados manualmente (sem código-fonte)
 
@@ -62,13 +62,13 @@ Convenção de arquivos (um arquivo por objeto ADT):
 9. **Índices secundários únicos** (garantia de unicidade no banco — a validation sozinha não
    protege contra duas ativações simultâneas):
 
-   | Tabela | Campos | Único |
-   |---|---|:--:|
-   | `ZTA_PC_CLIENTE` | `CPF` | sim |
-   | `ZTA_PC_ITEM` | `SKU` | sim |
-   | `ZTA_PC_ITEM_PED` | `ITEM_UUID` | não |
-   | `ZTA_PC_PEDIDO` | `CLIENTE_UUID` | não |
-   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID` | não |
+   | Tabela            | Campos         | Único |
+   | ----------------- | -------------- | :---: |
+   | `ZTA_PC_CLIENTE`  | `CPF`          |  sim  |
+   | `ZTA_PC_ITEM`     | `SKU`          |  sim  |
+   | `ZTA_PC_ITEM_PED` | `ITEM_UUID`    |  não  |
+   | `ZTA_PC_PEDIDO`   | `CLIENTE_UUID` |  não  |
+   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID` |  não  |
 
    No ADT: abrir a tabela → *Add Index* (ou *New → ABAP Dictionary → Database Index*, conforme o
    release). Os três últimos são de desempenho (feature control e checagens de vínculo).
@@ -96,14 +96,14 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
 ## 4. Testes rápidos (preview do Service Binding ou apps em `ui5/`)
 
-| Cenário | Como testar |
-|---|---|
-| Pagamento aprovado | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123` |
-| Pagamento recusado | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO) |
-| Mastercard | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`) |
-| Estoque insuficiente | Pedir mais unidades que a *Qtde disponível* do item |
-| Concorrência | Deixar o item em edição (draft) na app de Estoque e confirmar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
-| Exclusão de cliente | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`) |
+| Cenário              | Como testar                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Pagamento aprovado   | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123`                                      |
+| Pagamento recusado   | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO)                                        |
+| Mastercard           | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`)                                                         |
+| Estoque insuficiente | Pedir mais unidades que a *Qtde disponível* do item                                                          |
+| Concorrência         | Deixar o item em edição (draft) na app de Estoque e confirmar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
+| Exclusão de cliente  | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`)                                         |
 
 Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → **Simular pagamento** →
 **Aprovar / finalizar** (ou **Cancelar pedido** com motivo).
@@ -128,16 +128,16 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → *
 
 ## 6. Correções do code review (v1.1)
 
-| # | Correção | Objetos |
-|---|---|---|
-| B1 | `/UI2/CL_JSON` (API não liberada) substituída por extração via PCRE; alternativa XCO documentada no cabeçalho | `ZCL_PC_VIACEP` |
-| B2 | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
-| B3 | Toda chamada EML avalia `FAILED`/`REPORTED`; compensação de reserva e snapshots propagam erro | 3 behavior pools |
-| B4 | Índices únicos de `CPF` e `SKU` documentados como objeto manual (seção 2.9) | README |
-| B5 | `c_modo_trial` passa a `abap_false`; verificação por atividade (01/02/06/16) | `ZIF_PC_CONSTANTS`, `ZCL_PC_AUTH`, 3 behavior pools |
-| R4 | Cliente HTTP fechado também em caminho de erro | `ZCL_PC_VIACEP` |
-| R6 | `CATCH cx_root` eliminado | `ZCL_PC_VIACEP` |
-| R7 | Cache do ViaCEP limitado a 100 entradas | `ZCL_PC_VIACEP` |
+| #   | Correção                                                                                                        | Objetos                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| B1  | `/UI2/CL_JSON` (API não liberada) substituída por extração via PCRE; alternativa XCO documentada no cabeçalho   | `ZCL_PC_VIACEP`                                                               |
+| B2  | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
+| B3  | Toda chamada EML avalia `FAILED`/`REPORTED`; compensação de reserva e snapshots propagam erro                   | 3 behavior pools                                                              |
+| B4  | Índices únicos de `CPF` e `SKU` documentados como objeto manual (seção 2.9)                                     | README                                                                        |
+| B5  | `c_modo_trial` passa a `abap_false`; verificação por atividade (01/02/06/16)                                    | `ZIF_PC_CONSTANTS`, `ZCL_PC_AUTH`, 3 behavior pools                           |
+| R4  | Cliente HTTP fechado também em caminho de erro                                                                  | `ZCL_PC_VIACEP`                                                               |
+| R6  | `CATCH cx_root` eliminado                                                                                       | `ZCL_PC_VIACEP`                                                               |
+| R7  | Cache do ViaCEP limitado a 100 entradas                                                                         | `ZCL_PC_VIACEP`                                                               |
 
 Testes unitários (ABAP Unit) das regras puras acompanham as classes:
 `ZCL_PC_UTIL` e `ZCL_PC_PAGAMENTO_SIM` (arquivos `*.clas.testclasses.abap`).
@@ -147,11 +147,11 @@ Testes unitários (ABAP Unit) das regras puras acompanham as classes:
 Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serviço. O guia completo está
 em [`ui5/README.md`](ui5/README.md).
 
-| App | Pasta | Serviço | Páginas | Tile (semantic object) | BSP |
-|---|---|---|---|---|---|
-| Gestão de Clientes | `ui5/clientes` | `ZUI_PC_CLIENTES_O4` | Cliente → Endereço | `ZPCCliente-manage` | `ZPC_CLIENTES` |
-| Gestão de Estoque | `ui5/estoque` | `ZUI_PC_ESTOQUE_O4` | Item | `ZPCItemEstoque-manage` | `ZPC_ESTOQUE` |
-| Pedidos de Compras | `ui5/pedidos` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico de itens | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` |
+| App                | Pasta          | Serviço                     | Páginas                            | Tile (semantic object)   | BSP            |
+| ------------------ | -------------- | --------------------------- | ---------------------------------- | ------------------------ | -------------- |
+| Gestão de Clientes | `ui5/clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                 | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
+| Gestão de Estoque  | `ui5/estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                               | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
+| Pedidos de Compras | `ui5/pedidos`  | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico de itens | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 
 ```bash
 cd ui5
@@ -175,7 +175,7 @@ Requisitos e notas:
 
 Ajustes no backend feitos para o front-end (v1.2):
 
-| Ajuste | Objetos |
-|---|---|
-| Semantic objects para navegação entre apps: `ZPCCliente` em `ClienteUUID`/`NomeCliente` e `ZPCItemEstoque` em `ItemUUID`/`Sku` | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` |
-| Seções *Pagamento* e *Histórico - cliente* passam de `#LINEITEM_REFERENCE` para `#IDENTIFICATION_REFERENCE`: as composições são `[0..1]`, e Fiori Elements V4 só monta tabela para navegações de cardinalidade N | `ZC_PC_PEDIDO_APP` (MDE) |
+| Ajuste                                                                                                                                                                                                           | Objetos                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Semantic objects para navegação entre apps: `ZPCCliente` em `ClienteUUID`/`NomeCliente` e `ZPCItemEstoque` em `ItemUUID`/`Sku`                                                                                   | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` |
+| Seções *Pagamento* e *Histórico - cliente* passam de `#LINEITEM_REFERENCE` para `#IDENTIFICATION_REFERENCE`: as composições são `[0..1]`, e Fiori Elements V4 só monta tabela para navegações de cardinalidade N | `ZC_PC_PEDIDO_APP` (MDE)                    |
