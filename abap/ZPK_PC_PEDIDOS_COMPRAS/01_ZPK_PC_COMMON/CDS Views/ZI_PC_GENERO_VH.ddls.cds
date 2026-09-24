@@ -2,8 +2,8 @@
 @EndUserText.label: 'Gênero - Value Help'
 @ObjectModel.resultSet.sizeCategory: #XS
 @Metadata.ignorePropagatedAnnotations: true
-define view entity ZC_PC_GENERO_VALUEHELP
-  as select from ZR_PC_CODELIST
+define view entity ZI_PC_GENERO_VH
+  as select from ZI_PC_CODELIST
 {
       @ObjectModel.text.element: ['Descricao']
       @UI.textArrangement: #TEXT_ONLY

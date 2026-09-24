@@ -5,7 +5,7 @@
 define abstract entity ZPC_A_PAGAMENTO_INPUT
 {
   @EndUserText.label: 'Método de pagamento'
-  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_METODOPAG_VALUEHELP', element: 'Codigo' } }]
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_METODOPAG_VH', element: 'Codigo' } }]
   MetodoPagamento : abap.char(20);
 
   @EndUserText.label: 'Número do cartão'

@@ -76,8 +76,8 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
 1. Pacotes e objetos manuais 1–4.
 2. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
-3. **Todas** as tabelas ativas `ZA_*` (inclusive `ZTA_PC_CODELIST`).
-4. CDS base: `ZR_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
+3. **Todas** as tabelas ativas `ZTA_*` (inclusive `ZTA_PC_CODELIST`).
+4. CDS base: `ZI_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as 5 views `ZR_PC_*` do pedido (ativar juntas).
 5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`.
 6. Tabelas draft `ZD_*` (alternativa: deixar o ADT gerar pelo *quick fix* no BDEF e comparar).

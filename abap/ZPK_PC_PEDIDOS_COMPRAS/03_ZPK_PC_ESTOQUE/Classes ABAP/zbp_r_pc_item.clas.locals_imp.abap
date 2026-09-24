@@ -159,7 +159,7 @@ CLASS lhc_item IMPLEMENTATION.
       IF ls_item-QtdeReservada > 0 OR line_exists( lt_vinculados[ table_line = ls_item-ItemUUID ] ).
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_exclusao_bloqueada ) ) TO reported-item.
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_exclusao_bloqueada ) ) TO reported-item.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -335,16 +335,16 @@ CLASS lhc_item IMPLEMENTATION.
       READ TABLE lt_saldo ASSIGNING FIELD-SYMBOL(<ls_saldo>)
            WITH TABLE KEY is_draft = <ls_mov>-is_draft item_uuid = <ls_mov>-item_uuid.
       IF sy-subrc <> 0.
-        lo_msg = NEW #( textid = zcx_pc_msg=>item_estoque_concorrente attr1 = '?' ).
+        lo_msg = NEW #( textid = zif_pc_errors_constants=>item_estoque_concorrente attr1 = '?' ).
       ELSEIF <ls_mov>-qtde <= 0.
-        lo_msg = NEW #( textid = zcx_pc_msg=>item_qtde_invalida ).
+        lo_msg = NEW #( textid = zif_pc_errors_constants=>item_qtde_invalida ).
       ELSE.
         CASE iv_tipo.
           WHEN c_movimento-reservar.
             IF <ls_saldo>-ativo = abap_false.
-              lo_msg = NEW #( textid = zcx_pc_msg=>item_inativo attr1 = <ls_saldo>-sku ).
+              lo_msg = NEW #( textid = zif_pc_errors_constants=>item_inativo attr1 = <ls_saldo>-sku ).
             ELSEIF <ls_mov>-qtde > <ls_saldo>-estoque - <ls_saldo>-reservada.
-              lo_msg = NEW #( textid = zcx_pc_msg=>item_estoque_insuficiente
+              lo_msg = NEW #( textid = zif_pc_errors_constants=>item_estoque_insuficiente
                               attr1  = <ls_saldo>-sku
                               attr2  = |{ <ls_saldo>-estoque - <ls_saldo>-reservada }| ).
             ELSE.
@@ -353,14 +353,14 @@ CLASS lhc_item IMPLEMENTATION.
 
           WHEN c_movimento-liberar.
             IF <ls_mov>-qtde > <ls_saldo>-reservada.
-              lo_msg = NEW #( textid = zcx_pc_msg=>item_reserva_inconsistente attr1 = <ls_saldo>-sku ).
+              lo_msg = NEW #( textid = zif_pc_errors_constants=>item_reserva_inconsistente attr1 = <ls_saldo>-sku ).
             ELSE.
               <ls_saldo>-reservada -= <ls_mov>-qtde.
             ENDIF.
 
           WHEN c_movimento-baixar.
             IF <ls_mov>-qtde > <ls_saldo>-reservada OR <ls_mov>-qtde > <ls_saldo>-estoque.
-              lo_msg = NEW #( textid = zcx_pc_msg=>item_reserva_inconsistente attr1 = <ls_saldo>-sku ).
+              lo_msg = NEW #( textid = zif_pc_errors_constants=>item_reserva_inconsistente attr1 = <ls_saldo>-sku ).
             ELSE.
               <ls_saldo>-estoque   -= <ls_mov>-qtde.
               <ls_saldo>-reservada -= <ls_mov>-qtde.
@@ -492,7 +492,7 @@ CLASS lhc_item IMPLEMENTATION.
                           %control-Sku = if_abap_behv=>mk-on ) TO lt_update.
         CATCH cx_number_ranges INTO DATA(lx_nr).
           APPEND VALUE #( %tky = ls_item-%tky
-                          %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>numeracao_erro
+                          %msg = NEW zcx_pc_msg( textid   = zif_pc_errors_constants=>numeracao_erro
                                                  attr1    = lx_nr->get_text( )
                                                  previous = lx_nr ) ) TO reported-item.
       ENDTRY.
@@ -523,14 +523,14 @@ CLASS lhc_item IMPLEMENTATION.
       IF ls_item-Nome IS INITIAL.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Nome' )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>campo_obrigatorio attr1 = 'Nome' )
                         %element-Nome = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
 
       IF ls_item-Categoria IS INITIAL.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Categoria' )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>campo_obrigatorio attr1 = 'Categoria' )
                         %element-Categoria = if_abap_behv=>mk-on ) TO reported-item.
       ELSE.
         SELECT SINGLE @abap_true
@@ -541,7 +541,7 @@ CLASS lhc_item IMPLEMENTATION.
         IF lv_categoria_ok = abap_false.
           APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
           APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                          %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>valor_invalido attr1 = 'Categoria' )
+                          %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>valor_invalido attr1 = 'Categoria' )
                           %element-Categoria = if_abap_behv=>mk-on ) TO reported-item.
         ENDIF.
         CLEAR lv_categoria_ok.
@@ -550,21 +550,21 @@ CLASS lhc_item IMPLEMENTATION.
       IF ls_item-PrecoUnitario < 0.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_preco_invalido )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_preco_invalido )
                         %element-PrecoUnitario = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
 
       IF ls_item-Currency IS INITIAL.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Moeda' )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>campo_obrigatorio attr1 = 'Moeda' )
                         %element-Currency = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
 
       IF ls_item-Peso < 0 OR ls_item-Altura < 0 OR ls_item-Largura < 0 OR ls_item-Profundidade < 0.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_dimensao_invalida ) ) TO reported-item.
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_dimensao_invalida ) ) TO reported-item.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -584,7 +584,7 @@ CLASS lhc_item IMPLEMENTATION.
       IF ls_item-QtdeEstoque < 0 OR ls_item-QtdeEstoque < ls_item-QtdeReservada.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-quantidade
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_qtde_estoque_invalida
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_qtde_estoque_invalida
                                                attr1  = |{ ls_item-QtdeReservada }| )
                         %element-QtdeEstoque = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
@@ -616,7 +616,7 @@ CLASS lhc_item IMPLEMENTATION.
          OR line_exists( lt_em_pedido_ativo[ table_line = ls_item-ItemUUID ] ).
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-inativacao
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_inativacao_bloqueada )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_inativacao_bloqueada )
                         %element-ItemAtivo = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
     ENDLOOP.
@@ -641,7 +641,7 @@ CLASS lhc_item IMPLEMENTATION.
       IF ls_item-Sku IS INITIAL.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-sku
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'SKU' ) ) TO reported-item.
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>campo_obrigatorio attr1 = 'SKU' ) ) TO reported-item.
         CONTINUE.
       ENDIF.
 
@@ -654,7 +654,7 @@ CLASS lhc_item IMPLEMENTATION.
       IF lv_duplicado = abap_true.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-sku
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_sku_duplicado )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>item_sku_duplicado )
                         %element-Sku = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
       CLEAR lv_duplicado.
@@ -677,7 +677,7 @@ CLASS lhc_item IMPLEMENTATION.
                                       iv_nome_arquivo = ls_item-FotoFileName ) = abap_false.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-foto
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>foto_formato_invalido )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_errors_constants=>foto_formato_invalido )
                         %element-FotoItem = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
     ENDLOOP.

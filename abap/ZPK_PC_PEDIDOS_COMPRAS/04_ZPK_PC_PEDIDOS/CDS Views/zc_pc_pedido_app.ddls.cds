@@ -36,13 +36,13 @@ define root view entity ZC_PC_PEDIDO_APP
       EnderecoPrincipalCompleto,
 
       @ObjectModel.text.element: [ 'StatusPedidoTexto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSPED_VALUEHELP', element: 'Codigo' } }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_STATUSPED_VH', element: 'Codigo' } }]
       StatusPedido,
       _StatusPedidoTxt.Descricao      as StatusPedidoTexto,
       _StatusPedidoTxt.Criticality    as StatusPedidoCriticality,
 
       @ObjectModel.text.element: [ 'StatusPagamentoTexto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSPAG_VALUEHELP', element: 'Codigo' } }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_STATUSPAG_VH', element: 'Codigo' } }]
       StatusPagamento,
       _StatusPagamentoTxt.Descricao   as StatusPagamentoTexto,
       _StatusPagamentoTxt.Criticality as StatusPagamentoCriticality,

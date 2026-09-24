@@ -9,9 +9,9 @@ define root view entity ZR_PC_PEDIDO
   composition [0..*] of ZR_PC_PED_ITEM_SNAP as _ItensSnapshot
   association [0..1] to ZR_PC_CLIENTE       as _Cliente  on $projection.ClienteUUID = _Cliente.ClienteUUID
   association [0..1] to ZR_PC_ENDERECO      as _Endereco on $projection.EnderecoUUID = _Endereco.EnderecoUUID
-  association [0..1] to ZR_PC_CODELIST as _StatusPedidoTxt on  _StatusPedidoTxt.Lista  = 'STATUS_PEDIDO'
+  association [0..1] to ZI_PC_CODELIST as _StatusPedidoTxt on  _StatusPedidoTxt.Lista  = 'STATUS_PEDIDO'
                                                           and _StatusPedidoTxt.Codigo = $projection.StatusPedido
-  association [0..1] to ZR_PC_CODELIST as _StatusPagamentoTxt on  _StatusPagamentoTxt.Lista  = 'STATUS_PAGAMENTO'
+  association [0..1] to ZI_PC_CODELIST as _StatusPagamentoTxt on  _StatusPagamentoTxt.Lista  = 'STATUS_PAGAMENTO'
                                                              and _StatusPagamentoTxt.Codigo = $projection.StatusPagamento
 {
   key pedido_uuid           as PedidoUUID,

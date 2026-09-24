@@ -4,9 +4,9 @@
 define view entity ZR_PC_PAGAMENTO
   as select from zta_pc_pagamento
   association to parent ZR_PC_PEDIDO as _Pedido on $projection.PedidoUUID = _Pedido.PedidoUUID
-  association [0..1] to ZR_PC_CODELIST as _MetodoTxt on  _MetodoTxt.Lista  = 'METODO_PAGAMENTO'
+  association [0..1] to ZI_PC_CODELIST as _MetodoTxt on  _MetodoTxt.Lista  = 'METODO_PAGAMENTO'
                                                     and _MetodoTxt.Codigo = $projection.MetodoPagamento
-  association [0..1] to ZR_PC_CODELIST as _StatusTxt on  _StatusTxt.Lista  = 'STATUS_PAGAMENTO'
+  association [0..1] to ZI_PC_CODELIST as _StatusTxt on  _StatusTxt.Lista  = 'STATUS_PAGAMENTO'
                                                     and _StatusTxt.Codigo = $projection.StatusPagamento
 {
   key pagamento_uuid        as PagamentoUUID,

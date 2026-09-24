@@ -1,13 +1,13 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Status do pedido - Value Help'
+@EndUserText.label: 'Categoria do item - Value Help'
 @ObjectModel.resultSet.sizeCategory: #XS
 @Metadata.ignorePropagatedAnnotations: true
-define view entity ZC_PC_STATUSPED_VALUEHELP
-  as select from ZR_PC_CODELIST
+define view entity ZI_PC_CATEGORIA_VH
+  as select from ZI_PC_CODELIST
 {
       @ObjectModel.text.element: ['Descricao']
       @UI.textArrangement: #TEXT_ONLY
-      @EndUserText.label: 'Status do pedido'
+      @EndUserText.label: 'Categoria do item'
   key Codigo,
       @Semantics.text: true
       @EndUserText.label: 'Descrição'
@@ -18,4 +18,4 @@ define view entity ZC_PC_STATUSPED_VALUEHELP
       Ordem
 }
 where
-  Lista = 'STATUS_PEDIDO'
+  Lista = 'CATEGORIA'

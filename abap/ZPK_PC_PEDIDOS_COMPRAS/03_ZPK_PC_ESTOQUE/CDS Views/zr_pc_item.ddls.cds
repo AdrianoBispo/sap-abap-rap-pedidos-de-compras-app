@@ -3,9 +3,9 @@
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZR_PC_ITEM
   as select from zta_pc_item
-  association [0..1] to ZR_PC_CODELIST as _CategoriaTxt on  _CategoriaTxt.Lista  = 'CATEGORIA'
+  association [0..1] to ZI_PC_CODELIST as _CategoriaTxt on  _CategoriaTxt.Lista  = 'CATEGORIA'
                                                        and _CategoriaTxt.Codigo = $projection.Categoria
-  association [0..1] to ZR_PC_CODELIST as _StatusEstoqueTxt on  _StatusEstoqueTxt.Lista  = 'STATUS_ESTOQUE'
+  association [0..1] to ZI_PC_CODELIST as _StatusEstoqueTxt on  _StatusEstoqueTxt.Lista  = 'STATUS_ESTOQUE'
                                                            and _StatusEstoqueTxt.Codigo = $projection.StatusEstoque
 {
   key item_uuid             as ItemUUID,

@@ -23,7 +23,7 @@ define root view entity ZC_PC_ITEM_APP
       Descricao,
 
       @ObjectModel.text.element: [ 'CategoriaTexto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_CATEGORIA_VALUEHELP', element: 'Codigo' },
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_CATEGORIA_VH', element: 'Codigo' },
                                            useForValidation: true }]
       Categoria,
       _CategoriaTxt.Descricao          as CategoriaTexto,
@@ -33,7 +33,7 @@ define root view entity ZC_PC_ITEM_APP
       QtdeDisponivel,
 
       @ObjectModel.text.element: [ 'StatusEstoqueTexto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSEST_VALUEHELP', element: 'Codigo' } }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_STATUSEST_VH', element: 'Codigo' } }]
       StatusEstoque,
       _StatusEstoqueTxt.Descricao      as StatusEstoqueTexto,
       _StatusEstoqueTxt.Criticality    as StatusEstoqueCriticality,

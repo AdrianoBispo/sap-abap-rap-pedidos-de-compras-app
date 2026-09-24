@@ -1,13 +1,13 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Categoria do item - Value Help'
+@EndUserText.label: 'Status do pagamento - Value Help'
 @ObjectModel.resultSet.sizeCategory: #XS
 @Metadata.ignorePropagatedAnnotations: true
-define view entity ZC_PC_CATEGORIA_VALUEHELP
-  as select from ZR_PC_CODELIST
+define view entity ZI_PC_STATUSPAG_VH
+  as select from ZI_PC_CODELIST
 {
       @ObjectModel.text.element: ['Descricao']
       @UI.textArrangement: #TEXT_ONLY
-      @EndUserText.label: 'Categoria do item'
+      @EndUserText.label: 'Status do pagamento'
   key Codigo,
       @Semantics.text: true
       @EndUserText.label: 'Descrição'
@@ -18,4 +18,4 @@ define view entity ZC_PC_CATEGORIA_VALUEHELP
       Ordem
 }
 where
-  Lista = 'CATEGORIA'
+  Lista = 'STATUS_PAGAMENTO'

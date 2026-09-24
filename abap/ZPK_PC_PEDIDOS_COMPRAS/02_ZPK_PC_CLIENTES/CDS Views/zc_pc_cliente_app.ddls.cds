@@ -34,7 +34,7 @@ define root view entity ZC_PC_CLIENTE_APP
       virtual TelefoneFormatado : abap.char(15),
 
       @ObjectModel.text.element: [ 'GeneroTexto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_GENERO_VALUEHELP', element: 'Codigo' },
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_PC_GENERO_VH', element: 'Codigo' },
                                            useForValidation: true }]
       Genero,
       _GeneroTxt.Descricao      as GeneroTexto,

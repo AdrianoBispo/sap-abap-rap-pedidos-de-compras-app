@@ -6,7 +6,7 @@ define root view entity ZR_PC_CLIENTE
   composition [0..*] of ZR_PC_ENDERECO as _Endereco
   association [0..1] to ZR_PC_ENDERECO as _EnderecoPrincipal on  _EnderecoPrincipal.ClienteUUID       = $projection.ClienteUUID
                                                              and _EnderecoPrincipal.EnderecoPrincipal = 'X'
-  association [0..1] to ZR_PC_CODELIST as _GeneroTxt on  _GeneroTxt.Lista  = 'GENERO'
+  association [0..1] to ZI_PC_CODELIST as _GeneroTxt on  _GeneroTxt.Lista  = 'GENERO'
                                                     and _GeneroTxt.Codigo = $projection.Genero
 {
   key cliente_uuid          as ClienteUUID,

@@ -13,7 +13,7 @@ define service ZUI_PC_PEDIDOS_COMPRAS {
   expose ZC_PC_ITEM_VALUEHELP      as ItemVH;
 
   /* CodeLists */
-  expose ZC_PC_STATUSPED_VALUEHELP as StatusPedidoVH;
-  expose ZC_PC_STATUSPAG_VALUEHELP as StatusPagamentoVH;
-  expose ZC_PC_METODOPAG_VALUEHELP as MetodoPagamentoVH;
+  expose ZI_PC_STATUSPED_VH as StatusPedidoVH;
+  expose ZI_PC_STATUSPAG_VH as StatusPagamentoVH;
+  expose ZI_PC_METODOPAG_VH as MetodoPagamentoVH;
 }

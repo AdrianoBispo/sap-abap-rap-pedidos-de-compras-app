@@ -2,5 +2,5 @@
 define service ZUI_PC_CLIENTES {
   expose ZC_PC_CLIENTE_APP      as Cliente;
   expose ZC_PC_ENDERECO_APP     as Endereco;
-  expose ZC_PC_GENERO_VALUEHELP as GeneroVH;
+  expose ZI_PC_GENERO_VH as GeneroVH;
 }
