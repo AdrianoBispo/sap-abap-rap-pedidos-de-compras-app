@@ -5,18 +5,16 @@ serviço RAP do projeto. A UI é **orientada a anotações**: colunas, filtros, 
 criticidade vêm das Metadata Extensions (`*.ddlx.cds`) do backend. Aqui ficam apenas o
 `manifest.json` (serviço, rotas, tabelas, tile do launchpad) e a configuração de ferramentas.
 
-| App | Pasta | ID / namespace | Serviço (binding OData V4) | Semantic object (tile) | BSP no deploy |
-|---|---|---|---|---|---|
-| Gestão de Clientes | `clientes/` | `zpc.clientes` | `ZUI_PC_CLIENTES_O4` | `ZPCCliente-manage` | `ZPC_CLIENTES` |
-| Gestão de Estoque | `estoque/` | `zpc.estoque` | `ZUI_PC_ESTOQUE_O4` | `ZPCItemEstoque-manage` | `ZPC_ESTOQUE` |
-| Pedidos de Compras | `pedidos/` | `zpc.pedidos` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` |
+| App                | Pasta       | ID / namespace | Serviço (binding OData V4)  | Semantic object (tile)   | BSP no deploy  |
+| ------------------ | ----------- | -------------- | --------------------------- | ------------------------ | -------------- |
+| Gestão de Clientes | `clientes/` | `zpc.clientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
+| Gestão de Estoque  | `estoque/`  | `zpc.estoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
+| Pedidos de Compras | `pedidos/`  | `zpc.pedidos`  | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 
 ## Estrutura
 
 ```
 ui5/
-├── package.json              workspaces npm + scripts para as três apps
-├── scripts/set-backend.mjs   troca a URL do sistema em todos os ui5*.yaml
 ├── clientes/
 │   ├── package.json          scripts start / build / lint / deploy
 │   ├── ui5.yaml              servidor local: proxy /sap → BTP, UI5 da CDN, launchpad local
@@ -34,11 +32,11 @@ ui5/
 
 ### Páginas de cada app
 
-| App | List Report | Object Page | Sub-páginas |
-|---|---|---|---|
-| Clientes | `Cliente` | Cliente, com tabela de endereços e ação **Definir endereço principal** | `Endereco` (criação em página própria: o CEP dispara o ViaCEP) |
-| Estoque | `Item` | Item (foto, estoque, dimensões) | — |
-| Pedidos | `Pedido`, com as ações Confirmar / Simular pagamento / Aprovar / Cancelar | Pedido. Os itens são criados na própria tabela (*inline*); Pagamento e Histórico do cliente aparecem como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot` |
+| App      | List Report                                                               | Object Page                                                                                                                            | Sub-páginas                                                    |
+| -------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Clientes | `Cliente`                                                                 | Cliente, com tabela de endereços e ação **Definir endereço principal**                                                                 | `Endereco` (criação em página própria: o CEP dispara o ViaCEP) |
+| Estoque  | `Item`                                                                    | Item (foto, estoque, dimensões)                                                                                                        | —                                                              |
+| Pedidos  | `Pedido`, com as ações Confirmar / Simular pagamento / Aprovar / Cancelar | Pedido. Os itens são criados na própria tabela (*inline*); Pagamento e Histórico do cliente aparecem como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot`                                   |
 
 As ações com parâmetros (**Simular pagamento**, **Cancelar pedido**) abrem o diálogo automaticamente a
 partir das abstract entities `ZPC_A_PAGAMENTO_INPUT` e `ZPC_A_CANCELAMENTO_INPUT`.
@@ -54,32 +52,11 @@ no item.
 ## Pré-requisitos
 
 - Node.js 20 ou superior.
-- SAP Business Application Studio **ou** VS Code com a extensão *SAP Fiori tools*.
-- Backend ativado e **Service Bindings publicados** (README principal, seções 2 e 3).
+- SAP Business Application Studio **ou** VS Code com a extensão *SAP Fiori Tools*.
+- Backend ativado e **Service Bindings publicados**.
 - Usuário com as Business Roles do projeto no sistema BTP ABAP.
 - O SAP Fiori launchpad do sistema com **SAPUI5 1.136 ou superior**. O `manifest.json` usa
   descriptor versão 2 (`_version` 2.0.0).
-
-## Executar localmente
-
-```bash
-cd ui5
-npm install                      # instala as três apps (workspaces)
-npm run set-backend -- https://<id>.abap.<região>.hana.ondemand.com
-
-npm run start:launchpad          # launchpad local com os três tiles (recomendado)
-npm run start:clientes           # ou cada app isolada
-npm run start:estoque
-npm run start:pedidos
-```
-
-- **Autenticação.** O proxy usa `authenticationType: reentranceTicket`: no primeiro acesso abre-se o
-  navegador para logon no sistema BTP ABAP.
-- **SAP Business Application Studio.** Crie uma *destination* para o sistema e, em cada `ui5*.yaml`,
-  troque `url:` + `authenticationType:` por `destination: <nome>`.
-- **Endereços.** O launchpad local fica em `http://localhost:8080/test/flp.html` e é gerado pelo
-  middleware `fiori-tools-preview`. `npm run start-noflp -w <app>` abre a app sem launchpad
-  (`index.html`).
 
 ## Validar
 
@@ -108,11 +85,11 @@ preencha `transport:` em `ui5-deploy.yaml`. Para testar sem gravar nada: `npm ru
 1. **Business Catalogs (ADT).** Adicionar o IAM App gerado ao catálogo correspondente (*Apps* →
    *Add*) e **Publish Locally**:
 
-   | Business Catalog | IAM Apps |
-   |---|---|
+   | Business Catalog  | IAM Apps                                                      |
+   | ----------------- | ------------------------------------------------------------- |
    | `ZPC_BC_CLIENTES` | `ZPC_IAM_CLIENTES_EXT` (serviço) + `ZPC_CLIENTES_UI5R` (tile) |
-   | `ZPC_BC_ESTOQUE` | `ZPC_IAM_ESTOQUE_EXT` + `ZPC_ESTOQUE_UI5R` |
-   | `ZPC_BC_PEDIDOS` | `ZPC_IAM_PEDIDOS_EXT` + `ZPC_PEDIDOS_UI5R` |
+   | `ZPC_BC_ESTOQUE`  | `ZPC_IAM_ESTOQUE_EXT` + `ZPC_ESTOQUE_UI5R`                    |
+   | `ZPC_BC_PEDIDOS`  | `ZPC_IAM_PEDIDOS_EXT` + `ZPC_PEDIDOS_UI5R`                    |
 
 2. **Business Roles.** Nas roles `ZPC_BR_ADMIN` (três catálogos) e `ZPC_BR_COMUM` (Pedidos), use o app
    *Maintain Business Roles*. Os catálogos já atribuídos passam a trazer os tiles.

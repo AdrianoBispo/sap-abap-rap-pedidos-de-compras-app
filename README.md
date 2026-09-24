@@ -1,8 +1,6 @@
 # Pedidos de Compras – SAP RAP / ABAP Cloud
 
-Código-fonte da especificação técnica **v2.0** (três aplicações Fiori Elements desacopladas:
-Gestão de Clientes, Gestão de Estoque e Pedidos de Compras) para o **SAP BTP ABAP Environment (Trial)**:
-backend RAP em `src/` e front-end SAP Fiori Elements (OData V4) em `ui5/`.
+Código-fonte das três aplicações Fiori Elements desacopladas Gestão de Clientes, Gestão de Estoque e Pedidos de Compras para o **SAP BTP ABAP Environment (Trial)**: backend RAP em `abap/` e front-end SAP Fiori Elements (OData V4) em `ui5/`.
 
 > Os fontes foram escritos para ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com
 > *abaplint* (linguagem **Cloud**: parser ABAP/CDS e checagem de sintaxe). A ativação final
@@ -13,19 +11,20 @@ backend RAP em `src/` e front-end SAP Fiori Elements (OData V4) em `ui5/`.
 
 ```
 projeto/
-├── README.md
-├── src/     backend ABAP Cloud / RAP (um subdiretório por pacote, abaixo)
-└── ui5/     front-end Fiori Elements: apps clientes/, estoque/ e pedidos/ (ver seção 7)
-```
-
-Pacotes ABAP (`src/`):
-
-```
-ZPK_PC_PEDIDOS_COMPRAS                 (pacote principal, software component ZLOCAL no trial)
-├── 01_ZPK_PC_COMMON     constantes, mensagens, utilitários, ViaCEP, autorização, numeração, CodeLists, setup
-├── 02_ZPK_PC_CLIENTES   BO Cliente + Endereço, value helps de cliente/endereço, serviço ZUI_PC_CLIENTES
-├── 03_ZPK_PC_ESTOQUE    BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-└── 04_ZPK_PC_PEDIDOS    BO Pedido (+ itens, pagamento, snapshots), pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
+├── abap/ backend ABAP Cloud / RAP
+|    └── ZPK_PC_PEDIDOS_COMPRAS   (pacote principal, software component ZLOCAL no trial)
+|        ├── 01_ZPK_PC_COMMON     constantes, mensagens, utilitários, ViaCEP, autorização, numeração, CodeLists, setup
+|        ├── 02_ZPK_PC_CLIENTES   BO Cliente + Endereço, value helps de cliente/endereço, serviço ZUI_PC_CLIENTES
+|        ├── 03_ZPK_PC_ESTOQUE    BO Item, value help de item, serviço ZUI_PC_ESTOQUE
+|        └── 04_ZPK_PC_PEDIDOS    BO Pedido (+ itens, pagamento, snapshots), pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
+|
+├── ui5/ front-end Fiori Elements: apps clientes/, estoque/ e pedidos/
+|     ├── clientes  Arquivos UI5 para o app de Clientes
+|     ├── estoque   Arquivos UI5 para o app de Estoque
+|     ├── pedidos   Arquivos UI5 para o app de Pedidos de Compras
+|     └── README.md
+|
+└── README.md
 ```
 
 Convenção de arquivos (um arquivo por objeto ADT):
