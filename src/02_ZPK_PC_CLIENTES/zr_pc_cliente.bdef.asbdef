@@ -9,8 +9,8 @@ with draft;
    - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_CLIENTE alias Cliente
-persistent table zta_pc_cliente
-draft table zta_pc_cliente_d
+persistent table za_pc_cliente
+draft table zd_pc_cliente
 etag master LocalLastChangedAt
 lock master total etag LastChangedAt
 authorization master ( global )
@@ -53,7 +53,7 @@ authorization master ( global )
     validation Endereco~ValidarCep;
   }
 
-  mapping for zta_pc_cliente
+  mapping for za_pc_cliente
   {
     ClienteUUID        = cliente_uuid;
     FotoCliente        = foto_cliente;
@@ -76,8 +76,8 @@ authorization master ( global )
 }
 
 define behavior for ZR_PC_ENDERECO alias Endereco
-persistent table zta_pc_endereco
-draft table zta_pc_endereco_d
+persistent table za_pc_endereco
+draft table zd_pc_endereco
 etag master LocalLastChangedAt
 lock dependent by _Cliente
 authorization dependent by _Cliente
@@ -88,7 +88,7 @@ authorization dependent by _Cliente
   association _Cliente { with draft; }
 
   field ( numbering : managed, readonly ) EnderecoUUID;
-  field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, Cidade, Uf, Estado,
+  field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, CepStatus, Cidade, Uf, Estado,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
   /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município */
   field ( features : instance ) Logradouro, Bairro;
@@ -100,14 +100,15 @@ authorization dependent by _Cliente
   determination DefinirPrincipalInicial on modify { create; }
 
   validation ValidarNumero on save { create; field Numero; }
-  validation ValidarCep on save { create; field Cep, Logradouro, Bairro; }
+  validation ValidarCep on save { create; field Cep, Logradouro, Bairro, CepStatus; }
 
   side effects
   {
-    field Cep affects field Logradouro, field Bairro, field Cidade, field Uf, field Estado, field CepGeral;
+    field Cep affects field Logradouro, field Bairro, field Cidade, field Uf, field Estado,
+              field CepGeral, field CepStatus;
   }
 
-  mapping for zta_pc_endereco
+  mapping for za_pc_endereco
   {
     EnderecoUUID       = endereco_uuid;
     ClienteUUID        = cliente_uuid;
@@ -120,6 +121,7 @@ authorization dependent by _Cliente
     Uf                 = uf;
     Estado             = estado;
     CepGeral           = cep_geral;
+    CepStatus          = cep_status;
     EnderecoPrincipal  = endereco_principal;
     CreatedBy          = created_by;
     CreatedAt          = created_at;

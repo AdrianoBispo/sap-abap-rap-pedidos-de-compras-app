@@ -15,6 +15,7 @@ define view entity ZC_PC_ENDERECO_APP
       Uf,
       Estado,
       CepGeral,
+      CepStatus,
       EnderecoPrincipal,
       CreatedBy,
       CreatedAt,

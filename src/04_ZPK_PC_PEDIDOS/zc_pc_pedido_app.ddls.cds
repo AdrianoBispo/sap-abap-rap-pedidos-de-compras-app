@@ -12,6 +12,8 @@ define root view entity ZC_PC_PEDIDO_APP
       @Search.defaultSearchElement: true
       NumeroPedido,
 
+      /* Navegação entre apps (FLP): link para a app Gestão de Clientes */
+      @Consumption.semanticObject: 'ZPCCliente'
       @ObjectModel.text.element: [ 'NomeCliente' ]
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_CLIENTE_VALUEHELP', element: 'ClienteUUID' },
                                            useForValidation: true }]
@@ -19,6 +21,7 @@ define root view entity ZC_PC_PEDIDO_APP
 
       @Search.defaultSearchElement: true
       @Search.fuzzinessThreshold: 0.8
+      @Consumption.semanticObject: 'ZPCCliente'
       _Cliente.Nome                   as NomeCliente,
 
       @Search.defaultSearchElement: true

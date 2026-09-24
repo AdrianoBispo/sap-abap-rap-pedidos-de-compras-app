@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table zta_pc_snap_cli {
+define table za_pc_snap_cli {
 
   key client            : abap.clnt not null;
   key snapshot_uuid     : sysuuid_x16 not null;

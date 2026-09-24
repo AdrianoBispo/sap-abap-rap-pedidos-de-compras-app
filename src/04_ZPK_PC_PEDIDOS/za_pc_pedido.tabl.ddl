@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table zta_pc_pedido {
+define table za_pc_pedido {
 
   key client            : abap.clnt not null;
   key pedido_uuid       : sysuuid_x16 not null;
@@ -15,7 +15,7 @@ define table zta_pc_pedido {
   status_pagamento      : abap.char(30);
   observacao            : abap.char(500);
   currency              : abap.cuky;
-  @Semantics.amount.currencyCode : 'zta_pc_pedido.currency'
+  @Semantics.amount.currencyCode : 'za_pc_pedido.currency'
   valor_total           : abap.curr(15,2);
   data_finalizacao      : timestampl;
   motivo_cancelamento   : abap.char(500);

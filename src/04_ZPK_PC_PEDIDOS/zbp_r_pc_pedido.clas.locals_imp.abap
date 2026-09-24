@@ -77,8 +77,10 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR ACTION Pedido~CancelarPedido RESULT result.
 
     "! Soma ValorTotal dos itens e atualiza o total do pedido.
+    "! Devolve o reported da chamada EML para o handler chamador avaliar.
     METHODS recalcular_totais
-      IMPORTING it_pedidos TYPE tt_pedido_key.
+      IMPORTING it_pedidos         TYPE tt_pedido_key
+      RETURNING VALUE(rs_reported) TYPE ty_reported.
 
     "! Endereço principal atual do cliente (vazio se não houver).
     METHODS endereco_principal
@@ -106,11 +108,20 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING is_pedido   TYPE ts_pedido
                 it_itens    TYPE tt_itens_pedido
                 iv_motivo   TYPE csequence
-      CHANGING  cs_reported TYPE ty_reported.
+      CHANGING  cs_failed   TYPE ty_failed
+                cs_reported TYPE ty_reported.
 
     METHODS registrar_erro
       IMPORTING is_pedido   TYPE ts_pedido
                 io_msg      TYPE REF TO zcx_pc_msg
+      CHANGING  cs_failed   TYPE ty_failed
+                cs_reported TYPE ty_reported.
+
+    "! Propaga failed/reported de uma chamada EML para a resposta da action.
+    "! Nenhuma chamada EML deve ser feita sem avaliar o retorno.
+    METHODS propagar
+      IMPORTING is_failed   TYPE ty_failed OPTIONAL
+                is_reported TYPE ty_reported OPTIONAL
       CHANGING  cs_failed   TYPE ty_failed
                 cs_reported TYPE ty_reported.
 
@@ -123,33 +134,42 @@ ENDCLASS.
 CLASS lhc_pedido IMPLEMENTATION.
 
   METHOD get_global_authorizations.
-    DATA(lv_auth) = COND #( WHEN zcl_pc_auth=>pode_operar_pedidos( ) = abap_true
+    " Cada operação verifica sua própria atividade (ACTVT)
+    IF requested_authorizations-%create = if_abap_behv=>mk-on.
+      result-%create = COND #( WHEN zcl_pc_auth=>pedido_pode_criar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    IF requested_authorizations-%update = if_abap_behv=>mk-on.
+      result-%update = COND #( WHEN zcl_pc_auth=>pedido_pode_alterar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    IF requested_authorizations-%delete = if_abap_behv=>mk-on.
+      result-%delete = COND #( WHEN zcl_pc_auth=>pedido_pode_excluir( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    IF requested_authorizations-%action-Edit = if_abap_behv=>mk-on.
+      result-%action-Edit = COND #( WHEN zcl_pc_auth=>pedido_pode_alterar( ) = abap_true
+                                    THEN if_abap_behv=>auth-allowed
+                                    ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    DATA(lv_exec) = COND #( WHEN zcl_pc_auth=>pedido_pode_executar( ) = abap_true
                             THEN if_abap_behv=>auth-allowed
                             ELSE if_abap_behv=>auth-unauthorized ).
 
-    IF requested_authorizations-%create = if_abap_behv=>mk-on.
-      result-%create = lv_auth.
-    ENDIF.
-    IF requested_authorizations-%update = if_abap_behv=>mk-on.
-      result-%update = lv_auth.
-    ENDIF.
-    IF requested_authorizations-%delete = if_abap_behv=>mk-on.
-      result-%delete = lv_auth.
-    ENDIF.
-    IF requested_authorizations-%action-Edit = if_abap_behv=>mk-on.
-      result-%action-Edit = lv_auth.
-    ENDIF.
     IF requested_authorizations-%action-ConfirmarPedido = if_abap_behv=>mk-on.
-      result-%action-ConfirmarPedido = lv_auth.
+      result-%action-ConfirmarPedido = lv_exec.
     ENDIF.
     IF requested_authorizations-%action-SimularPagamento = if_abap_behv=>mk-on.
-      result-%action-SimularPagamento = lv_auth.
+      result-%action-SimularPagamento = lv_exec.
     ENDIF.
     IF requested_authorizations-%action-AprovarPedido = if_abap_behv=>mk-on.
-      result-%action-AprovarPedido = lv_auth.
+      result-%action-AprovarPedido = lv_exec.
     ENDIF.
     IF requested_authorizations-%action-CancelarPedido = if_abap_behv=>mk-on.
-      result-%action-CancelarPedido = lv_auth.
+      result-%action-CancelarPedido = lv_exec.
     ENDIF.
   ENDMETHOD.
 
@@ -203,7 +223,12 @@ CLASS lhc_pedido IMPLEMENTATION.
                         StatusPedido    = zif_pc_constants=>c_status_pedido-criado
                         StatusPagamento = zif_pc_constants=>c_status_pagamento-pendente
                         Currency        = zif_pc_constants=>c_moeda_padrao
-                        ValorTotal      = 0 ) ).
+                        ValorTotal      = 0 ) )
+      REPORTED DATA(ls_reported_ini).
+
+    LOOP AT ls_reported_ini-pedido INTO DATA(ls_rep_ini) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_ini ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -230,7 +255,12 @@ CLASS lhc_pedido IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY Pedido UPDATE FROM lt_update.
+      ENTITY Pedido UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_d1).
+
+    LOOP AT ls_reported_d1-pedido INTO DATA(ls_rep_d1) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_d1 ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -262,17 +292,32 @@ CLASS lhc_pedido IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY Pedido UPDATE FROM lt_update.
+      ENTITY Pedido UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_d2).
+
+    LOOP AT ls_reported_d2-pedido INTO DATA(ls_rep_d2) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_d2 ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
   METHOD CalcularTotalPedido.
-    recalcular_totais( VALUE #( FOR k IN keys ( is_draft = k-%is_draft pedido_uuid = k-PedidoUUID ) ) ).
+    DATA(ls_reported_tot) = recalcular_totais(
+      VALUE #( FOR k IN keys ( is_draft = k-%is_draft pedido_uuid = k-PedidoUUID ) ) ).
+
+    LOOP AT ls_reported_tot-pedido INTO DATA(ls_rep_tot) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_tot ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
   METHOD RecalcularTotal.
-    recalcular_totais( VALUE #( FOR k IN keys ( is_draft = k-%is_draft pedido_uuid = k-PedidoUUID ) ) ).
+    DATA(ls_reported_tot) = recalcular_totais(
+      VALUE #( FOR k IN keys ( is_draft = k-%is_draft pedido_uuid = k-PedidoUUID ) ) ).
+
+    LOOP AT ls_reported_tot-pedido INTO DATA(ls_rep_tot) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_tot ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -312,7 +357,8 @@ CLASS lhc_pedido IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY Pedido UPDATE FROM lt_update.
+      ENTITY Pedido UPDATE FROM lt_update
+      REPORTED rs_reported.
   ENDMETHOD.
 
 
@@ -399,6 +445,25 @@ CLASS lhc_pedido IMPLEMENTATION.
       APPEND VALUE #( %tky = is_pedido-%tky ) TO cs_failed-pedido.
     ENDIF.
     APPEND VALUE #( %tky = is_pedido-%tky %msg = io_msg ) TO cs_reported-pedido.
+  ENDMETHOD.
+
+
+  METHOD propagar.
+    LOOP AT is_reported-pedido INTO DATA(ls_rep) WHERE %msg IS BOUND.
+      APPEND ls_rep TO cs_reported-pedido.
+    ENDLOOP.
+    LOOP AT is_reported-itempedido INTO DATA(ls_rep_item) WHERE %msg IS BOUND.
+      APPEND ls_rep_item TO cs_reported-itempedido.
+    ENDLOOP.
+    LOOP AT is_reported-pagamento INTO DATA(ls_rep_pag) WHERE %msg IS BOUND.
+      APPEND ls_rep_pag TO cs_reported-pagamento.
+    ENDLOOP.
+
+    APPEND LINES OF is_failed-pedido          TO cs_failed-pedido.
+    APPEND LINES OF is_failed-itempedido      TO cs_failed-itempedido.
+    APPEND LINES OF is_failed-pagamento       TO cs_failed-pagamento.
+    APPEND LINES OF is_failed-clientesnapshot TO cs_failed-clientesnapshot.
+    APPEND LINES OF is_failed-itemsnapshot    TO cs_failed-itemsnapshot.
   ENDMETHOD.
 
 
@@ -557,7 +622,16 @@ CLASS lhc_pedido IMPLEMENTATION.
                           ValorTotal                = lv_total
                           Currency                  = zif_pc_constants=>c_moeda_padrao
                           EnderecoUUID              = ls_endereco-endereco_uuid
-                          EnderecoPrincipalCompleto = ls_endereco-completo ) ).
+                          EnderecoPrincipalCompleto = ls_endereco-completo ) )
+        FAILED DATA(ls_failed_conf)
+        REPORTED DATA(ls_reported_conf).
+
+      propagar( EXPORTING is_failed = ls_failed_conf is_reported = ls_reported_conf
+                CHANGING  cs_failed = failed cs_reported = reported ).
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
+      ENDIF.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_confirmado
@@ -630,7 +704,12 @@ CLASS lhc_pedido IMPLEMENTATION.
                             CartaoMascarado       = ls_sim-cartao_mascarado
                             CodigoAutorizacao     = ls_sim-codigo_autorizacao
                             MensagemPagamento     = ls_sim-mensagem
-                            DataPagamento         = lv_agora ) ).
+                            DataPagamento         = lv_agora ) )
+          FAILED DATA(ls_failed_pag)
+          REPORTED DATA(ls_reported_pag).
+
+        propagar( EXPORTING is_failed = ls_failed_pag is_reported = ls_reported_pag
+                  CHANGING  cs_failed = failed cs_reported = reported ).
       ELSE.
         MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
           ENTITY Pedido
@@ -647,7 +726,16 @@ CLASS lhc_pedido IMPLEMENTATION.
                                                  CartaoMascarado       = ls_sim-cartao_mascarado
                                                  CodigoAutorizacao     = ls_sim-codigo_autorizacao
                                                  MensagemPagamento     = ls_sim-mensagem
-                                                 DataPagamento         = lv_agora ) ) ) ).
+                                                 DataPagamento         = lv_agora ) ) ) )
+          FAILED DATA(ls_failed_cre)
+          REPORTED DATA(ls_reported_cre).
+
+        propagar( EXPORTING is_failed = ls_failed_cre is_reported = ls_reported_cre
+                  CHANGING  cs_failed = failed cs_reported = reported ).
+      ENDIF.
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
       ENDIF.
       CLEAR ls_pag.
 
@@ -660,7 +748,12 @@ CLASS lhc_pedido IMPLEMENTATION.
                           StatusPagamento = ls_sim-status
                           StatusPedido    = COND #( WHEN lv_aprovado = abap_true
                                                     THEN zif_pc_constants=>c_status_pedido-aguardando_aprovacao
-                                                    ELSE zif_pc_constants=>c_status_pedido-aguardando_pagamento ) ) ).
+                                                    ELSE zif_pc_constants=>c_status_pedido-aguardando_pagamento ) ) )
+          FAILED DATA(ls_failed_ped)
+          REPORTED DATA(ls_reported_ped).
+
+      propagar( EXPORTING is_failed = ls_failed_ped is_reported = ls_reported_ped
+                CHANGING  cs_failed = failed cs_reported = reported ).
 
       " Recusa não é erro técnico: o pedido segue aguardando nova tentativa
       APPEND VALUE #( %tky = ls_pedido-%tky
@@ -763,7 +856,12 @@ CLASS lhc_pedido IMPLEMENTATION.
       criar_snapshots( EXPORTING is_pedido   = ls_pedido
                                  it_itens    = lt_itens_ped
                                  iv_motivo   = 'FINALIZACAO'
-                       CHANGING  cs_reported = reported ).
+                       CHANGING  cs_failed   = failed
+                                 cs_reported = reported ).
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
+      ENDIF.
 
       " 8) DataFinalizacao / 9) FINALIZADO
       DATA lv_agora TYPE timestampl.
@@ -774,7 +872,16 @@ CLASS lhc_pedido IMPLEMENTATION.
           UPDATE FIELDS ( StatusPedido DataFinalizacao )
           WITH VALUE #( ( %tky            = ls_pedido-%tky
                           StatusPedido    = zif_pc_constants=>c_status_pedido-finalizado
-                          DataFinalizacao = lv_agora ) ).
+                          DataFinalizacao = lv_agora ) )
+          FAILED DATA(ls_failed_apr)
+          REPORTED DATA(ls_reported_apr).
+
+      propagar( EXPORTING is_failed = ls_failed_apr is_reported = ls_reported_apr
+                CHANGING  cs_failed = failed cs_reported = reported ).
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
+      ENDIF.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_finalizado
@@ -848,7 +955,12 @@ CLASS lhc_pedido IMPLEMENTATION.
       criar_snapshots( EXPORTING is_pedido   = ls_pedido
                                  it_itens    = lt_itens_ped
                                  iv_motivo   = 'CANCELAMENTO'
-                       CHANGING  cs_reported = reported ).
+                       CHANGING  cs_failed   = failed
+                                 cs_reported = reported ).
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
+      ENDIF.
 
       " 6) Motivo, data e usuário / 7) CANCELADO
       DATA lv_agora TYPE timestampl.
@@ -868,7 +980,16 @@ CLASS lhc_pedido IMPLEMENTATION.
                           StatusPedido       = zif_pc_constants=>c_status_pedido-cancelado
                           MotivoCancelamento = lv_motivo
                           DataCancelamento   = lv_agora
-                          CanceladoPor       = lv_usuario ) ).
+                          CanceladoPor       = lv_usuario ) )
+          FAILED DATA(ls_failed_can)
+          REPORTED DATA(ls_reported_can).
+
+      propagar( EXPORTING is_failed = ls_failed_can is_reported = ls_reported_can
+                CHANGING  cs_failed = failed cs_reported = reported ).
+
+      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        CONTINUE.
+      ENDIF.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_cancelado
@@ -966,7 +1087,22 @@ CLASS lhc_pedido IMPLEMENTATION.
         MODIFY ENTITIES OF zr_pc_item
           ENTITY Item
             EXECUTE LiberarReserva
-            FROM VALUE #( FOR r IN lt_reservados ( ItemUUID = r-item_uuid %param-Quantidade = r-qtde ) ).
+            FROM VALUE #( FOR r IN lt_reservados ( ItemUUID = r-item_uuid %param-Quantidade = r-qtde ) )
+          FAILED DATA(ls_failed_comp)
+          REPORTED DATA(ls_reported_comp).
+
+        " A compensação não pode falhar em silêncio: reserva presa é inconsistência
+        LOOP AT ls_reported_comp-item INTO DATA(ls_rep_comp) WHERE %msg IS BOUND.
+          APPEND VALUE #( %tky = is_pedido-%tky %msg = ls_rep_comp-%msg ) TO cs_reported-pedido.
+        ENDLOOP.
+        LOOP AT ls_failed_comp-item INTO DATA(ls_fail_comp).
+          READ TABLE lt_sku INTO DATA(ls_sku_comp) WITH KEY ItemUUID = ls_fail_comp-ItemUUID.
+          APPEND VALUE #( %tky = is_pedido-%tky
+                          %msg = NEW zcx_pc_msg(
+                                   textid = zcx_pc_msg=>item_reserva_inconsistente
+                                   attr1  = COND string( WHEN sy-subrc = 0 THEN ls_sku_comp-Sku ELSE `?` ) ) )
+                 TO cs_reported-pedido.
+        ENDLOOP.
       ENDIF.
     ENDIF.
   ENDMETHOD.
@@ -1071,11 +1207,17 @@ CLASS lhc_pedido IMPLEMENTATION.
           FIELDS ( ItemPedidoUUID ItemUUID Sku Nome Descricao Categoria Quantidade Currency
                    PrecoUnitario ValorTotal Peso Altura Largura Profundidade )
           WITH lt_create_itens
+      FAILED DATA(ls_failed)
       REPORTED DATA(ls_reported).
 
-    LOOP AT ls_reported-pedido INTO DATA(ls_rep) WHERE %msg IS BOUND.
-      APPEND VALUE #( %tky = is_pedido-%tky %msg = ls_rep-%msg ) TO cs_reported-pedido.
-    ENDLOOP.
+    propagar( EXPORTING is_failed = ls_failed is_reported = ls_reported
+              CHANGING  cs_failed = cs_failed cs_reported = cs_reported ).
+
+    IF ls_failed-pedido IS NOT INITIAL
+       OR ls_failed-clientesnapshot IS NOT INITIAL
+       OR ls_failed-itemsnapshot IS NOT INITIAL.
+      APPEND VALUE #( %tky = is_pedido-%tky ) TO cs_failed-pedido.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
@@ -1141,11 +1283,21 @@ CLASS lhc_itempedido IMPLEMENTATION.
     ENDLOOP.
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY ItemPedido UPDATE FROM lt_update.
+      ENTITY ItemPedido UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_d3).
+
+    LOOP AT ls_reported_d3-itempedido INTO DATA(ls_rep_d3) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_d3 ) TO reported-itempedido.
+    ENDLOOP.
 
     " Atualiza o total exibido no pedido
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY Pedido EXECUTE RecalcularTotal FROM lt_pais.
+      ENTITY Pedido EXECUTE RecalcularTotal FROM lt_pais
+      REPORTED DATA(ls_reported_d4).
+
+    LOOP AT ls_reported_d4-pedido INTO DATA(ls_rep_d4) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_d4 ) TO reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 

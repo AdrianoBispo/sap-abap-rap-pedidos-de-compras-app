@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #C
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table zta_pc_codelist {
+define table za_pc_codelist {
 
   key client  : abap.clnt not null;
   key lista   : abap.char(30) not null;

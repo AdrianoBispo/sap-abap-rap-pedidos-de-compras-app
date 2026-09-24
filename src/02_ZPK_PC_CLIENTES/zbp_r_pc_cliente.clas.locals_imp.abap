@@ -67,21 +67,26 @@ ENDCLASS.
 CLASS lhc_cliente IMPLEMENTATION.
 
   METHOD get_global_authorizations.
-    DATA(lv_auth) = COND #( WHEN zcl_pc_auth=>is_admin( ) = abap_true
-                            THEN if_abap_behv=>auth-allowed
-                            ELSE if_abap_behv=>auth-unauthorized ).
-
+    " Cada operação verifica sua própria atividade (ACTVT)
     IF requested_authorizations-%create = if_abap_behv=>mk-on.
-      result-%create = lv_auth.
+      result-%create = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%update = if_abap_behv=>mk-on.
-      result-%update = lv_auth.
+      result-%update = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%delete = if_abap_behv=>mk-on.
-      result-%delete = lv_auth.
+      result-%delete = COND #( WHEN zcl_pc_auth=>admin_pode_excluir( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%action-Edit = if_abap_behv=>mk-on.
-      result-%action-Edit = lv_auth.
+      result-%action-Edit = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
+                                    THEN if_abap_behv=>auth-allowed
+                                    ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
   ENDMETHOD.
 
@@ -132,7 +137,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
     " Pedidos ainda em draft (ainda não ativados)
     SELECT clienteuuid
-      FROM zta_pc_pedido_d
+      FROM zd_pc_pedido
       FOR ALL ENTRIES IN @it_clientes
       WHERE clienteuuid = @it_clientes-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -162,7 +167,12 @@ CLASS lhc_cliente IMPLEMENTATION.
         UPDATE FIELDS ( ClienteAtivo )
         WITH VALUE #( FOR c IN lt_clientes
                       ( %tky         = c-%tky
-                        ClienteAtivo = abap_true ) ).
+                        ClienteAtivo = abap_true ) )
+      REPORTED DATA(ls_rep_cliente0_all).
+
+    LOOP AT ls_rep_cliente0_all-cliente INTO DATA(ls_rep_cliente0) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_cliente0 ) TO reported-cliente.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -194,7 +204,12 @@ CLASS lhc_cliente IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
-      ENTITY Cliente UPDATE FROM lt_update.
+      ENTITY Cliente UPDATE FROM lt_update
+      REPORTED DATA(ls_rep_cliente1_all).
+
+    LOOP AT ls_rep_cliente1_all-cliente INTO DATA(ls_rep_cliente1) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_cliente1 ) TO reported-cliente.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -224,7 +239,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
       " Unicidade: nenhum outro cliente ativo com o mesmo CPF
       SELECT SINGLE @abap_true
-        FROM zta_pc_cliente
+        FROM za_pc_cliente
         WHERE cpf          =  @ls_cliente-Cpf
           AND cliente_uuid <> @ls_cliente-ClienteUUID
         INTO @DATA(lv_existe).
@@ -534,63 +549,73 @@ CLASS lhc_endereco IMPLEMENTATION.
 
 
   METHOD PreencherEnderecoViaCep.
+    " Única fase em que o ViaCEP é chamado (fase de interação). A fase de save
+    " não faz I/O remoto: a validation apenas avalia CepStatus/Cidade/Uf.
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_cliente\\Endereco.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Endereco
-        FIELDS ( Cep )
+        FIELDS ( ClienteUUID Cep )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_enderecos).
 
     LOOP AT lt_enderecos INTO DATA(ls_end).
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
+      DATA(ls_dados) = VALUE zcl_pc_viacep=>ty_endereco( ).
+      DATA(lv_status) = CONV zr_pc_endereco-CepStatus( space ).
+      DATA(lv_geral)  = abap_false.
 
-      " Sem CEP válido: limpa dados derivados (ValidarCep reportará o erro)
       IF strlen( lv_cep ) <> 8.
-        APPEND VALUE #( %tky = ls_end-%tky
-                        Logradouro = `` Bairro = `` Cidade = `` Uf = `` Estado = `` CepGeral = abap_false
-                        %control = VALUE #( Logradouro = if_abap_behv=>mk-on Bairro = if_abap_behv=>mk-on
-                                            Cidade     = if_abap_behv=>mk-on Uf     = if_abap_behv=>mk-on
-                                            Estado     = if_abap_behv=>mk-on CepGeral = if_abap_behv=>mk-on ) )
-               TO lt_update.
-        CONTINUE.
-      ENDIF.
-
-      DATA(ls_viacep) = zcl_pc_viacep=>consultar( lv_cep ).
-
-      IF ls_viacep-valido = abap_true.
-        APPEND VALUE #( %tky       = ls_end-%tky
-                        Cep        = lv_cep
-                        Logradouro = ls_viacep-endereco-logradouro
-                        Bairro     = ls_viacep-endereco-bairro
-                        Cidade     = ls_viacep-endereco-localidade
-                        Uf         = ls_viacep-endereco-uf
-                        Estado     = COND #( WHEN ls_viacep-endereco-estado IS NOT INITIAL
-                                             THEN ls_viacep-endereco-estado
-                                             ELSE ls_viacep-endereco-uf )
-                        CepGeral   = ls_viacep-cep_geral
-                        %control = VALUE #( Cep        = if_abap_behv=>mk-on
-                                            Logradouro = if_abap_behv=>mk-on Bairro = if_abap_behv=>mk-on
-                                            Cidade     = if_abap_behv=>mk-on Uf     = if_abap_behv=>mk-on
-                                            Estado     = if_abap_behv=>mk-on CepGeral = if_abap_behv=>mk-on ) )
-               TO lt_update.
+        lv_status = COND #( WHEN lv_cep IS INITIAL
+                            THEN space
+                            ELSE zif_pc_constants=>c_status_cep-invalido ).
       ELSE.
-        " CEP inexistente ou serviço indisponível: não preenche nada
-        APPEND VALUE #( %tky = ls_end-%tky
-                        Cep  = lv_cep
-                        Logradouro = `` Bairro = `` Cidade = `` Uf = `` Estado = `` CepGeral = abap_false
-                        %control = VALUE #( Cep        = if_abap_behv=>mk-on
-                                            Logradouro = if_abap_behv=>mk-on Bairro = if_abap_behv=>mk-on
-                                            Cidade     = if_abap_behv=>mk-on Uf     = if_abap_behv=>mk-on
-                                            Estado     = if_abap_behv=>mk-on CepGeral = if_abap_behv=>mk-on ) )
-               TO lt_update.
+        DATA(ls_viacep) = zcl_pc_viacep=>consultar( lv_cep ).
+        IF ls_viacep-indisponivel = abap_true.
+          lv_status = zif_pc_constants=>c_status_cep-indisponivel.
+          APPEND VALUE #( %tky = ls_end-%tky
+                          %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>cep_indisponivel
+                                                 severity = if_abap_behv_message=>severity-warning )
+                          %path = VALUE #( cliente-%is_draft   = ls_end-%is_draft
+                                           cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
+        ELSEIF ls_viacep-valido = abap_true.
+          lv_status = zif_pc_constants=>c_status_cep-validado.
+          ls_dados  = ls_viacep-endereco.
+          lv_geral  = ls_viacep-cep_geral.
+        ELSE.
+          lv_status = zif_pc_constants=>c_status_cep-invalido.
+        ENDIF.
       ENDIF.
+
+      APPEND VALUE #( %tky       = ls_end-%tky
+                      Cep        = lv_cep
+                      Logradouro = ls_dados-logradouro
+                      Bairro     = ls_dados-bairro
+                      Cidade     = ls_dados-localidade
+                      Uf         = ls_dados-uf
+                      Estado     = COND #( WHEN ls_dados-estado IS NOT INITIAL
+                                           THEN ls_dados-estado
+                                           ELSE ls_dados-uf )
+                      CepGeral   = lv_geral
+                      CepStatus  = lv_status
+                      %control = VALUE #( Cep        = if_abap_behv=>mk-on
+                                          Logradouro = if_abap_behv=>mk-on Bairro    = if_abap_behv=>mk-on
+                                          Cidade     = if_abap_behv=>mk-on Uf        = if_abap_behv=>mk-on
+                                          Estado     = if_abap_behv=>mk-on CepGeral  = if_abap_behv=>mk-on
+                                          CepStatus  = if_abap_behv=>mk-on ) ) TO lt_update.
     ENDLOOP.
 
-    CHECK lt_update IS NOT INITIAL.
+    IF lt_update IS INITIAL.
+      RETURN.
+    ENDIF.
 
     MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
-      ENTITY Endereco UPDATE FROM lt_update.
+      ENTITY Endereco UPDATE FROM lt_update
+      REPORTED DATA(ls_reported).
+
+    LOOP AT ls_reported-endereco INTO DATA(ls_rep) WHERE %msg IS BOUND.
+      APPEND ls_rep TO reported-endereco.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -632,7 +657,12 @@ CLASS lhc_endereco IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
-      ENTITY Endereco UPDATE FROM lt_update.
+      ENTITY Endereco UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_prin).
+
+    LOOP AT ls_reported_prin-endereco INTO DATA(ls_rep_prin) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_prin ) TO reported-endereco.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -661,9 +691,11 @@ CLASS lhc_endereco IMPLEMENTATION.
 
 
   METHOD ValidarCep.
+    " Sem chamada remota: a fase de save avalia apenas o que a determination
+    " PreencherEnderecoViaCep já gravou (CepStatus, Cidade, Uf, CepGeral).
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Endereco
-        FIELDS ( ClienteUUID Cep Logradouro Bairro CepGeral )
+        FIELDS ( ClienteUUID Cep Logradouro Bairro Cidade Uf CepGeral CepStatus )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_enderecos).
 
@@ -678,18 +710,16 @@ CLASS lhc_endereco IMPLEMENTATION.
 
       IF strlen( lv_cep ) <> 8.
         lo_msg = NEW #( textid = zcx_pc_msg=>cep_invalido ).
-      ELSE.
-        " Validação definitiva no backend: consulta o ViaCEP novamente (cache por sessão)
-        DATA(ls_viacep) = zcl_pc_viacep=>consultar( lv_cep ).
-        IF ls_viacep-indisponivel = abap_true.
-          lo_msg = NEW #( textid = zcx_pc_msg=>cep_indisponivel ).
-        ELSEIF ls_viacep-valido = abap_false.
-          lo_msg = NEW #( textid = zcx_pc_msg=>cep_invalido ).
-        ELSEIF ls_viacep-cep_geral = abap_true AND ls_end-Logradouro IS INITIAL.
-          lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Logradouro' ).
-        ELSEIF ls_viacep-cep_geral = abap_true AND ls_end-Bairro IS INITIAL.
-          lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Bairro' ).
-        ENDIF.
+      ELSEIF ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel.
+        lo_msg = NEW #( textid = zcx_pc_msg=>cep_indisponivel ).
+      ELSEIF ls_end-CepStatus <> zif_pc_constants=>c_status_cep-validado
+             OR ls_end-Cidade IS INITIAL
+             OR ls_end-Uf IS INITIAL.
+        lo_msg = NEW #( textid = zcx_pc_msg=>cep_invalido ).
+      ELSEIF ls_end-CepGeral = abap_true AND ls_end-Logradouro IS INITIAL.
+        lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Logradouro' ).
+      ELSEIF ls_end-CepGeral = abap_true AND ls_end-Bairro IS INITIAL.
+        lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Bairro' ).
       ENDIF.
 
       IF lo_msg IS BOUND.

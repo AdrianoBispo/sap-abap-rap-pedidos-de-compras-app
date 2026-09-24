@@ -94,21 +94,26 @@ ENDCLASS.
 CLASS lhc_item IMPLEMENTATION.
 
   METHOD get_global_authorizations.
-    DATA(lv_auth) = COND #( WHEN zcl_pc_auth=>is_admin( ) = abap_true
-                            THEN if_abap_behv=>auth-allowed
-                            ELSE if_abap_behv=>auth-unauthorized ).
-
+    " Cada operação verifica sua própria atividade (ACTVT)
     IF requested_authorizations-%create = if_abap_behv=>mk-on.
-      result-%create = lv_auth.
+      result-%create = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%update = if_abap_behv=>mk-on.
-      result-%update = lv_auth.
+      result-%update = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%delete = if_abap_behv=>mk-on.
-      result-%delete = lv_auth.
+      result-%delete = COND #( WHEN zcl_pc_auth=>admin_pode_excluir( ) = abap_true
+                               THEN if_abap_behv=>auth-allowed
+                               ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
     IF requested_authorizations-%action-Edit = if_abap_behv=>mk-on.
-      result-%action-Edit = lv_auth.
+      result-%action-Edit = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
+                                    THEN if_abap_behv=>auth-allowed
+                                    ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
   ENDMETHOD.
 
@@ -164,13 +169,13 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK it_itens IS NOT INITIAL.
 
     SELECT item_uuid
-      FROM zta_pc_item_ped
+      FROM za_pc_item_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE item_uuid = @it_itens-table_line
       INTO TABLE @DATA(lt_ativos).
 
     SELECT itemuuid
-      FROM zta_pc_item_d_ped
+      FROM zd_pc_item_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -188,8 +193,8 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK it_itens IS NOT INITIAL.
 
     SELECT ip~item_uuid
-      FROM zta_pc_item_ped AS ip
-      INNER JOIN zta_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
+      FROM za_pc_item_ped AS ip
+      INNER JOIN za_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
       FOR ALL ENTRIES IN @it_itens
       WHERE ip~item_uuid = @it_itens-table_line
         AND p~status_pedido IN ( @zif_pc_constants=>c_status_pedido-criado,
@@ -199,7 +204,7 @@ CLASS lhc_item IMPLEMENTATION.
 
     " Pedidos em draft (ainda não ativados) também contam como ativos
     SELECT itemuuid
-      FROM zta_pc_item_d_ped
+      FROM zd_pc_item_ped
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -395,7 +400,16 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_item IN LOCAL MODE
-      ENTITY Item UPDATE FROM lt_update.
+      ENTITY Item UPDATE FROM lt_update
+      FAILED DATA(ls_failed_mov)
+      REPORTED DATA(ls_reported_mov).
+
+    LOOP AT ls_reported_mov-item INTO DATA(ls_rep_mov) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_mov ) TO cs_reported-item.
+    ENDLOOP.
+    IF ls_failed_mov-item IS NOT INITIAL.
+      APPEND LINES OF ls_failed_mov-item TO cs_failed-item.
+    ENDIF.
   ENDMETHOD.
 
 
@@ -417,7 +431,12 @@ CLASS lhc_item IMPLEMENTATION.
                         ItemAtivo      = abap_true
                         QtdeReservada  = 0
                         QtdeDisponivel = i-QtdeEstoque
-                        StatusEstoque  = zcl_pc_util=>calcular_status_estoque( i-QtdeEstoque ) ) ).
+                        StatusEstoque  = zcl_pc_util=>calcular_status_estoque( i-QtdeEstoque ) ) )
+      REPORTED DATA(ls_rep_item0_all).
+
+    LOOP AT ls_rep_item0_all-item INTO DATA(ls_rep_item0) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_item0 ) TO reported-item.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -445,7 +464,12 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_item IN LOCAL MODE
-      ENTITY Item UPDATE FROM lt_update.
+      ENTITY Item UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_stat).
+
+    LOOP AT ls_reported_stat-item INTO DATA(ls_rep_stat) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_stat ) TO reported-item.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -477,7 +501,12 @@ CLASS lhc_item IMPLEMENTATION.
     CHECK lt_update IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_item IN LOCAL MODE
-      ENTITY Item UPDATE FROM lt_update.
+      ENTITY Item UPDATE FROM lt_update
+      REPORTED DATA(ls_reported_sku).
+
+    LOOP AT ls_reported_sku-item INTO DATA(ls_rep_sku) WHERE %msg IS BOUND.
+      APPEND CORRESPONDING #( ls_rep_sku ) TO reported-item.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -617,7 +646,7 @@ CLASS lhc_item IMPLEMENTATION.
       ENDIF.
 
       SELECT SINGLE @abap_true
-        FROM zta_pc_item
+        FROM za_pc_item
         WHERE sku       =  @ls_item-Sku
           AND item_uuid <> @ls_item-ItemUUID
         INTO @DATA(lv_duplicado).

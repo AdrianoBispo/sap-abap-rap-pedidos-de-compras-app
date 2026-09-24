@@ -66,6 +66,9 @@ annotate entity ZC_PC_ENDERECO_APP with
   @UI.hidden: true
   CepGeral;
 
+  @UI.hidden: true
+  CepStatus;
+
   @UI: { lineItem:       [{ position: 80, label: 'Principal', importance: #HIGH }],
          identification: [{ position: 90, label: 'Endereço principal' }] }
   @EndUserText.label: 'Principal'

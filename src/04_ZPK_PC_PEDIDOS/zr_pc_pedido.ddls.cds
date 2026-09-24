@@ -2,7 +2,7 @@
 @EndUserText.label: 'Pedido de compra - BO root'
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZR_PC_PEDIDO
-  as select from zta_pc_pedido
+  as select from za_pc_pedido
   composition [0..*] of ZR_PC_ITEM_PEDIDO   as _Itens
   composition [0..1] of ZR_PC_PAGAMENTO     as _Pagamento
   composition [0..1] of ZR_PC_PED_CLI_SNAP  as _ClienteSnapshot

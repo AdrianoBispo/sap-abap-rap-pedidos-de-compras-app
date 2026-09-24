@@ -2,7 +2,7 @@
 @EndUserText.label: 'Pagamento do pedido - BO child'
 @Metadata.ignorePropagatedAnnotations: true
 define view entity ZR_PC_PAGAMENTO
-  as select from zta_pc_pagamento
+  as select from za_pc_pagamento
   association to parent ZR_PC_PEDIDO as _Pedido on $projection.PedidoUUID = _Pedido.PedidoUUID
   association [0..1] to ZR_PC_CODELIST as _MetodoTxt on  _MetodoTxt.Lista  = 'METODO_PAGAMENTO'
                                                     and _MetodoTxt.Codigo = $projection.MetodoPagamento

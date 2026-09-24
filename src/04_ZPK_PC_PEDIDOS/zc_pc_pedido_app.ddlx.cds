@@ -18,11 +18,13 @@ annotate entity ZC_PC_PEDIDO_APP with
       label: 'Dados do pedido', position: 10 },
     { id: 'Itens',           purpose: #STANDARD, type: #LINEITEM_REFERENCE,
       label: 'Itens', position: 20, targetElement: '_Itens' },
-    { id: 'Pagamento',       purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+    /* Composições [0..1] viram seções de formulário: Fiori Elements V4 só
+       renderiza tabela (LINEITEM) para navegações de cardinalidade N. */
+    { id: 'Pagamento',       purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
       label: 'Pagamento (última tentativa)', position: 30, targetElement: '_Pagamento' },
     { id: 'Encerramento',    purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       label: 'Finalização / cancelamento', position: 40, targetQualifier: 'Encerramento' },
-    { id: 'SnapCliente',     purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+    { id: 'SnapCliente',     purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
       label: 'Histórico - cliente', position: 50, targetElement: '_ClienteSnapshot' },
     { id: 'SnapItens',       purpose: #STANDARD, type: #LINEITEM_REFERENCE,
       label: 'Histórico - itens', position: 60, targetElement: '_ItensSnapshot' },

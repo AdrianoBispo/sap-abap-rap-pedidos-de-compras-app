@@ -2,7 +2,7 @@
 @EndUserText.label: 'Endereço do cliente - BO child'
 @Metadata.ignorePropagatedAnnotations: true
 define view entity ZR_PC_ENDERECO
-  as select from zta_pc_endereco
+  as select from za_pc_endereco
   association to parent ZR_PC_CLIENTE as _Cliente on $projection.ClienteUUID = _Cliente.ClienteUUID
 {
   key endereco_uuid         as EnderecoUUID,
@@ -16,6 +16,7 @@ define view entity ZR_PC_ENDERECO
       uf                    as Uf,
       estado                as Estado,
       cep_geral             as CepGeral,
+      cep_status            as CepStatus,
       endereco_principal    as EnderecoPrincipal,
       @Semantics.user.createdBy: true
       created_by            as CreatedBy,

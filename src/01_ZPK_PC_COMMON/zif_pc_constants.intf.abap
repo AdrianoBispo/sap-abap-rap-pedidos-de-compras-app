@@ -8,11 +8,12 @@ INTERFACE zif_pc_constants PUBLIC.
   TYPES ty_codelist         TYPE c LENGTH 30.
 
   "! Modo educacional para o SAP BTP ABAP Environment Trial.
-  "! No trial compartilhado normalmente não é possível manter Business Roles
-  "! nem atribuir objetos de autorização ao próprio usuário. Com abap_true,
-  "! ZCL_PC_AUTH libera todas as operações. Em um sistema real, defina abap_false
-  "! e atribua as Business Roles ZPC_BR_ADMIN / ZPC_BR_COMUM.
-  CONSTANTS c_modo_trial TYPE abap_boolean VALUE abap_true.
+  "! ATENÇÃO: com abap_true, ZCL_PC_AUTH libera TODAS as operações para
+  "! qualquer usuário do serviço. O valor entregue é abap_false (seguro por
+  "! padrão). Habilite apenas em sistema de treinamento, quando não houver
+  "! como manter as Business Roles ZPC_BR_ADMIN / ZPC_BR_COMUM, e nunca
+  "! transporte esse valor para um sistema produtivo.
+  CONSTANTS c_modo_trial TYPE abap_boolean VALUE abap_false.
 
   CONSTANTS c_moeda_padrao TYPE waers VALUE 'BRL'.
 
@@ -47,6 +48,15 @@ INTERFACE zif_pc_constants PUBLIC.
 
   "! Limite superior da faixa ACABANDO (1 a 10). A partir de 11 = EM_ESTOQUE.
   CONSTANTS c_limite_acabando TYPE i VALUE 10.
+
+  "! Resultado da consulta ao ViaCEP, gravado pela determination (fase de
+  "! interação) e avaliado pela validation (fase de save, sem I/O remoto).
+  CONSTANTS:
+    BEGIN OF c_status_cep,
+      validado     TYPE c LENGTH 1 VALUE 'V',
+      invalido     TYPE c LENGTH 1 VALUE 'I',
+      indisponivel TYPE c LENGTH 1 VALUE 'X',
+    END OF c_status_cep.
 
   CONSTANTS:
     BEGIN OF c_codelist,
