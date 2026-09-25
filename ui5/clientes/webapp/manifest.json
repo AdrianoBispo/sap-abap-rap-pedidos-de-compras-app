@@ -185,15 +185,15 @@
             "settings": {
               "contextPath": "/Cliente/_Endereco",
               "editableHeaderContent": false,
-              "content": {
-                "body": {
-                  "sections": {
-                    "ConsultaCep": {
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.Identification": {
+                  "fields": {
+                    "Cep": {
                       "template": "zpc.clientes.ext.fragment.CepLookup",
-                      "title": "{i18n>consultaCepTitle}",
+                      "label": "{i18n>cepLabel}",
                       "position": {
                         "placement": "Before",
-                        "anchor": "DadosEndereco"
+                        "anchor": "DataField::Logradouro"
                       }
                     }
                   }

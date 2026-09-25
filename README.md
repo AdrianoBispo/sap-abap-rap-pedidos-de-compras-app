@@ -192,8 +192,10 @@ O CRUD do Endereço (filho de composição de `Cliente`) segue a mesma lógica d
 `sap-abap-enderecos-viacep`. O BO não chama mais o ViaCEP: a consulta sai da determination e passa
 para uma custom entity que a UI lê.
 
-1. Na Object Page do Endereço, a seção **Consulta de CEP** (extensão SAPUI5 em
-   `ui5/clientes/webapp/ext/`) aplica a máscara `99999-999` e grava o CEP normalizado no draft.
+1. Na Object Page do Endereço, o campo **CEP** do formulário *Endereço* é um campo customizado da
+   extensão SAPUI5 (`ui5/clientes/webapp/ext/`, registrado em `controlConfiguration` da
+   Identification, antes do Logradouro). Ele aplica a máscara `99999-999` e grava o CEP normalizado no
+   draft.
 2. A determination `LimparDadosCep` (on modify, campo `Cep`) apaga logradouro, complemento, bairro,
    cidade, UF, estado, `CepGeral`, `CepStatus` e `ConsultedCep` sempre que o CEP deixa de ser o
    consultado.

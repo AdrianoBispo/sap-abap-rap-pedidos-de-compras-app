@@ -1,6 +1,6 @@
 @EndUserText.label: 'Consulta de CEP (ViaCEP)'
 @ObjectModel.query.implementedBy: 'ABAP:ZCL_PC_CEP_LOOKUP_PROVIDER'
-/* Consultada pela seção "Consulta de CEP" da app de Clientes com
+/* Consultada pelo campo customizado de CEP da app de Clientes com
    $filter=Cep eq '<8 dígitos>'. Nunca falha por CEP inexistente: devolve
    uma linha com Status I (inválido) ou X (ViaCEP indisponível).
    O resultado é repassado à ação AplicarDadosCep do Endereço.         */

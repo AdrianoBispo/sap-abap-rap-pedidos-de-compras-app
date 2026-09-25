@@ -20,12 +20,14 @@ annotate entity ZC_PC_ENDERECO_APP with
   @UI.hidden: true
   ClienteUUID;
 
-  // O CEP NÃO é exposto no formulário nem na tabela: a entrada é feita pela
-  // seção customizada "Consulta de CEP" (extensão SAPUI5 da app de Clientes),
+  // O CEP aparece no formulário "Endereço" (facet DadosEndereco), mas NÃO via
+  // @UI.identification: é um campo customizado da extensão SAPUI5 da app de
+  // Clientes (manifest.json > controlConfiguration > Identification > fields),
   // que normaliza a máscara, lê a custom entity CepLookUp e dispara a ação
-  // AplicarDadosCep. Na tabela de endereços do cliente, em modo de edição,
-  // uma coluna Cep editável mudaria o CEP sem consulta (LimparDadosCep apaga
-  // os dados e ValidarCep bloqueia a ativação).
+  // AplicarDadosCep. Um DataField padrão para Cep criaria um segundo campo,
+  // sem consulta. Pelo mesmo motivo Cep fica fora da tabela de endereços do
+  // cliente: em modo de edição, uma coluna Cep editável mudaria o CEP sem
+  // consulta (LimparDadosCep apaga os dados e ValidarCep bloqueia a ativação).
   @EndUserText.label: 'CEP'
   Cep;
 
