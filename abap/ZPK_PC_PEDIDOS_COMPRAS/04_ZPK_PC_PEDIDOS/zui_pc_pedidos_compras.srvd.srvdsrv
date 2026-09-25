@@ -8,7 +8,7 @@ define service ZUI_PC_PEDIDOS_COMPRAS {
   expose ZC_PC_PED_ITEM_SNAP_APP   as ItemSnapshot;
 
   /* Comunicação com Clientes e Estoque (somente leitura) */
-  expose ZC_PC_CLIENTE_VALUEHELP   as ClienteVH;
+  expose ZC_PC_CLIENTE_VH   as ClienteVH;
   expose ZC_PC_ENDERECO_VALUEHELP  as EnderecoVH;
   expose ZC_PC_ITEM_VALUEHELP      as ItemVH;
 

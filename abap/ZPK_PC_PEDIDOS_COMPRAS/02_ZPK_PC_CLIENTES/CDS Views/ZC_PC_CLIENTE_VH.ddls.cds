@@ -6,7 +6,7 @@
 @Metadata.ignorePropagatedAnnotations: true
 /* View reutilizável consumida pela aplicação Pedidos de Compras.
    Somente clientes ativos são oferecidos para novos pedidos.        */
-define view entity ZC_PC_CLIENTE_VALUEHELP
+define view entity ZC_PC_CLIENTE_VH
   as select from ZR_PC_CLIENTE
 {
       @UI.hidden: true
