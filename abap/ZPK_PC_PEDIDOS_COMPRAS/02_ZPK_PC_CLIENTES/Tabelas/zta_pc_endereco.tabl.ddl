@@ -18,6 +18,7 @@ define table zta_pc_endereco {
   estado                : abap.char(100);
   cep_geral             : abap_boolean;
   cep_status            : abap.char(1);
+  consulted_cep         : abap.char(8);
   endereco_principal    : abap_boolean;
   created_by            : abp_creation_user;
   created_at            : abp_creation_tstmpl;

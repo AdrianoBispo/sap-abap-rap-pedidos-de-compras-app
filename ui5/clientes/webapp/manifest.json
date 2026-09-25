@@ -184,7 +184,21 @@
           "options": {
             "settings": {
               "contextPath": "/Cliente/_Endereco",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "body": {
+                  "sections": {
+                    "ConsultaCep": {
+                      "template": "zpc.clientes.ext.fragment.CepLookup",
+                      "title": "{i18n>consultaCepTitle}",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "DadosEndereco"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

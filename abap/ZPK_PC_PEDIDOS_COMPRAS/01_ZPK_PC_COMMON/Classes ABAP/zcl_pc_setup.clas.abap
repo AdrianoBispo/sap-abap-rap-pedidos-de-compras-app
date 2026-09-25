@@ -4,6 +4,7 @@
 "!  1. Cria os intervalos 01 (pedido) e 02 (SKU) do objeto ZPC_NR
 "!  2. Recarrega a tabela ZTA_PC_CODELIST
 "!  3. Insere dados de demonstração se as tabelas estiverem vazias
+"!  4. Marca como consultados os endereços gravados antes de ConsultedCep
 CLASS zcl_pc_setup DEFINITION
   PUBLIC
   FINAL
@@ -20,6 +21,8 @@ CLASS zcl_pc_setup DEFINITION
     METHODS carregar_dados_demo
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out
       RAISING   cx_uuid_error cx_number_ranges.
+    METHODS migrar_enderecos_cep
+      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
 ENDCLASS.
 
 
@@ -34,6 +37,7 @@ CLASS zcl_pc_setup IMPLEMENTATION.
       CATCH cx_uuid_error cx_number_ranges INTO DATA(lx).
         out->write( |Erro nos dados demo: { lx->get_text( ) }| ).
     ENDTRY.
+    migrar_enderecos_cep( out ).
     COMMIT WORK.
     out->write( `Setup concluído.` ).
   ENDMETHOD.
@@ -153,11 +157,13 @@ CLASS zcl_pc_setup IMPLEMENTATION.
         ( endereco_uuid = cl_system_uuid=>create_uuid_x16_static( ) cliente_uuid = lv_cli1
           cep = '01001000' logradouro = 'Praça da Sé' numero = '100' complemento = 'Sala 1'
           bairro = 'Sé' cidade = 'São Paulo' uf = 'SP' estado = 'São Paulo' endereco_principal = abap_true
+          cep_status = zif_pc_constants=>c_status_cep-validado consulted_cep = '01001000'
           created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
           last_changed_at = lv_agora local_last_changed_at = lv_agora )
         ( endereco_uuid = cl_system_uuid=>create_uuid_x16_static( ) cliente_uuid = lv_cli2
           cep = '01310100' logradouro = 'Avenida Paulista' numero = '1000'
           bairro = 'Bela Vista' cidade = 'São Paulo' uf = 'SP' estado = 'São Paulo' endereco_principal = abap_true
+          cep_status = zif_pc_constants=>c_status_cep-validado consulted_cep = '01310100'
           created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
           last_changed_at = lv_agora local_last_changed_at = lv_agora ) ).
       INSERT zta_pc_endereco FROM TABLE @lt_enderecos.
@@ -206,6 +212,20 @@ CLASS zcl_pc_setup IMPLEMENTATION.
 
       io_out->write( `Itens de estoque de demonstração criados.` ).
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD migrar_enderecos_cep.
+    " ValidarCep exige ConsultedCep = Cep. Endereços gravados antes desse campo
+    " (determination antiga com CepStatus V, ou dados demo sem status) já foram
+    " validados no ViaCEP: registra o CEP deles como consultado.
+    UPDATE zta_pc_endereco
+      SET consulted_cep = cep,
+          cep_status    = @zif_pc_constants=>c_status_cep-validado
+      WHERE consulted_cep = @space
+        AND cidade        <> @space
+        AND ( cep_status = @zif_pc_constants=>c_status_cep-validado OR cep_status = @space ).
+    io_out->write( |Endereços migrados para ConsultedCep: { sy-dbcnt }| ).
   ENDMETHOD.
 
 ENDCLASS.

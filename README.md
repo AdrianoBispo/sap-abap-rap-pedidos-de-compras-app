@@ -43,7 +43,7 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
 ## 2. Objetos criados manualmente (sem código-fonte)
 
-1. **Message Class `ZPC_MSG`** – cadastrar as mensagens 001–041 de `01_ZPK_PC_COMMON/zpc_msg.msag.csv`
+1. **Message Class `ZPC_MSG`** – cadastrar as mensagens 001–047 de `01_ZPK_PC_COMMON/zpc_msg.msag.csv`
    (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
 3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto.
@@ -79,13 +79,17 @@ Convenção de arquivos (um arquivo por objeto ADT):
 3. **Todas** as tabelas ativas `ZTA_*` (inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZI_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as 5 views `ZR_PC_*` do pedido (ativar juntas).
-5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`.
+5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`. A custom entity `ZI_PC_CEP_LOOKUP` e
+   a classe `ZCL_PC_CEP_LOOKUP_PROVIDER` referenciam uma à outra: ativar as duas juntas.
 6. Tabelas draft `ZD_*` (alternativa: deixar o ADT gerar pelo *quick fix* no BDEF e comparar).
+   `ZD_PC_ENDERECO` precisa ter `CONSULTEDCEP`: se ela já existia, use *Ctrl+1 → Update draft table*
+   sobre `zd_pc_endereco` no BDEF `ZR_PC_CLIENTE`.
 7. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
 8. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (colar *Global Class* + *Local Types*) → BDEF de projeção `ZC_*`.
 9. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_SETUP`.
 10. Service Definitions → Service Bindings (publicar).
-11. Executar `ZCL_PC_SETUP` (F9): cria intervalos de numeração, CodeLists e dados de demonstração.
+11. Executar `ZCL_PC_SETUP` (F9): cria intervalos de numeração, CodeLists e dados de demonstração, e marca
+    como consultados (`CONSULTED_CEP = CEP`) os endereços gravados antes da seção 8.
 12. Front-end: `cd ui5 && npm install && npm run set-backend -- <URL do sistema>` → testar com
     `npm run start:launchpad` → `npm run deploy` → incluir os IAM Apps `*_UI5R` nos Business Catalogs
     (seção 7).
@@ -178,3 +182,45 @@ Ajustes no backend feitos para o front-end (v1.2):
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Semantic objects para navegação entre apps: `ZPCCliente` em `ClienteUUID`/`NomeCliente` e `ZPCItemEstoque` em `ItemUUID`/`Sku`                                                                                   | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` |
 | Seções *Pagamento* e *Histórico - cliente* passam de `#LINEITEM_REFERENCE` para `#IDENTIFICATION_REFERENCE`: as composições são `[0..1]`, e Fiori Elements V4 só monta tabela para navegações de cardinalidade N | `ZC_PC_PEDIDO_APP` (MDE)                    |
+
+## 8. Endereço do cliente: consulta de CEP (v1.3)
+
+O CRUD do Endereço (filho de composição de `Cliente`) segue a mesma lógica da aplicação
+`sap-abap-enderecos-viacep`. O BO não chama mais o ViaCEP: a consulta sai da determination e passa
+para uma custom entity que a UI lê.
+
+1. Na Object Page do Endereço, a seção **Consulta de CEP** (extensão SAPUI5 em
+   `ui5/clientes/webapp/ext/`) aplica a máscara `99999-999` e grava o CEP normalizado no draft.
+2. A determination `LimparDadosCep` (on modify, campo `Cep`) apaga logradouro, complemento, bairro,
+   cidade, UF, estado, `CepGeral`, `CepStatus` e `ConsultedCep` sempre que o CEP deixa de ser o
+   consultado.
+3. A UI lê `CepLookUp` (`ZI_PC_CEP_LOOKUP` → `ZCL_PC_CEP_LOOKUP_PROVIDER` → `ZCL_PC_VIACEP`). A
+   leitura nunca falha por CEP ruim: devolve `Status` `V` (validado), `I` (inválido/inexistente) ou
+   `X` (ViaCEP indisponível).
+4. A UI chama a ação `AplicarDadosCep` (parâmetro `ZPC_A_CEP_RESULTADO`, `result [1] $self`), que
+   grava o resultado e `ConsultedCep`. Resultados com falha também são gravados, com os campos
+   automáticos limpos.
+5. `ValidarCep` (on save, sem I/O remoto) bloqueia a ativação quando o CEP tem formato inválido,
+   `CepStatus` é `I`/`X`/vazio, `ConsultedCep <> Cep`, ou o CEP é geral de município sem
+   logradouro/bairro.
+
+Campos: cidade, UF, estado e os técnicos são somente leitura. Logradouro e bairro continuam com
+feature control (editáveis e obrigatórios só para CEP geral). Complemento e número ficam livres.
+
+Detalhes que costumam morder:
+
+- **Cardinalidade da ação.** Toda chave de `AplicarDadosCep` precisa sair em `result` ou em
+  `failed`. Uma chave que não aparece em nenhum dos dois faz o runtime OData abortar com
+  `RAISE_SHORTDUMP`. O caso típico é o draft ativado ou descartado com a chamada ainda em voo
+  (mensagem 047).
+- **Rajada de requisições.** O handler usa debounce de 700 ms e um token de sequência que descarta
+  respostas fora de ordem. O backend ainda confere se o resultado corresponde ao CEP gravado no
+  draft (mensagem 042).
+- **`@UI.hidden` não é cosmético.** `CepStatus` e `ConsultedCep` ficam fora do `$select` da Object
+  Page. O handler usa `requestProperty()` para lê-los.
+- **CEP na tabela de endereços.** A coluna "CEP" da tabela do cliente é `ConsultedCep`, que é somente
+  leitura. Uma coluna `Cep` editável em modo de edição mudaria o CEP sem consulta.
+- **Namespace da ação.** `CepUtil.js` descobre o namespace do serviço em runtime (`/$EntityContainer`).
+  Os caminhos de módulo do fragmento usam `zpc/clientes`, que precisa bater com `sap.app.id`.
+
+Testes da extensão: `ui5/clientes/webapp/test/testsuite.qunit.html` (UI5 Test Starter).

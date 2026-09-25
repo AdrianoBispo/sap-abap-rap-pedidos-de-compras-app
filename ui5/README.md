@@ -23,7 +23,9 @@ ui5/
 │       ├── manifest.json     serviço OData V4, rotas LR → OP → sub-OP, tile (inbound)
 │       ├── Component.js      sap/fe/core/AppComponent
 │       ├── index.html        execução sem launchpad
-│       └── i18n/             i18n.properties (pt-BR, padrão) e i18n_en.properties
+│       ├── i18n/             i18n.properties (pt-BR, padrão) e i18n_en.properties
+│       ├── ext/              (só clientes) seção "Consulta de CEP": fragment/ + util/CepUtil.js
+│       └── test/             (só clientes) testes QUnit da extensão (UI5 Test Starter)
 ├── estoque/                  mesma estrutura
 └── pedidos/                  mesma estrutura, mais:
     ├── ui5-launchpad.yaml    launchpad local com as TRÊS apps (tiles + navegação entre apps)
@@ -34,7 +36,7 @@ ui5/
 
 | App      | List Report                                                               | Object Page                                                                                                                            | Sub-páginas                                                    |
 | -------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Clientes | `Cliente`                                                                 | Cliente, com tabela de endereços e ação **Definir endereço principal**                                                                 | `Endereco` (criação em página própria: o CEP dispara o ViaCEP) |
+| Clientes | `Cliente`                                                                 | Cliente, com tabela de endereços e ação **Definir endereço principal**                                                                 | `Endereco` (criação em página própria, com a seção customizada **Consulta de CEP**) |
 | Estoque  | `Item`                                                                    | Item (foto, estoque, dimensões)                                                                                                        | —                                                              |
 | Pedidos  | `Pedido`, com as ações Confirmar / Simular pagamento / Aprovar / Cancelar | Pedido. Os itens são criados na própria tabela (*inline*); Pagamento e Histórico do cliente aparecem como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot`                                   |
 

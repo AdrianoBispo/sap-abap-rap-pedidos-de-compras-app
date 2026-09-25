@@ -17,6 +17,7 @@ define view entity ZR_PC_ENDERECO
       estado                as Estado,
       cep_geral             as CepGeral,
       cep_status            as CepStatus,
+      consulted_cep         as ConsultedCep,
       endereco_principal    as EnderecoPrincipal,
       @Semantics.user.createdBy: true
       created_by            as CreatedBy,

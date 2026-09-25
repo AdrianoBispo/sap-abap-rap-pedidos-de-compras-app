@@ -88,7 +88,9 @@ authorization dependent by _Cliente
   association _Cliente { with draft; }
 
   field ( numbering : managed, readonly ) EnderecoUUID;
-  field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, CepStatus, Cidade, Uf, Estado,
+  /* Preenchidos exclusivamente pela ação AplicarDadosCep (resultado do ViaCEP).
+     Complemento fica de fora de propósito: vem do ViaCEP, mas o usuário pode ajustá-lo. */
+  field ( readonly ) ClienteUUID, EnderecoPrincipal, Cidade, Uf, Estado, CepGeral, CepStatus, ConsultedCep,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
   /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município */
   field ( features : instance ) Logradouro, Bairro;
@@ -96,16 +98,27 @@ authorization dependent by _Cliente
 
   action ( features : instance ) DefinirEnderecoPrincipal result [1] $self;
 
-  determination PreencherEnderecoViaCep on modify { create; field Cep; }
+  /* Recebe a linha que a UI leu na custom entity CepLookUp (ZI_PC_CEP_LOOKUP)
+     e a grava no draft. O BO não chama o ViaCEP. */
+  action AplicarDadosCep parameter ZPC_A_CEP_RESULTADO result [1] $self;
+
+  /* CEP alterado: descarta os dados do CEP anterior até a próxima AplicarDadosCep */
+  determination LimparDadosCep on modify { field Cep; }
   determination DefinirPrincipalInicial on modify { create; }
 
   validation ValidarNumero on save { create; field Numero; }
-  validation ValidarCep on save { create; field Cep, Logradouro, Bairro, CepStatus; }
+  validation ValidarCep on save { create; field Cep, Logradouro, Bairro, CepStatus, ConsultedCep; }
 
   side effects
   {
-    field Cep affects field Logradouro, field Bairro, field Cidade, field Uf, field Estado,
-              field CepGeral, field CepStatus;
+    field Cep affects field Logradouro, field Complemento, field Bairro, field Cidade, field Uf,
+              field Estado, field CepGeral, field CepStatus, field ConsultedCep,
+              permissions ( field Logradouro, field Bairro );
+
+    action AplicarDadosCep affects field Logradouro, field Complemento, field Bairro, field Cidade,
+                                   field Uf, field Estado, field CepGeral, field CepStatus,
+                                   field ConsultedCep,
+                                   permissions ( field Logradouro, field Bairro );
   }
 
   mapping for zta_pc_endereco
@@ -122,6 +135,7 @@ authorization dependent by _Cliente
     Estado             = estado;
     CepGeral           = cep_geral;
     CepStatus          = cep_status;
+    ConsultedCep       = consulted_cep;
     EnderecoPrincipal  = endereco_principal;
     CreatedBy          = created_by;
     CreatedAt          = created_at;

@@ -3,4 +3,5 @@ define service ZUI_PC_CLIENTES {
   expose ZC_PC_CLIENTE_APP      as Cliente;
   expose ZC_PC_ENDERECO_APP     as Endereco;
   expose ZI_PC_GENERO_VH as GeneroVH;
+  expose ZI_PC_CEP_LOOKUP       as CepLookUp;
 }

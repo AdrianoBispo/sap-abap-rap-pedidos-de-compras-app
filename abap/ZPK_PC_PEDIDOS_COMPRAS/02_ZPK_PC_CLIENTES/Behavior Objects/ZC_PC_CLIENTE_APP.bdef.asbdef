@@ -26,6 +26,7 @@ use etag
   use delete;
 
   use action DefinirEnderecoPrincipal;
+  use action AplicarDadosCep;
 
   use association _Cliente { with draft; }
 }

@@ -40,3 +40,9 @@ Numero;Constante ZCX_PC_MSG;Texto (max. 73 caracteres)
 039;PEDIDO_EDICAO_BLOQUEADA;Pedido só pode ser editado ou excluído no status CRIADO.
 040;ITEM_DIMENSAO_INVALIDA;Peso e dimensões não podem ser negativos.
 041;VALOR_INVALIDO;Valor inválido para o campo &1.
+042;CEP_DIVERGENTE;O resultado da consulta não corresponde ao CEP informado.
+043;CEP_NAO_CONSULTADO;Consulte o CEP antes de salvar o endereço.
+044;CEP_FILTRO_AUSENTE;Informe o CEP como filtro da consulta.
+045;CEP_FILTRO_INVALIDO;Utilize um filtro de igualdade (EQ) para o CEP.
+046;CEP_CONSULTADO;CEP consultado com sucesso.
+047;ENDERECO_RASCUNHO_AUSENTE;Rascunho do endereço indisponível. Reabra-o e consulte o CEP novamente.

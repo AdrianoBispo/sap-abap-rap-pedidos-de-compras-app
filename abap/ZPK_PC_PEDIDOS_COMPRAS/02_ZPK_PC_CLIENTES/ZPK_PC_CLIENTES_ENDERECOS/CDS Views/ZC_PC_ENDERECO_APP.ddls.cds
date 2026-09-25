@@ -15,7 +15,13 @@ define view entity ZC_PC_ENDERECO_APP
       Uf,
       Estado,
       CepGeral,
+
+      // Campos técnicos: expostos para a extensão SAPUI5 poder reagir ao
+      // resultado da consulta do CEP. Ocultos no formulário pela Metadata
+      // Extension; ConsultedCep é a coluna "CEP" da tabela de endereços.
       CepStatus,
+      ConsultedCep,
+
       EnderecoPrincipal,
       CreatedBy,
       CreatedAt,

@@ -20,17 +20,19 @@ annotate entity ZC_PC_ENDERECO_APP with
   @UI.hidden: true
   ClienteUUID;
 
-  @UI: { lineItem:       [{ position: 10, label: 'CEP', importance: #HIGH },
-                          { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
-                            label: 'Definir como principal' }],
-         identification: [{ position: 10, label: 'CEP (somente números)' },
-                          { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
-                            label: 'Definir como principal' }] }
+  // O CEP NÃO é exposto no formulário nem na tabela: a entrada é feita pela
+  // seção customizada "Consulta de CEP" (extensão SAPUI5 da app de Clientes),
+  // que normaliza a máscara, lê a custom entity CepLookUp e dispara a ação
+  // AplicarDadosCep. Na tabela de endereços do cliente, em modo de edição,
+  // uma coluna Cep editável mudaria o CEP sem consulta (LimparDadosCep apaga
+  // os dados e ValidarCep bloqueia a ativação).
   @EndUserText.label: 'CEP'
   Cep;
 
   @UI: { lineItem:       [{ position: 20, label: 'Logradouro', importance: #HIGH }],
-         identification: [{ position: 20, label: 'Logradouro' }] }
+         identification: [{ position: 20, label: 'Logradouro' },
+                          { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
+                            label: 'Definir como principal' }] }
   @EndUserText.label: 'Logradouro'
   Logradouro;
 
@@ -66,8 +68,17 @@ annotate entity ZC_PC_ENDERECO_APP with
   @UI.hidden: true
   CepGeral;
 
+  // Campos técnicos consumidos pela extensão SAPUI5, ocultos no formulário.
+  // ConsultedCep é a coluna "CEP" da tabela: é somente leitura e, depois da
+  // ativação, sempre igual a Cep (ValidarCep garante).
   @UI.hidden: true
   CepStatus;
+
+  @UI: { lineItem: [{ position: 10, label: 'CEP', importance: #HIGH },
+                    { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
+                      label: 'Definir como principal' }] }
+  @EndUserText.label: 'CEP'
+  ConsultedCep;
 
   @UI: { lineItem:       [{ position: 80, label: 'Principal', importance: #HIGH }],
          identification: [{ position: 90, label: 'Endereço principal' }] }

@@ -410,6 +410,66 @@ INTERFACE zif_pc_errors_constants PUBLIC.
         attr2 TYPE scx_attrname VALUE '',
         attr3 TYPE scx_attrname VALUE '',
         attr4 TYPE scx_attrname VALUE '',
-      END OF valor_invalido.
+      END OF valor_invalido,
+
+      "! 042 - O resultado da consulta não corresponde ao CEP informado.
+      BEGIN OF cep_divergente,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '042',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF cep_divergente,
+
+      "! 043 - Consulte o CEP antes de salvar o endereço.
+      BEGIN OF cep_nao_consultado,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '043',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF cep_nao_consultado,
+
+      "! 044 - Informe o CEP como filtro da consulta.
+      BEGIN OF cep_filtro_ausente,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '044',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF cep_filtro_ausente,
+
+      "! 045 - Utilize um filtro de igualdade (EQ) para o CEP.
+      BEGIN OF cep_filtro_invalido,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '045',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF cep_filtro_invalido,
+
+      "! 046 - CEP consultado com sucesso.
+      BEGIN OF cep_consultado,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '046',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF cep_consultado,
+
+      "! 047 - Rascunho do endereço indisponível. Reabra-o e consulte o CEP novamente.
+      BEGIN OF endereco_rascunho_ausente,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '047',
+        attr1 TYPE scx_attrname VALUE '',
+        attr2 TYPE scx_attrname VALUE '',
+        attr3 TYPE scx_attrname VALUE '',
+        attr4 TYPE scx_attrname VALUE '',
+      END OF endereco_rascunho_ausente.
 
 ENDINTERFACE.
