@@ -7,7 +7,7 @@
 /* View reutilizável consumida pela aplicação Pedidos de Compras.
    Somente itens ativos; preço e disponibilidade são informativos -
    a validação definitiva ocorre no backend (ConfirmarPedido).        */
-define view entity ZC_PC_ITEM_VALUEHELP
+define view entity ZC_PC_ITEM_VH
   as select from ZR_PC_ITEM
 {
       @UI.hidden: true

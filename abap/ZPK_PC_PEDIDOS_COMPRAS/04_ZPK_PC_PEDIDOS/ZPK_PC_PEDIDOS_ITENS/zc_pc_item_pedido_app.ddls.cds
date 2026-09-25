@@ -10,7 +10,7 @@ define view entity ZC_PC_ITEM_PEDIDO_APP
       /* Navegação entre apps (FLP): link para a app Gestão de Estoque */
       @Consumption.semanticObject: 'ZPCItemEstoque'
       @ObjectModel.text.element: [ 'NomeItem' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ITEM_VALUEHELP', element: 'ItemUUID' },
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ITEM_VH', element: 'ItemUUID' },
                                            useForValidation: true }]
       ItemUUID,
       @Consumption.semanticObject: 'ZPCItemEstoque'
