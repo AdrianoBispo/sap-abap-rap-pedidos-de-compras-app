@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_QTDE_ESTOQUE
+* Domínio           : ZDOM_PC_QUANTIDADE
+* Rótulos           : curto 'Qtde est.' / médio 'Qtde em estoque' /
+*                     longo 'Quantidade em estoque' / cabeçalho 'Qtde em estoque'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_QUANTIDADE.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Qtde em estoque'
+@EndUserText.heading   : 'Qtde em estoque'
+@EndUserText.quickInfo : 'Quantidade em estoque'
+define data element ZDE_PC_QTDE_ESTOQUE : ZDOM_PC_QUANTIDADE;

@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_ENDERECO_UUID
+* Domínio           : ZDOM_PC_UUID
+* Rótulos           : curto 'Endereço' / médio 'ID do endereço' /
+*                     longo 'Identificador do endereço' / cabeçalho 'ID do endereço'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_UUID.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'ID do endereço'
+@EndUserText.heading   : 'ID do endereço'
+@EndUserText.quickInfo : 'Identificador do endereço'
+define data element ZDE_PC_ENDERECO_UUID : ZDOM_PC_UUID;

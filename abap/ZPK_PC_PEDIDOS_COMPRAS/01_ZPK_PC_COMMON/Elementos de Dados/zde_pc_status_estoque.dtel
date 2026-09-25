@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_STATUS_ESTOQUE
+* Domínio           : ZDOM_PC_STATUS_ESTOQUE
+* Rótulos           : curto 'Status' / médio 'Status do estoque' /
+*                     longo 'Status do estoque do item' / cabeçalho 'Status do estoque'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_STATUS_ESTOQUE.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Status do estoque'
+@EndUserText.heading   : 'Status do estoque'
+@EndUserText.quickInfo : 'Status do estoque do item'
+define data element ZDE_PC_STATUS_ESTOQUE : ZDOM_PC_STATUS_ESTOQUE;

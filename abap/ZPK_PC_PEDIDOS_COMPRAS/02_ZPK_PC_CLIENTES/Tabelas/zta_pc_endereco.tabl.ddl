@@ -5,25 +5,12 @@
 @AbapCatalog.dataMaintenance : #RESTRICTED
 define table zta_pc_endereco {
 
-  key client            : abap.clnt not null;
-  key endereco_uuid     : sysuuid_x16 not null;
-  cliente_uuid          : sysuuid_x16;
-  cep                   : abap.char(8);
-  logradouro            : abap.char(150);
-  numero                : abap.char(20);
-  complemento           : abap.char(100);
-  bairro                : abap.char(100);
-  cidade                : abap.char(100);
-  uf                    : abap.char(2);
-  estado                : abap.char(100);
-  cep_geral             : abap_boolean;
-  cep_status            : abap.char(1);
-  consulted_cep         : abap.char(8);
-  endereco_principal    : abap_boolean;
-  created_by            : abp_creation_user;
-  created_at            : abp_creation_tstmpl;
-  last_changed_by       : abp_lastchange_user;
-  last_changed_at       : abp_lastchange_tstmpl;
-  local_last_changed_at : abp_locinst_lastchange_tstmpl;
+  // A chave é declarada aqui, campo a campo, e NÃO vem do include: uma
+  // "key" dentro da estrutura deixaria a chave primária só com CLIENT.
+  key client        : abap.clnt not null;
+  key endereco_uuid : zde_pc_endereco_uuid not null;
+
+  include zs_pc_endereco;
+  include zs_pc_admin;
 
 }

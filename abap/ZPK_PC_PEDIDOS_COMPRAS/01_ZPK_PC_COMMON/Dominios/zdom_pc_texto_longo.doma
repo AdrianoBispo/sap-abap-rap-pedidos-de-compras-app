@@ -1,0 +1,15 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_TEXTO_LONGO
+* Tipo      : CHAR(500)
+* Descrição : Texto livre de até 500 caracteres
+* Minúsculas: sim (preserva o texto como digitado; sem a flag o RAP
+*             expõe o campo como IsUpperCase e o Fiori converte a entrada)
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = CHAR, Length = 500,
+* "Lowercase" marcado.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Texto livre de até 500 caracteres'
+define domain ZDOM_PC_TEXTO_LONGO : abap.char(500);

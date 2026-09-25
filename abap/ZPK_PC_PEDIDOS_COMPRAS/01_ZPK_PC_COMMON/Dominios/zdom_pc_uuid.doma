@@ -1,0 +1,12 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_UUID
+* Tipo      : RAW(16)
+* Descrição : Identificador único (UUID)
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = RAW, Length = 16.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Identificador único (UUID)'
+define domain ZDOM_PC_UUID : abap.raw(16);

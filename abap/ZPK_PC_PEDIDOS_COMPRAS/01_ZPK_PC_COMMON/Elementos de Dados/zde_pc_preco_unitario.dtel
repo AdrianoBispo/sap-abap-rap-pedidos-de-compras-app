@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_PRECO_UNITARIO
+* Domínio           : ZDOM_PC_VALOR
+* Rótulos           : curto 'Preço un.' / médio 'Preço unitário' /
+*                     longo 'Preço unitário' / cabeçalho 'Preço unitário'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_VALOR.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Preço unitário'
+@EndUserText.heading   : 'Preço unitário'
+@EndUserText.quickInfo : 'Preço unitário'
+define data element ZDE_PC_PRECO_UNITARIO : ZDOM_PC_VALOR;

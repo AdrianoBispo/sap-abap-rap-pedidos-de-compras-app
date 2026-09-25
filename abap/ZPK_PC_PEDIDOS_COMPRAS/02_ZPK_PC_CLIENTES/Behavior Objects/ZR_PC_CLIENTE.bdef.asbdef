@@ -10,7 +10,7 @@ with draft;
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_CLIENTE alias Cliente
 persistent table zta_pc_cliente
-draft table zd_pc_cliente
+draft table zta_pc_cliente_d
 etag master LocalLastChangedAt
 lock master total etag LastChangedAt
 authorization master ( global )
@@ -77,7 +77,7 @@ authorization master ( global )
 
 define behavior for ZR_PC_ENDERECO alias Endereco
 persistent table zta_pc_endereco
-draft table zd_pc_endereco
+draft table zta_pc_ender_d
 etag master LocalLastChangedAt
 lock dependent by _Cliente
 authorization dependent by _Cliente

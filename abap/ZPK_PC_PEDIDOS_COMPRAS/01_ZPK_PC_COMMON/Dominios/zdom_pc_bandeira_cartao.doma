@@ -1,0 +1,31 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_BANDEIRA_CARTAO
+* Tipo      : CHAR(30)
+* Descrição : Bandeira do cartão
+* Minúsculas: sim (preserva o texto como digitado; sem a flag o RAP
+*             expõe o campo como IsUpperCase e o Fiori converte a entrada)
+*
+* Valores fixos:
+*   VISA       = Visa
+*   MASTERCARD = Mastercard
+*   OUTRA      = Outra bandeira
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = CHAR, Length = 30,
+* "Lowercase" marcado,
+* aba "Fixed Values" com as entradas acima.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Bandeira do cartão'
+define domain ZDOM_PC_BANDEIRA_CARTAO : abap.char(30)
+  fixed values {
+    @EndUserText.label : 'Visa'
+    VISA : 'VISA';
+
+    @EndUserText.label : 'Mastercard'
+    MASTERCARD : 'MASTERCARD';
+
+    @EndUserText.label : 'Outra bandeira'
+    OUTRA : 'OUTRA';
+  }

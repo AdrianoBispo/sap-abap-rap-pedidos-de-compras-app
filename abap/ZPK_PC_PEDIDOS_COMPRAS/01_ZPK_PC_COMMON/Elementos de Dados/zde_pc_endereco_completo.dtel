@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_ENDERECO_COMPLETO
+* Domínio           : ZDOM_PC_TEXTO_LONGO
+* Rótulos           : curto 'Endereço' / médio 'Endereço completo' /
+*                     longo 'Endereço de entrega formatado' / cabeçalho 'Endereço completo'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_TEXTO_LONGO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Endereço completo'
+@EndUserText.heading   : 'Endereço completo'
+@EndUserText.quickInfo : 'Endereço de entrega formatado'
+define data element ZDE_PC_ENDERECO_COMPLETO : ZDOM_PC_TEXTO_LONGO;

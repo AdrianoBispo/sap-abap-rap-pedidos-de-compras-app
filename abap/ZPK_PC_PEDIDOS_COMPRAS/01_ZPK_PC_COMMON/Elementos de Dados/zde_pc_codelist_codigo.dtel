@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CODELIST_CODIGO
+* Domínio           : ZDOM_PC_CODELIST_CODIGO
+* Rótulos           : curto 'Código' / médio 'Código' /
+*                     longo 'Código da CodeList' / cabeçalho 'Código'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_CODELIST_CODIGO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Código'
+@EndUserText.heading   : 'Código'
+@EndUserText.quickInfo : 'Código da CodeList'
+define data element ZDE_PC_CODELIST_CODIGO : ZDOM_PC_CODELIST_CODIGO;

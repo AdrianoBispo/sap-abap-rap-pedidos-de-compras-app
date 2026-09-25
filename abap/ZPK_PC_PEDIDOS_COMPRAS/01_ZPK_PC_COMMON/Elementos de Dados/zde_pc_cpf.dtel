@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CPF
+* Domínio           : ZDOM_PC_CPF
+* Rótulos           : curto 'CPF' / médio 'CPF' /
+*                     longo 'CPF (somente dígitos)' / cabeçalho 'CPF'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_CPF.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'CPF'
+@EndUserText.heading   : 'CPF'
+@EndUserText.quickInfo : 'CPF (somente dígitos)'
+define data element ZDE_PC_CPF : ZDOM_PC_CPF;

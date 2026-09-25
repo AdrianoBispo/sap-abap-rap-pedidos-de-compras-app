@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_LARGURA
+* Domínio           : ZDOM_PC_MEDIDA
+* Rótulos           : curto 'Largura' / médio 'Largura' /
+*                     longo 'Largura do item' / cabeçalho 'Largura'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_MEDIDA.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Largura'
+@EndUserText.heading   : 'Largura'
+@EndUserText.quickInfo : 'Largura do item'
+define data element ZDE_PC_LARGURA : ZDOM_PC_MEDIDA;

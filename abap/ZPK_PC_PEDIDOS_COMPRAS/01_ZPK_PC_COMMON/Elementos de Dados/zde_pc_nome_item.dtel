@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_NOME_ITEM
+* Domínio           : ZDOM_PC_NOME_ITEM
+* Rótulos           : curto 'Nome' / médio 'Nome do item' /
+*                     longo 'Nome do item' / cabeçalho 'Nome do item'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_NOME_ITEM.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Nome do item'
+@EndUserText.heading   : 'Nome do item'
+@EndUserText.quickInfo : 'Nome do item'
+define data element ZDE_PC_NOME_ITEM : ZDOM_PC_NOME_ITEM;

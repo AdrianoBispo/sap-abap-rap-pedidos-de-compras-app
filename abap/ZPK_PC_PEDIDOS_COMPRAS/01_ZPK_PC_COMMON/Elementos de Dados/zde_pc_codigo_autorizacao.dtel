@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CODIGO_AUTORIZACAO
+* Domínio           : ZDOM_PC_CODIGO_AUTORIZACAO
+* Rótulos           : curto 'Autoriz.' / médio 'Código autorização' /
+*                     longo 'Código de autorização do pagamento' / cabeçalho 'Código autorização'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_CODIGO_AUTORIZACAO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Código autorização'
+@EndUserText.heading   : 'Código autorização'
+@EndUserText.quickInfo : 'Código de autorização do pagamento'
+define data element ZDE_PC_CODIGO_AUTORIZACAO : ZDOM_PC_CODIGO_AUTORIZACAO;

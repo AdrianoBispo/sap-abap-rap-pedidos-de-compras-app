@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_ESTADO
+* Domínio           : ZDOM_PC_ESTADO
+* Rótulos           : curto 'Estado' / médio 'Estado' /
+*                     longo 'Estado' / cabeçalho 'Estado'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_ESTADO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Estado'
+@EndUserText.heading   : 'Estado'
+@EndUserText.quickInfo : 'Estado'
+define data element ZDE_PC_ESTADO : ZDOM_PC_ESTADO;

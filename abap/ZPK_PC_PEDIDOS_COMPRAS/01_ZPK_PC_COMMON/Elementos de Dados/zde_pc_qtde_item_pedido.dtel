@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_QTDE_ITEM_PEDIDO
+* Domínio           : ZDOM_PC_QUANTIDADE
+* Rótulos           : curto 'Quantidade' / médio 'Quantidade' /
+*                     longo 'Quantidade do item no pedido' / cabeçalho 'Quantidade'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_QUANTIDADE.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Quantidade'
+@EndUserText.heading   : 'Quantidade'
+@EndUserText.quickInfo : 'Quantidade do item no pedido'
+define data element ZDE_PC_QTDE_ITEM_PEDIDO : ZDOM_PC_QUANTIDADE;

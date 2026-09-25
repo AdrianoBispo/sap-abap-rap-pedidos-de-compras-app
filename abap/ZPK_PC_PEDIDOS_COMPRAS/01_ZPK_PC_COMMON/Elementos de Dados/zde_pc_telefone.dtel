@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_TELEFONE
+* Domínio           : ZDOM_PC_TELEFONE
+* Rótulos           : curto 'Telefone' / médio 'Telefone' /
+*                     longo 'Telefone com DDD (somente dígitos)' / cabeçalho 'Telefone'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_TELEFONE.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Telefone'
+@EndUserText.heading   : 'Telefone'
+@EndUserText.quickInfo : 'Telefone com DDD (somente dígitos)'
+define data element ZDE_PC_TELEFONE : ZDOM_PC_TELEFONE;

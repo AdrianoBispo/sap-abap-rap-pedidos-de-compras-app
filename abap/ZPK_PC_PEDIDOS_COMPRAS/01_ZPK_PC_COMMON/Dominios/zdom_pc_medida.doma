@@ -1,0 +1,12 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_MEDIDA
+* Tipo      : DEC(15,3)
+* Descrição : Peso ou dimensão
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = DEC, Length = 15, Decimals = 3.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Peso ou dimensão'
+define domain ZDOM_PC_MEDIDA : abap.dec(15,3);

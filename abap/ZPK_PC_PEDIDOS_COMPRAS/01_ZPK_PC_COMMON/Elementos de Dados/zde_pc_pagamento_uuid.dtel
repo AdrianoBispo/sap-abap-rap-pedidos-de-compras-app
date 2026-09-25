@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_PAGAMENTO_UUID
+* Domínio           : ZDOM_PC_UUID
+* Rótulos           : curto 'Pagamento' / médio 'ID do pagamento' /
+*                     longo 'Identificador do pagamento' / cabeçalho 'ID do pagamento'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_UUID.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'ID do pagamento'
+@EndUserText.heading   : 'ID do pagamento'
+@EndUserText.quickInfo : 'Identificador do pagamento'
+define data element ZDE_PC_PAGAMENTO_UUID : ZDOM_PC_UUID;

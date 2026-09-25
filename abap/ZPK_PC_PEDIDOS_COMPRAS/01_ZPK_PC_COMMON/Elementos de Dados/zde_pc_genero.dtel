@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_GENERO
+* Domínio           : ZDOM_PC_GENERO
+* Rótulos           : curto 'Gênero' / médio 'Gênero' /
+*                     longo 'Gênero do cliente' / cabeçalho 'Gênero'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_GENERO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Gênero'
+@EndUserText.heading   : 'Gênero'
+@EndUserText.quickInfo : 'Gênero do cliente'
+define data element ZDE_PC_GENERO : ZDOM_PC_GENERO;

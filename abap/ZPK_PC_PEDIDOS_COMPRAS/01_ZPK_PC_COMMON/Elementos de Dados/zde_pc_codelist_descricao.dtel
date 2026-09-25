@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CODELIST_DESCRICAO
+* Domínio           : ZDOM_PC_CODELIST_DESCRICAO
+* Rótulos           : curto 'Descrição' / médio 'Descrição' /
+*                     longo 'Descrição do código' / cabeçalho 'Descrição'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_CODELIST_DESCRICAO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Descrição'
+@EndUserText.heading   : 'Descrição'
+@EndUserText.quickInfo : 'Descrição do código'
+define data element ZDE_PC_CODELIST_DESCRICAO : ZDOM_PC_CODELIST_DESCRICAO;

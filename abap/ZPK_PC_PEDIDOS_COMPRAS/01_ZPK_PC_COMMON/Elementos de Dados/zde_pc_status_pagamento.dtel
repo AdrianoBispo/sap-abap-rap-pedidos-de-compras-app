@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_STATUS_PAGAMENTO
+* Domínio           : ZDOM_PC_STATUS_PAGAMENTO
+* Rótulos           : curto 'Status pag' / médio 'Status do pagamento' /
+*                     longo 'Status do pagamento' / cabeçalho 'Status do pagamento'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_STATUS_PAGAMENTO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Status do pagamento'
+@EndUserText.heading   : 'Status do pagamento'
+@EndUserText.quickInfo : 'Status do pagamento'
+define data element ZDE_PC_STATUS_PAGAMENTO : ZDOM_PC_STATUS_PAGAMENTO;

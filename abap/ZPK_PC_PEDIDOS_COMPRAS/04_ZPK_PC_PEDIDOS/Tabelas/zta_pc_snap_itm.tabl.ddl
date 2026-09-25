@@ -5,29 +5,12 @@
 @AbapCatalog.dataMaintenance : #RESTRICTED
 define table zta_pc_snap_itm {
 
+  // A chave é declarada aqui, campo a campo, e NÃO vem do include: uma
+  // "key" dentro da estrutura deixaria a chave primária só com CLIENT.
   key client             : abap.clnt not null;
-  key snapshot_item_uuid : sysuuid_x16 not null;
-  pedido_uuid            : sysuuid_x16;
-  item_pedido_uuid       : sysuuid_x16;
-  item_uuid              : sysuuid_x16;
-  sku                    : abap.char(21);
-  nome                   : abap.char(120);
-  descricao              : abap.char(500);
-  categoria              : abap.char(30);
-  quantidade             : abap.int4;
-  currency               : abap.cuky;
-  @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
-  preco_unitario         : abap.curr(15,2);
-  @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
-  valor_total            : abap.curr(15,2);
-  peso                   : abap.dec(15,3);
-  altura                 : abap.dec(15,3);
-  largura                : abap.dec(15,3);
-  profundidade           : abap.dec(15,3);
-  created_by             : abp_creation_user;
-  created_at             : abp_creation_tstmpl;
-  last_changed_by        : abp_lastchange_user;
-  last_changed_at        : abp_lastchange_tstmpl;
-  local_last_changed_at  : abp_locinst_lastchange_tstmpl;
+  key snapshot_item_uuid : zde_pc_snapshot_item_uuid not null;
+
+  include zs_pc_snap_itm;
+  include zs_pc_admin;
 
 }

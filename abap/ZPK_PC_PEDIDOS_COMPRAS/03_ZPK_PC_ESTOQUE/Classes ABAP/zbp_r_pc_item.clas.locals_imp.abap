@@ -175,7 +175,7 @@ CLASS lhc_item IMPLEMENTATION.
       INTO TABLE @DATA(lt_ativos).
 
     SELECT itemuuid
-      FROM zd_pc_item_ped
+      FROM zta_pc_itped_d
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).
@@ -204,7 +204,7 @@ CLASS lhc_item IMPLEMENTATION.
 
     " Pedidos em draft (ainda não ativados) também contam como ativos
     SELECT itemuuid
-      FROM zd_pc_item_ped
+      FROM zta_pc_itped_d
       FOR ALL ENTRIES IN @it_itens
       WHERE itemuuid = @it_itens-table_line
       INTO TABLE @DATA(lt_drafts).

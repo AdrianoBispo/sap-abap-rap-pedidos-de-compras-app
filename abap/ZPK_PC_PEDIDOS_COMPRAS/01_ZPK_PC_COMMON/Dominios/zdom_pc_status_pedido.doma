@@ -1,0 +1,39 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_STATUS_PEDIDO
+* Tipo      : CHAR(40)
+* Descrição : Status do pedido
+* Minúsculas: sim (preserva o texto como digitado; sem a flag o RAP
+*             expõe o campo como IsUpperCase e o Fiori converte a entrada)
+*
+* Valores fixos:
+*   CRIADO               = Criado
+*   AGUARDANDO_PAGAMENTO = Aguardando pagamento
+*   AGUARDANDO_APROVACAO = Aguardando aprovação
+*   FINALIZADO           = Finalizado
+*   CANCELADO            = Cancelado
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = CHAR, Length = 40,
+* "Lowercase" marcado,
+* aba "Fixed Values" com as entradas acima.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Status do pedido'
+define domain ZDOM_PC_STATUS_PEDIDO : abap.char(40)
+  fixed values {
+    @EndUserText.label : 'Criado'
+    CRIADO : 'CRIADO';
+
+    @EndUserText.label : 'Aguardando pagamento'
+    AGUARDANDO_PAGAMENTO : 'AGUARDANDO_PAGAMENTO';
+
+    @EndUserText.label : 'Aguardando aprovação'
+    AGUARDANDO_APROVACAO : 'AGUARDANDO_APROVACAO';
+
+    @EndUserText.label : 'Finalizado'
+    FINALIZADO : 'FINALIZADO';
+
+    @EndUserText.label : 'Cancelado'
+    CANCELADO : 'CANCELADO';
+  }

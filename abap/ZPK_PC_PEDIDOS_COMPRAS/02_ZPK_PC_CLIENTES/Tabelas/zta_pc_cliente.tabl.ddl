@@ -5,23 +5,12 @@
 @AbapCatalog.dataMaintenance : #RESTRICTED
 define table zta_pc_cliente {
 
-  key client            : abap.clnt not null;
-  key cliente_uuid      : sysuuid_x16 not null;
-  foto_cliente          : abap.rawstring(0);
-  foto_mime_type        : abap.char(50);
-  foto_file_name        : abap.char(255);
-  cpf                   : abap.char(11);
-  nome                  : abap.char(255);
-  email                 : abap.char(100);
-  telefone              : abap.char(11);
-  genero                : abap.char(30);
-  data_nascimento       : abap.dats;
-  cliente_ativo         : abap_boolean;
-  score_cliente         : abap.dec(5,2);
-  created_by            : abp_creation_user;
-  created_at            : abp_creation_tstmpl;
-  last_changed_by       : abp_lastchange_user;
-  last_changed_at       : abp_lastchange_tstmpl;
-  local_last_changed_at : abp_locinst_lastchange_tstmpl;
+  // A chave é declarada aqui, campo a campo, e NÃO vem do include: uma
+  // "key" dentro da estrutura deixaria a chave primária só com CLIENT.
+  key client       : abap.clnt not null;
+  key cliente_uuid : zde_pc_cliente_uuid not null;
+
+  include zs_pc_cliente;
+  include zs_pc_admin;
 
 }

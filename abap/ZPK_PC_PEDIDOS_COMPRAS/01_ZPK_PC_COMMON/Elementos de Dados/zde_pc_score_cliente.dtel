@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_SCORE_CLIENTE
+* Domínio           : ZDOM_PC_SCORE
+* Rótulos           : curto 'Score' / médio 'Score do cliente' /
+*                     longo 'Score do cliente' / cabeçalho 'Score do cliente'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_SCORE.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Score do cliente'
+@EndUserText.heading   : 'Score do cliente'
+@EndUserText.quickInfo : 'Score do cliente'
+define data element ZDE_PC_SCORE_CLIENTE : ZDOM_PC_SCORE;

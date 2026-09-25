@@ -137,7 +137,7 @@ CLASS lhc_cliente IMPLEMENTATION.
 
     " Pedidos ainda em draft (ainda não ativados)
     SELECT clienteuuid
-      FROM zd_pc_pedido
+      FROM zta_pc_pedido_d
       FOR ALL ENTRIES IN @it_clientes
       WHERE clienteuuid = @it_clientes-table_line
       INTO TABLE @DATA(lt_drafts).

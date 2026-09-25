@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_FOTO_CLIENTE
+* Domínio           : ZDOM_PC_FOTO
+* Rótulos           : curto 'Foto' / médio 'Foto do cliente' /
+*                     longo 'Foto do cliente (JPEG ou PNG)' / cabeçalho 'Foto do cliente'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_FOTO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Foto do cliente'
+@EndUserText.heading   : 'Foto do cliente'
+@EndUserText.quickInfo : 'Foto do cliente (JPEG ou PNG)'
+define data element ZDE_PC_FOTO_CLIENTE : ZDOM_PC_FOTO;

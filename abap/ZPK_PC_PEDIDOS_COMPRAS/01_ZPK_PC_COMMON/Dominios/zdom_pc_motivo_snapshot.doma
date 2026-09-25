@@ -1,0 +1,27 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_MOTIVO_SNAPSHOT
+* Tipo      : CHAR(40)
+* Descrição : Motivo do snapshot do pedido
+* Minúsculas: sim (preserva o texto como digitado; sem a flag o RAP
+*             expõe o campo como IsUpperCase e o Fiori converte a entrada)
+*
+* Valores fixos:
+*   FINALIZACAO  = Finalização do pedido
+*   CANCELAMENTO = Cancelamento do pedido
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = CHAR, Length = 40,
+* "Lowercase" marcado,
+* aba "Fixed Values" com as entradas acima.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Motivo do snapshot do pedido'
+define domain ZDOM_PC_MOTIVO_SNAPSHOT : abap.char(40)
+  fixed values {
+    @EndUserText.label : 'Finalização do pedido'
+    FINALIZACAO : 'FINALIZACAO';
+
+    @EndUserText.label : 'Cancelamento do pedido'
+    CANCELAMENTO : 'CANCELAMENTO';
+  }

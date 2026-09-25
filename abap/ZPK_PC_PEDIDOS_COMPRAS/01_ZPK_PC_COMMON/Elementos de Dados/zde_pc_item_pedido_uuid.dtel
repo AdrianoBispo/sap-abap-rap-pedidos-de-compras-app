@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_ITEM_PEDIDO_UUID
+* Domínio           : ZDOM_PC_UUID
+* Rótulos           : curto 'Item ped.' / médio 'ID do item do pedido' /
+*                     longo 'Identificador do item do pedido' / cabeçalho 'ID do item do pedido'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_UUID.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'ID do item do pedido'
+@EndUserText.heading   : 'ID do item do pedido'
+@EndUserText.quickInfo : 'Identificador do item do pedido'
+define data element ZDE_PC_ITEM_PEDIDO_UUID : ZDOM_PC_UUID;

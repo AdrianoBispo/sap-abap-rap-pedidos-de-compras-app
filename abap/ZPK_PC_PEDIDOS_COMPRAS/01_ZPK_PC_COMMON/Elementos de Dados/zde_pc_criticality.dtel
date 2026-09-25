@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CRITICALITY
+* Domínio           : ZDOM_PC_CRITICALITY
+* Rótulos           : curto 'Critic.' / médio 'Criticidade' /
+*                     longo 'Criticidade Fiori (0 a 3)' / cabeçalho 'Criticidade'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_CRITICALITY.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Criticidade'
+@EndUserText.heading   : 'Criticidade'
+@EndUserText.quickInfo : 'Criticidade Fiori (0 a 3)'
+define data element ZDE_PC_CRITICALITY : ZDOM_PC_CRITICALITY;

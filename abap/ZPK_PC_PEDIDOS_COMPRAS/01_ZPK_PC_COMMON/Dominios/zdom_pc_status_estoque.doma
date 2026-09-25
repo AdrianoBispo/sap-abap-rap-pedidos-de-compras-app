@@ -1,0 +1,31 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_STATUS_ESTOQUE
+* Tipo      : CHAR(30)
+* Descrição : Status do estoque
+* Minúsculas: sim (preserva o texto como digitado; sem a flag o RAP
+*             expõe o campo como IsUpperCase e o Fiori converte a entrada)
+*
+* Valores fixos:
+*   SEM_ESTOQUE = Sem estoque
+*   ACABANDO    = Acabando (1 a 10 unidades)
+*   EM_ESTOQUE  = Em estoque (11 ou mais)
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = CHAR, Length = 30,
+* "Lowercase" marcado,
+* aba "Fixed Values" com as entradas acima.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Status do estoque'
+define domain ZDOM_PC_STATUS_ESTOQUE : abap.char(30)
+  fixed values {
+    @EndUserText.label : 'Sem estoque'
+    SEM_ESTOQUE : 'SEM_ESTOQUE';
+
+    @EndUserText.label : 'Acabando (1 a 10 unidades)'
+    ACABANDO : 'ACABANDO';
+
+    @EndUserText.label : 'Em estoque (11 ou mais)'
+    EM_ESTOQUE : 'EM_ESTOQUE';
+  }

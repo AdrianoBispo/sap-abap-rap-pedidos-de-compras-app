@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CANCELADO_POR
+* Domínio           : ZDOM_PC_USUARIO
+* Rótulos           : curto 'Cancel.por' / médio 'Cancelado por' /
+*                     longo 'Usuário que cancelou o pedido' / cabeçalho 'Cancelado por'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_USUARIO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Cancelado por'
+@EndUserText.heading   : 'Cancelado por'
+@EndUserText.quickInfo : 'Usuário que cancelou o pedido'
+define data element ZDE_PC_CANCELADO_POR : ZDOM_PC_USUARIO;

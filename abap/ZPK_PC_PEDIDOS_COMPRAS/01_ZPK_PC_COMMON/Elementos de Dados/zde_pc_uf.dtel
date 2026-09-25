@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_UF
+* Domínio           : ZDOM_PC_UF
+* Rótulos           : curto 'UF' / médio 'UF' /
+*                     longo 'Unidade federativa' / cabeçalho 'UF'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_UF.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'UF'
+@EndUserText.heading   : 'UF'
+@EndUserText.quickInfo : 'Unidade federativa'
+define data element ZDE_PC_UF : ZDOM_PC_UF;

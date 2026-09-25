@@ -13,7 +13,8 @@ Código-fonte das três aplicações Fiori Elements desacopladas Gestão de Clie
 projeto/
 ├── abap/ backend ABAP Cloud / RAP
 |    └── ZPK_PC_PEDIDOS_COMPRAS   (pacote principal, software component ZLOCAL no trial)
-|        ├── 01_ZPK_PC_COMMON     constantes, mensagens, utilitários, ViaCEP, autorização, numeração, CodeLists, setup
+|        ├── 01_ZPK_PC_COMMON     dicionário (domínios, elementos de dados), constantes, mensagens, utilitários,
+|        |                        ViaCEP, autorização, numeração, CodeLists, setup
 |        ├── 02_ZPK_PC_CLIENTES   BO Cliente + Endereço, value helps de cliente/endereço, serviço ZUI_PC_CLIENTES
 |        ├── 03_ZPK_PC_ESTOQUE    BO Item, value help de item, serviço ZUI_PC_ESTOQUE
 |        └── 04_ZPK_PC_PEDIDOS    BO Pedido (+ itens, pagamento, snapshots), pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
@@ -31,7 +32,9 @@ Convenção de arquivos (um arquivo por objeto ADT):
 
 | Extensão                 | Objeto no ADT                                                    |
 | ------------------------ | ---------------------------------------------------------------- |
-| `*.tabl.ddl`             | Database Table (editor DDL)                                      |
+| `*.doma`                 | Domain                                                           |
+| `*.dtel`                 | Data Element                                                     |
+| `*.tabl.ddl`             | Database Table ou Structure (editor DDL)                         |
 | `*.ddls.cds`             | Data Definition (CDS view entity / projection / abstract entity) |
 | `*.ddlx.cds`             | Metadata Extension                                               |
 | `*.bdef.asbdef`          | Behavior Definition                                              |
@@ -75,22 +78,22 @@ Convenção de arquivos (um arquivo por objeto ADT):
 ## 3. Ordem de criação e ativação
 
 1. Pacotes e objetos manuais 1–4.
-2. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
-3. **Todas** as tabelas ativas `ZTA_*` (inclusive `ZTA_PC_CODELIST`).
-4. CDS base: `ZI_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
+2. Dicionário (seção 9): domínios `ZDOM_PC_*` → elementos de dados `ZDE_PC_*` → estruturas `ZS_PC_*`.
+3. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
+4. **Todas** as tabelas ativas `ZTA_*` (inclusive `ZTA_PC_CODELIST`).
+5. CDS base: `ZI_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as 5 views `ZR_PC_*` do pedido (ativar juntas).
-5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`. A custom entity `ZI_PC_CEP_LOOKUP` e
+6. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`. A custom entity `ZI_PC_CEP_LOOKUP` e
    a classe `ZCL_PC_CEP_LOOKUP_PROVIDER` referenciam uma à outra: ativar as duas juntas.
-6. Tabelas draft `ZD_*` (alternativa: deixar o ADT gerar pelo *quick fix* no BDEF e comparar).
-   `ZD_PC_ENDERECO` precisa ter `CONSULTEDCEP`: se ela já existia, use *Ctrl+1 → Update draft table*
-   sobre `zd_pc_endereco` no BDEF `ZR_PC_CLIENTE`.
-7. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
-8. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (colar *Global Class* + *Local Types*) → BDEF de projeção `ZC_*`.
-9. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_SETUP`.
-10. Service Definitions → Service Bindings (publicar).
-11. Executar `ZCL_PC_SETUP` (F9): cria intervalos de numeração, CodeLists e dados de demonstração, e marca
+7. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o nome
+   declarado em `draft table` de cada BDEF `ZR_*`. Os nomes estão na seção 9.
+8. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
+9. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (colar *Global Class* + *Local Types*) → BDEF de projeção `ZC_*`.
+10. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_SETUP`.
+11. Service Definitions → Service Bindings (publicar).
+12. Executar `ZCL_PC_SETUP` (F9): cria intervalos de numeração, CodeLists e dados de demonstração, e marca
     como consultados (`CONSULTED_CEP = CEP`) os endereços gravados antes da seção 8.
-12. Front-end: `cd ui5 && npm install && npm run set-backend -- <URL do sistema>` → testar com
+13. Front-end: `cd ui5 && npm install && npm run set-backend -- <URL do sistema>` → testar com
     `npm run start:launchpad` → `npm run deploy` → incluir os IAM Apps `*_UI5R` nos Business Catalogs
     (seção 7).
 
@@ -224,3 +227,64 @@ Detalhes que costumam morder:
   Os caminhos de módulo do fragmento usam `zpc/clientes`, que precisa bater com `sap.app.id`.
 
 Testes da extensão: `ui5/clientes/webapp/test/testsuite.qunit.html` (UI5 Test Starter).
+
+## 9. Dicionário de dados e tabelas draft (v1.4)
+
+### Domínios, elementos de dados e estruturas
+
+Todas as tabelas ativas usam elementos de dados próprios. Os campos de negócio ficam numa estrutura
+incluída na tabela:
+
+| Objeto              | Onde                                                | Quantidade |
+| ------------------- | --------------------------------------------------- | ---------- |
+| `ZDOM_PC_*`         | `01_ZPK_PC_COMMON/Dominios`                         | 45         |
+| `ZDE_PC_*`          | `01_ZPK_PC_COMMON/Elementos de Dados`               | 64         |
+| `ZS_PC_ADMIN`       | `01_ZPK_PC_COMMON/Estruturas`                       | 1          |
+| `ZS_PC_<tabela>`    | pasta `Estruturas` do pacote dono da tabela         | 9          |
+
+Cada tabela declara `client` e a chave campo a campo e depois faz `include zs_pc_<tabela>` e
+`include zs_pc_admin`. `ZTA_PC_CODELIST` não tem campos administrativos. A chave não pode vir do
+include: uma `key` dentro da estrutura deixaria a chave primária só com `CLIENT`.
+
+Regras seguidas:
+
+- **Mesmos tipos técnicos.** Cada coluna mantém nome, posição e tipo técnico anteriores. A ativação das
+  tabelas não exige conversão de banco.
+- **Minúsculas.** Todo domínio `CHAR` tem *Lowercase* marcado. Sem essa flag, o RAP publica o campo como
+  `IsUpperCase` e o Fiori converteria e-mail, nome, logradouro e tipo MIME para maiúsculas.
+- **Tipos padrão mantidos.** `abap_boolean` (exposto como `Edm.Boolean`), `timestampl`
+  (`Edm.DateTimeOffset`) e os `abp_*` dos campos administrativos continuam como estão. Um domínio
+  próprio faria o OData perder esses tipos.
+- **Valores fixos.** Os domínios de status, método, bandeira, motivo do snapshot, CodeList e
+  criticidade repetem os valores de `ZIF_PC_CONSTANTS`. Gênero e categoria não têm valores fixos: vêm
+  da tabela `ZTA_PC_CODELIST`.
+
+Cada arquivo `.doma`/`.dtel` traz no cabeçalho os parâmetros do wizard do ADT (*New → Dictionary →
+Domain / Data Element*): tipo, tamanho, *Lowercase*, valores fixos e rótulos. Use o wizard se o seu
+release não tiver editor de código-fonte para esses objetos.
+
+### Tabelas draft
+
+Tabelas draft seguem o nome da tabela ativa com o sufixo `_d`. O ABAP Dictionary limita nomes de tabela
+a 16 caracteres, então cinco delas usam o nome da ativa abreviado:
+
+| Tabela ativa       | Tabela draft        | Entidade                     |
+| ------------------ | ------------------- | ---------------------------- |
+| `ZTA_PC_CLIENTE`   | `ZTA_PC_CLIENTE_D`  | `ZR_PC_CLIENTE`              |
+| `ZTA_PC_ENDERECO`  | `ZTA_PC_ENDER_D`    | `ZR_PC_ENDERECO`             |
+| `ZTA_PC_ITEM`      | `ZTA_PC_ITEM_D`     | `ZR_PC_ITEM`                 |
+| `ZTA_PC_PEDIDO`    | `ZTA_PC_PEDIDO_D`   | `ZR_PC_PEDIDO`               |
+| `ZTA_PC_ITEM_PED`  | `ZTA_PC_ITPED_D`    | `ZR_PC_ITEM_PEDIDO`          |
+| `ZTA_PC_PAGAMENTO` | `ZTA_PC_PAGTO_D`    | `ZR_PC_PAGAMENTO`            |
+| `ZTA_PC_SNAP_CLI`  | `ZTA_PC_SNPCLI_D`   | `ZR_PC_PED_CLI_SNAP`         |
+| `ZTA_PC_SNAP_ITM`  | `ZTA_PC_SNPITM_D`   | `ZR_PC_PED_ITEM_SNAP`        |
+
+Migração de um sistema que já tinha as tabelas `ZD_PC_*`:
+
+1. Ative ou descarte todos os rascunhos abertos nas três apps. Os drafts ficam nas tabelas antigas e
+   não são copiados.
+2. Ative as BDEFs `ZR_PC_CLIENTE`, `ZR_PC_ITEM` e `ZR_PC_PEDIDO` com os novos nomes e gere cada tabela
+   draft pelo *quick fix*.
+3. Ative os behavior pools `ZBP_R_PC_CLIENTE` e `ZBP_R_PC_ITEM`. Eles leem `ZTA_PC_PEDIDO_D` e
+   `ZTA_PC_ITPED_D` para detectar pedidos ainda em rascunho.
+4. Apague as tabelas `ZD_PC_*` antigas.

@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_MOTIVO_CANCELAMENTO
+* Domínio           : ZDOM_PC_TEXTO_LONGO
+* Rótulos           : curto 'Motivo' / médio 'Motivo cancelamento' /
+*                     longo 'Motivo do cancelamento do pedido' / cabeçalho 'Motivo cancelamento'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_TEXTO_LONGO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Motivo cancelamento'
+@EndUserText.heading   : 'Motivo cancelamento'
+@EndUserText.quickInfo : 'Motivo do cancelamento do pedido'
+define data element ZDE_PC_MOTIVO_CANCELAMENTO : ZDOM_PC_TEXTO_LONGO;

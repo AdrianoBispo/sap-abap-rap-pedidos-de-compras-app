@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_CODELIST_ORDEM
+* Domínio           : ZDOM_PC_ORDEM
+* Rótulos           : curto 'Ordem' / médio 'Ordem' /
+*                     longo 'Ordem de exibição' / cabeçalho 'Ordem'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_ORDEM.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Ordem'
+@EndUserText.heading   : 'Ordem'
+@EndUserText.quickInfo : 'Ordem de exibição'
+define data element ZDE_PC_CODELIST_ORDEM : ZDOM_PC_ORDEM;

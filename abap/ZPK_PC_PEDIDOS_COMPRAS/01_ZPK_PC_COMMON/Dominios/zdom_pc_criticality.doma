@@ -1,0 +1,32 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_CRITICALITY
+* Tipo      : INT1
+* Descrição : Criticidade Fiori
+*
+* Valores fixos:
+*   0 = Neutra
+*   1 = Negativa (vermelho)
+*   2 = Crítica (amarelo)
+*   3 = Positiva (verde)
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = INT1, Length = 3,
+* aba "Fixed Values" com as entradas acima.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Criticidade Fiori'
+define domain ZDOM_PC_CRITICALITY : abap.int1
+  fixed values {
+    @EndUserText.label : 'Neutra'
+    NEUTRA : '0';
+
+    @EndUserText.label : 'Negativa (vermelho)'
+    NEGATIVA : '1';
+
+    @EndUserText.label : 'Crítica (amarelo)'
+    CRITICA : '2';
+
+    @EndUserText.label : 'Positiva (verde)'
+    POSITIVA : '3';
+  }

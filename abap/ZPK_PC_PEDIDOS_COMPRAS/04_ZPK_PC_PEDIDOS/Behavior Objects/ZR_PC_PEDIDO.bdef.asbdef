@@ -9,13 +9,13 @@ with draft;
      (disponibilidade por status = feature control, não autorização)
    - Pagamento e snapshots: filhos de composição, criados apenas
      internamente pelas actions (sem create/update/delete externos).
-     Como o BO é draft, as tabelas draft técnicas ZD_PC_SNAP_CLI e
-     ZD_PC_SNAP_ITM são obrigatórias e permanecem vazias.
+     Como o BO é draft, as tabelas draft técnicas ZTA_PC_SNPCLI_D e
+     ZTA_PC_SNPITM_D são obrigatórias e permanecem vazias.
    - Estoque movimentado via EML nas actions do BO Item (mesma LUW)
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_PEDIDO alias Pedido
 persistent table zta_pc_pedido
-draft table zd_pc_pedido
+draft table zta_pc_pedido_d
 etag master LocalLastChangedAt
 lock master total etag LastChangedAt
 authorization master ( global )
@@ -94,7 +94,7 @@ authorization master ( global )
 
 define behavior for ZR_PC_ITEM_PEDIDO alias ItemPedido
 persistent table zta_pc_item_ped
-draft table zd_pc_item_ped
+draft table zta_pc_itped_d
 etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
@@ -139,7 +139,7 @@ authorization dependent by _Pedido
 
 define behavior for ZR_PC_PAGAMENTO alias Pagamento
 persistent table zta_pc_pagamento
-draft table zd_pc_pagamento
+draft table zta_pc_pagto_d
 etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
@@ -176,7 +176,7 @@ authorization dependent by _Pedido
 
 define behavior for ZR_PC_PED_CLI_SNAP alias ClienteSnapshot
 persistent table zta_pc_snap_cli
-draft table zd_pc_snap_cli
+draft table zta_pc_snpcli_d
 etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
@@ -224,7 +224,7 @@ authorization dependent by _Pedido
 
 define behavior for ZR_PC_PED_ITEM_SNAP alias ItemSnapshot
 persistent table zta_pc_snap_itm
-draft table zd_pc_snap_itm
+draft table zta_pc_snpitm_d
 etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido

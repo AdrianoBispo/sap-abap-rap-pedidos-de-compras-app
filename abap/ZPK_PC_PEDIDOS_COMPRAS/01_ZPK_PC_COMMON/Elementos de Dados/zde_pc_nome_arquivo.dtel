@@ -1,0 +1,14 @@
+* ---------------------------------------------------------------------
+* Elemento de dados : ZDE_PC_NOME_ARQUIVO
+* Domínio           : ZDOM_PC_NOME_ARQUIVO
+* Rótulos           : curto 'Arquivo' / médio 'Nome do arquivo' /
+*                     longo 'Nome do arquivo enviado' / cabeçalho 'Nome do arquivo'
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte não esteja
+* disponível): New > Other ABAP Repository Object > Dictionary > Data
+* Element, Category = Domain, Type Name = ZDOM_PC_NOME_ARQUIVO.
+* ---------------------------------------------------------------------
+@EndUserText.label     : 'Nome do arquivo'
+@EndUserText.heading   : 'Nome do arquivo'
+@EndUserText.quickInfo : 'Nome do arquivo enviado'
+define data element ZDE_PC_NOME_ARQUIVO : ZDOM_PC_NOME_ARQUIVO;

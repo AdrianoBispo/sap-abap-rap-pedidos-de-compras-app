@@ -1,0 +1,12 @@
+* ---------------------------------------------------------------------
+* Domínio   : ZDOM_PC_ORDEM
+* Tipo      : INT2
+* Descrição : Ordem de exibição
+*
+* Criação pelo wizard do ADT (caso o editor de código-fonte de domínios
+* não esteja disponível no seu release): New > Other ABAP Repository
+* Object > Dictionary > Domain,
+* Data Type = INT2, Length = 5.
+* ---------------------------------------------------------------------
+@EndUserText.label : 'Ordem de exibição'
+define domain ZDOM_PC_ORDEM : abap.int2;
