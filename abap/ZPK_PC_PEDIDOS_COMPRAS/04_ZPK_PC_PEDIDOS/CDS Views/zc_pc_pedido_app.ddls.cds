@@ -28,7 +28,7 @@ define root view entity ZC_PC_PEDIDO_APP
       _Cliente.Cpf                    as CpfCliente,
 
       @ObjectModel.text.element: [ 'EnderecoPrincipalCompleto' ]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ENDERECO_VALUEHELP', element: 'EnderecoUUID' },
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ENDERECO_VH', element: 'EnderecoUUID' },
                                            additionalBinding: [{ localElement: 'ClienteUUID',
                                                                  element:      'ClienteUUID',
                                                                  usage:        #FILTER }] }]
