@@ -1,0 +1,29 @@
+{
+  "generationParameters": {
+    "generationDate": "Sun Sep 27 2026 13:01:18 GMT-0300 (Horário Padrão de Brasília)",
+    "generatorPlatform": "CLI",
+    "serviceType": "OData URL",
+    "metadataFilename": "",
+    "serviceUrl": "https://a4796127-12c7-4a21-ae82-e3ced4ab9c3d.abap.us10.hana.ondemand.com/sap/opu/odata4/sap/zui_pc_estoque_o4/srvd/sap/zui_pc_estoque/0001/",
+    "appName": "gestao-estoque",
+    "appTitle": "Gestão de Estoque",
+    "appDescription": "Cadastro de itens, preço, quantidades em estoque e reservas",
+    "appNamespace": "",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.136.7",
+    "enableEslint": true,
+    "enableTypeScript": false,
+    "showMockDataInfo": true,
+    "generatorVersion": "1.28.0",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "Item"
+      }
+    ],
+    "launchText": "To launch the generated application, run the following from the generated application root folder:\n\n```\n    npm start\n```",
+    "valueHelpDownloaded": true
+  }
+}
