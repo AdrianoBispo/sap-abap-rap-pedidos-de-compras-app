@@ -20,11 +20,14 @@ use etag
   use action SimularPagamento;
   use action AprovarPedido;
   use action CancelarPedido;
+  use action AprovarReembolso;
+  use action RejeitarReembolso;
 
   use association _Itens           { create; with draft; }
   use association _Pagamento       { with draft; }
   use association _ClienteSnapshot { with draft; }
   use association _ItensSnapshot   { with draft; }
+  use association _Reembolsos      { with draft; }
 }
 
 define behavior for ZC_PC_ITEM_PEDIDO_APP alias ItemPedido
@@ -49,6 +52,12 @@ use etag
 }
 
 define behavior for ZC_PC_PED_ITEM_SNAP_APP alias ItemSnapshot
+use etag
+{
+  use association _Pedido { with draft; }
+}
+
+define behavior for ZC_PC_REEMBOLSO_APP alias Reembolso
 use etag
 {
   use association _Pedido { with draft; }
