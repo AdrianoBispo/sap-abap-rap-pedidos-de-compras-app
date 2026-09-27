@@ -135,9 +135,9 @@ Código-fonte de três aplicações **Fiori Elements (OData V4)** para o **SAP B
 | Backend         | ABAP Cloud (`strict ( 2 )`), RAP Managed com Draft, CDS View Entities, EML         |
 | Serviços        | OData V4: `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`, `ZUI_PC_PEDIDOS_COMPRAS_O4`   |
 | Integração      | `cl_http_destination_provider` → API ViaCEP                                        |
-| Front-end       | SAP Fiori Elements V4 (List Report + Object Page), extensão SAPUI5, descriptor v2  |
+| Front-end       | SAP Fiori Elements V4 (List Report + Object Page), gerado com SAP Fiori tools, descriptor v2 |
 | Ferramentas     | ADT (Eclipse), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint                      |
-| Testes          | ABAP Unit, QUnit (UI5 Test Starter)                                                |
+| Testes          | ABAP Unit, OPA5 (testes de integração gerados pelo Fiori tools)                   |
 
 ---
 
@@ -205,10 +205,10 @@ stateDiagram-v2
 │       └── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens, pagamento, reembolso, snapshots),
 │                                       pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
 │
-├── ui5/                                front-end Fiori Elements
-│   ├── clientes/                       app Gestão de Clientes (com extensão do campo CEP)
-│   ├── estoque/                        app Gestão de Estoque
-│   ├── pedidos/                        app Pedidos de Compras (+ launchpad local com as três apps)
+├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
+│   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
+│   ├── gestao-estoque/                 app Gestão de Estoque (projeto isolado)
+│   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   └── README.md                       guia do front-end
 │
 ├── docs/
@@ -324,23 +324,21 @@ no ADT):
 
 ## Front-end Fiori
 
-Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serviço. O guia completo
-está em [`ui5/README.md`](ui5/README.md).
+Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serviço, geradas com o
+**SAP Fiori tools** (Application Generator). Cada uma é um projeto isolado, com `package.json`,
+`node_modules` e configuração próprios. O guia completo está em [`ui5/README.md`](ui5/README.md).
 
-| App                | Pasta          | Serviço                     | Páginas                            | Tile (semantic object)   | BSP            |
-| ------------------ | -------------- | --------------------------- | ----------------------------------- | ------------------------ | -------------- |
-| Gestão de Clientes | `ui5/clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                  | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
-| Gestão de Estoque  | `ui5/estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                                | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
-| Pedidos de Compras | `ui5/pedidos`  | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico / Reembolso | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
-
-Em cada app, aponte o `url` do backend em `ui5.yaml` e `ui5-deploy.yaml` (e em
-`pedidos/ui5-launchpad.yaml`) para o seu sistema: `https://<id>.abap.<região>.hana.ondemand.com`.
+| App                | Pasta                 | Serviço                     | Páginas                               | Tile (semantic object)   | BSP            |
+| ------------------ | --------------------- | --------------------------- | ------------------------------------- | ------------------------ | -------------- |
+| Gestão de Clientes | `ui5/gestao-clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                    | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
+| Gestão de Estoque  | `ui5/gestao-estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                                  | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
+| Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico / Reembolso | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 
 ```bash
-cd ui5/pedidos              # ou ui5/clientes, ui5/estoque
+cd ui5/pedidos-compras      # ou ui5/gestao-clientes, ui5/gestao-estoque
 npm install
-npm start                   # a app no launchpad local
-npm run start-launchpad     # (só pedidos) launchpad local com os três tiles e navegação entre apps
+npm start                   # launchpad local (sandbox) com dados reais; login BTP no navegador
+npm run start-mock          # dados de mock (sem backend)
 npm run lint && npm run build
 npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* correspondente
 ```
@@ -349,9 +347,8 @@ npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* corr
 espaço/página em *Manage Launchpad Spaces* e atribuí-lo às Business Roles `ZPC_BR_ADMIN` e
 `ZPC_BR_COMUM`.
 
-**Validação:** as três apps passam no `ui5 build` e no UI5 linter (sem achados). Os manifests
-validam contra o schema oficial do descriptor v2. O teste contra o backend real depende do seu
-sistema BTP.
+**Validação:** as três apps passam no `ui5 build`, no ESLint e no UI5 linter (sem achados), e foram
+testadas contra o backend real pelo proxy do Fiori tools.
 
 ---
 
@@ -380,7 +377,7 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → *
 | Tipo              | Onde                                                                    | Como rodar                     |
 | ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
 | ABAP Unit         | `ZCL_PC_UTIL` e `ZCL_PC_PAGAMENTO_SIM` (`*.clas.testclasses.abap`)      | `Ctrl+Shift+F10` no ADT         |
-| QUnit (extensão)  | `ui5/clientes/webapp/test/`                                             | abrir `testsuite.qunit.html`    |
+| OPA5 (gerados)    | `ui5/<app>/webapp/test/integration/`                                    | `npm run int-test` (mock)       |
 
 As classes de teste de precheck/validação usadas para verificar os ajustes desta rodada (item sem
 estoque, CEP único) foram temporárias e já foram removidas após a confirmação — `ZCL_PC_UTIL`
@@ -391,69 +388,36 @@ todos passando (28/28).
 
 ## Endereço do cliente: consulta de CEP
 
-O CRUD do Endereço (filho de composição de `Cliente`) segue a mesma lógica da aplicação
-[sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep). O BO não
-chama o ViaCEP diretamente: a consulta é feita por uma custom entity que a UI lê.
+A consulta do CEP é feita inteiramente no backend. Na app, o **CEP** é um campo padrão do Fiori
+Elements, sem extensão SAPUI5.
 
 ```mermaid
 sequenceDiagram
     actor U as Usuário
-    participant UI as Campo CEP (extensão)
+    participant UI as Object Page do Endereço
     participant BO as ZR_PC_ENDERECO
-    participant CE as ZI_PC_CEP_LOOKUP
     participant API as ViaCEP
 
-    U->>UI: digita o CEP (máscara 99999-999)
-    UI->>BO: grava CEP normalizado no draft
-    Note over BO: LimparDadosCep limpa os campos do CEP anterior
-    UI->>CE: lê CepLookUp
-    CE->>API: ZCL_PC_CEP_LOOKUP_PROVIDER → ZCL_PC_VIACEP
-    API-->>CE: dados do endereço
-    CE-->>UI: Status V / I / X + dados
-    UI->>BO: ação AplicarDadosCep
+    U->>UI: informa o CEP (ou escolhe no value help ZC_PC_CEP_VH)
+    UI->>BO: grava o CEP no draft
+    Note over BO: determination PreencherEnderecoViaCep
+    BO->>BO: CEP já cadastrado? reaproveita os dados
+    BO->>API: só para CEPs desconhecidos
+    API-->>BO: dados do endereço
+    BO-->>UI: side effects recarregam logradouro, bairro, cidade, UF...
     U->>BO: Salvar
-    Note over BO: ValidarCep bloqueia CEP inválido,<br/>não consultado ou geral sem logradouro
+    Note over BO: ValidarCep e ValidarCepUnico
 ```
 
-1. Na Object Page do Endereço, o campo **CEP** do formulário *Endereço* é um campo customizado da
-   extensão SAPUI5 (`ui5/clientes/webapp/ext/`, registrado em `controlConfiguration` da
-   Identification, antes do Logradouro). Ele aplica a máscara `99999-999` e grava o CEP normalizado
-   no draft. O value help `ZC_PC_CEP_VH` sugere CEPs já cadastrados na tabela de endereços.
-2. A determination `LimparDadosCep` (on modify, campo `Cep`) apaga logradouro, complemento, bairro,
-   cidade, UF, estado, `CepGeral`, `CepStatus` e `ConsultedCep` sempre que o CEP deixa de ser o
-   consultado.
-3. A UI lê `CepLookUp` (`ZI_PC_CEP_LOOKUP` → `ZCL_PC_CEP_LOOKUP_PROVIDER` → `ZCL_PC_VIACEP`). A
-   leitura nunca falha por CEP ruim: devolve `Status` `V` (validado), `I` (inválido/inexistente)
-   ou `X` (ViaCEP indisponível).
-4. A UI chama a ação `AplicarDadosCep` (parâmetro `ZPC_A_CEP_RESULTADO`, `result [1] $self`), que
-   grava o resultado e `ConsultedCep`. Resultados com falha também são gravados, com os campos
-   automáticos limpos.
-5. `ValidarCep` (on save, sem I/O remoto) bloqueia a ativação quando o CEP tem formato inválido,
-   `CepStatus` é `I`/`X`/vazio, `ConsultedCep <> Cep`, ou o CEP é geral de município sem
-   logradouro/bairro.
-
-Campos: cidade, UF, estado e os técnicos são somente leitura. Logradouro e bairro continuam com
-feature control (editáveis e obrigatórios só para CEP geral). Complemento e número ficam livres.
-
-<details>
-<summary><b>Detalhes que costumam morder</b></summary>
-
-- **Cardinalidade da ação.** Toda chave de `AplicarDadosCep` precisa sair em `result` ou em
-  `failed`. Uma chave que não aparece em nenhum dos dois faz o runtime OData abortar com
-  `RAISE_SHORTDUMP`. O caso típico é o draft ativado ou descartado com a chamada ainda em voo
-  (mensagem 042).
-- **Rajada de requisições.** O handler usa debounce de 700 ms e um token de sequência que descarta
-  respostas fora de ordem. O backend ainda confere se o resultado corresponde ao CEP gravado no
-  draft.
-- **`@UI.hidden` não é cosmético.** `CepStatus` e `ConsultedCep` ficam fora do `$select` da Object
-  Page. O handler usa `requestProperty()` para lê-los.
-- **CEP na tabela de endereços.** A coluna "CEP" da tabela do cliente é `ConsultedCep`, que é
-  somente leitura. Uma coluna `Cep` editável em modo de edição mudaria o CEP sem consulta.
-- **Namespace da ação.** `CepUtil.js` descobre o namespace do serviço em runtime
-  (`/$EntityContainer`). Os caminhos de módulo do fragmento usam `zpc/clientes`, que precisa bater
-  com `sap.app.id`.
-
-</details>
+1. O value help `ZC_PC_CEP_VH` sugere os CEPs já validados (um por CEP, sem CEP geral).
+2. A determination `PreencherEnderecoViaCep` (on modify, campo `Cep`) preenche o endereço:
+   reaproveita os dados de um CEP já cadastrado e só chama o ViaCEP para CEPs desconhecidos.
+3. O bloco `side effects` do Endereço (`field Cep affects field Logradouro, field Bairro,
+   field Cidade, field Uf, field Estado, field CepGeral, field CepStatus`) faz o Fiori Elements
+   recarregar esses campos logo após a alteração do CEP.
+4. Ao salvar, `ValidarCep` (campos `Cep`, `Logradouro`, `Bairro`, `CepStatus`) bloqueia CEP
+   inválido ou geral de município sem logradouro/bairro, e `ValidarCepUnico` impede CEP repetido
+   no mesmo cliente.
 
 ---
 
@@ -464,7 +428,7 @@ e reaproveitável:
 
 - **Registro automático.** Ao consultar um CEP que ainda não existe na tabela `ZTA_PC_ENDERECO`
   para nenhum cliente, o endereço retornado pelo ViaCEP é persistido normalmente pelo próprio fluxo
-  de criação do Endereço (`AplicarDadosCep` + `Salvar`) — não é necessário nenhum cadastro manual
+  de criação do Endereço (`PreencherEnderecoViaCep` + `Salvar`) — não é necessário nenhum cadastro manual
   posterior; da próxima vez que qualquer cliente consultar o mesmo CEP, o value help `ZC_PC_CEP_VH`
   já o sugere.
 - **CEP como chave, único por cliente.** `ZTA_PC_ENDERECO` declara `cep` como campo adicional da
@@ -557,7 +521,7 @@ limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
 - O *preview* do Service Binding continua útil para testar o backend isoladamente, mas não tem
   launchpad nem navegação entre apps.
 - No trial, o deploy das apps funciona, mas os tiles só aparecem para quem tiver as roles. Use o
-  launchpad local (`npm run start-launchpad` em `ui5/pedidos`) para o teste completo.
+  launchpad local de cada app (`npm start` em `ui5/<app>`) para o teste completo.
 - Os dados do cartão aparecem no diálogo da action (parâmetros da action não possuem máscara em
   Fiori Elements). Eles **não** são persistidos nem logados; apenas bandeira, últimos 4 dígitos e
   máscara são gravados.
