@@ -4,7 +4,7 @@
     "id": "gestaoestoque",
     "type": "application",
     "i18n": {
-      "bundleName": "gestaoestoque.i18n.i18n",
+      "bundleUrl": "i18n/i18n.properties",
       "supportedLocales": [
         ""
       ],
