@@ -1,0 +1,77 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Reembolso',
+                typeNamePlural: 'Reembolsos',
+                title:          { type: #STANDARD, value: 'StatusReembolso' },
+                description:    { type: #STANDARD, value: 'MotivoSolicitacao' } }
+}
+annotate entity ZC_PC_REEMBOLSO_APP with
+{
+  @UI.facet: [
+    { id: 'DadosReembolso', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Reembolso', position: 10 }
+  ]
+
+  @UI.hidden: true
+  ReembolsoUUID;
+  @UI.hidden: true
+  PedidoUUID;
+
+  @UI: { lineItem:       [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality', importance: #HIGH }],
+         identification: [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality' }] }
+  @EndUserText.label: 'Status do reembolso'
+  StatusReembolso;
+  @UI.hidden: true
+  StatusReembolsoTexto;
+  @UI.hidden: true
+  StatusReembolsoCriticality;
+
+  @UI.identification: [{ position: 15, label: 'Status anterior do pedido' }]
+  @EndUserText.label: 'Status anterior do pedido'
+  StatusPedidoAnterior;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem: [{ position: 20, label: 'Valor' }], identification: [{ position: 20, label: 'Valor do reembolso' }] }
+  @EndUserText.label: 'Valor do reembolso'
+  ValorReembolso;
+
+  @UI: { lineItem: [{ position: 30, label: 'Motivo da solicitação' }],
+         identification: [{ position: 30, label: 'Motivo da solicitação' }] }
+  @UI.multiLineText: true
+  @EndUserText.label: 'Motivo da solicitação'
+  MotivoSolicitacao;
+
+  @UI: { lineItem: [{ position: 40, label: 'Solicitado em' }], identification: [{ position: 40, label: 'Solicitado em' }] }
+  @EndUserText.label: 'Solicitado em'
+  DataSolicitacao;
+
+  @UI.identification: [{ position: 50, label: 'Solicitado por' }]
+  @EndUserText.label: 'Solicitado por'
+  SolicitadoPor;
+
+  @UI: { lineItem: [{ position: 50, label: 'Motivo da decisão' }],
+         identification: [{ position: 60, label: 'Motivo da decisão' }] }
+  @UI.multiLineText: true
+  @EndUserText.label: 'Motivo da decisão'
+  MotivoDecisao;
+
+  @UI.identification: [{ position: 70, label: 'Decidido em' }]
+  @EndUserText.label: 'Decidido em'
+  DataDecisao;
+
+  @UI.identification: [{ position: 80, label: 'Decidido por' }]
+  @EndUserText.label: 'Decidido por'
+  DecididoPor;
+
+  @UI.hidden: true
+  CreatedBy;
+  @UI.hidden: true
+  CreatedAt;
+  @UI.hidden: true
+  LastChangedBy;
+  @UI.hidden: true
+  LastChangedAt;
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

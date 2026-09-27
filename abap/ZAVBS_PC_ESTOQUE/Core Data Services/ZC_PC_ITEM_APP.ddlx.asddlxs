@@ -1,0 +1,122 @@
+@Metadata.layer: #CORE
+
+@UI: {
+  headerInfo: { typeName:       'Item',
+                typeNamePlural: 'Itens de estoque',
+                title:          { type: #STANDARD, value: 'Nome' },
+                description:    { type: #STANDARD, value: 'Sku' },
+                imageUrl:       'FotoItem' },
+  presentationVariant: [{ sortOrder:      [{ by: 'Nome', direction: #ASC }],
+                          visualizations: [{ type: #AS_LINEITEM }] }]
+}
+
+annotate entity ZC_PC_ITEM_APP with
+{
+  @UI.facet: [
+    { id: 'HeaderEstoque', purpose: #HEADER, type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'Status', position: 10 },
+    { id: 'DadosItem',     purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'Dados do item', position: 10 },
+    { id: 'Estoque',       purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Estoque', targetQualifier: 'Estoque', position: 20 },
+    { id: 'Dimensoes',     purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Peso e dimensões', targetQualifier: 'Dimensoes', position: 30 },
+    { id: 'Administrativo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Dados administrativos', targetQualifier: 'Admin', position: 40 }
+  ]
+
+  @UI.hidden: true
+  ItemUUID;
+
+  @UI: { lineItem:       [{ position: 5, label: 'Foto' }],
+         identification: [{ position: 5, label: 'Foto (JPEG ou PNG)' }] }
+  FotoItem;
+
+  @UI.hidden: true
+  FotoMimeType;
+
+  @UI.hidden: true
+  FotoFileName;
+
+  @UI: { lineItem:       [{ position: 10, label: 'SKU', importance: #HIGH }],
+         identification: [{ position: 10, label: 'SKU (gerado automaticamente)' }],
+         selectionField: [{ position: 10 }] }
+  @EndUserText.label: 'SKU'
+  Sku;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Nome', importance: #HIGH }],
+         identification: [{ position: 20, label: 'Nome' }],
+         selectionField: [{ position: 20 }] }
+  @EndUserText.label: 'Nome'
+  Nome;
+
+  @UI: { identification: [{ position: 30, label: 'Descrição' }] }
+  @UI.multiLineText: true
+  @EndUserText.label: 'Descrição'
+  Descricao;
+
+  @UI: { lineItem:       [{ position: 30, label: 'Categoria' }],
+         identification: [{ position: 40, label: 'Categoria' }],
+         selectionField: [{ position: 30 }] }
+  @EndUserText.label: 'Categoria'
+  Categoria;
+
+  @UI.hidden: true
+  CategoriaTexto;
+
+  @UI: { lineItem:       [{ position: 60, label: 'Preço unitário' }],
+         identification: [{ position: 50, label: 'Preço unitário' }] }
+  @EndUserText.label: 'Preço unitário'
+  PrecoUnitario;
+
+  @UI: { identification: [{ position: 60, label: 'Moeda' }] }
+  @EndUserText.label: 'Moeda'
+  Currency;
+
+  @UI: { lineItem:       [{ position: 80, label: 'Ativo' }],
+         identification: [{ position: 70, label: 'Item ativo' }],
+         selectionField: [{ position: 50 }] }
+  @EndUserText.label: 'Ativo'
+  ItemAtivo;
+
+  @UI: { lineItem:   [{ position: 40, label: 'Qtde estoque' }],
+         fieldGroup: [{ qualifier: 'Estoque', position: 10, label: 'Quantidade em estoque' }] }
+  @EndUserText.label: 'Qtde estoque'
+  QtdeEstoque;
+
+  @UI: { lineItem:   [{ position: 45, label: 'Qtde reservada' }],
+         fieldGroup: [{ qualifier: 'Estoque', position: 20, label: 'Quantidade reservada' }] }
+  @EndUserText.label: 'Qtde reservada'
+  QtdeReservada;
+
+  @UI: { lineItem:       [{ position: 50, label: 'Qtde disponível', importance: #HIGH }],
+         fieldGroup:     [{ qualifier: 'Estoque', position: 30, label: 'Quantidade disponível' }],
+         selectionField: [{ position: 60 }] }
+  @EndUserText.label: 'Qtde disponível'
+  QtdeDisponivel;
+
+  @UI: { lineItem:       [{ position: 55, label: 'Status', criticality: 'StatusEstoqueCriticality', importance: #HIGH }],
+         fieldGroup:     [{ qualifier: 'Estoque', position: 40, label: 'Status do estoque',
+                            criticality: 'StatusEstoqueCriticality' }],
+         dataPoint:      { qualifier: 'Status', title: 'Status do estoque', criticality: 'StatusEstoqueCriticality' },
+         selectionField: [{ position: 40 }] }
+  @EndUserText.label: 'Status'
+  StatusEstoque;
+
+  @UI.hidden: true
+  StatusEstoqueTexto;
+
+  @UI.hidden: true
+  StatusEstoqueCriticality;
+
+  @UI.fieldGroup: [{ qualifier: 'Admin', position: 10, label: 'Criado em' }]
+  CreatedAt;
+  @UI.fieldGroup: [{ qualifier: 'Admin', position: 20, label: 'Criado por' }]
+  CreatedBy;
+  @UI.fieldGroup: [{ qualifier: 'Admin', position: 30, label: 'Alterado em' }]
+  LastChangedAt;
+  @UI.fieldGroup: [{ qualifier: 'Admin', position: 40, label: 'Alterado por' }]
+  LastChangedBy;
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

@@ -1,7 +1,0 @@
-@EndUserText.label: 'Gestão de Estoque'
-define service ZUI_PC_ESTOQUE {
-  expose ZC_PC_ITEM_APP            as Item;
-  expose ZI_PC_CATEGORIA_VH as CategoriaVH;
-  expose ZI_PC_STATUSEST_VH as StatusEstoqueVH;
-  expose I_CurrencyStdVH           as CurrencyVH;
-}

@@ -1,0 +1,18 @@
+@EndUserText.label: 'Pedidos de Compras'
+define service ZUI_PC_PEDIDOS_COMPRAS {
+  expose ZC_PC_PEDIDO_APP          as Pedido;
+  expose ZC_PC_ITEM_PEDIDO_APP     as ItemPedido;
+  expose ZC_PC_PAGAMENTO_APP       as Pagamento;
+  expose ZC_PC_PED_CLI_SNAP_APP    as ClienteSnapshot;
+  expose ZC_PC_PED_ITEM_SNAP_APP   as ItemSnapshot;
+  expose ZC_PC_REEMBOLSO_APP       as Reembolso;
+
+  expose ZC_PC_CLIENTE_VH   as ClienteVH;
+  expose ZC_PC_ENDERECO_VH  as EnderecoVH;
+  expose ZC_PC_ITEM_VH      as ItemVH;
+
+  expose ZC_PC_STATUSPED_VH as StatusPedidoVH;
+  expose ZC_PC_STATUSPAG_VH as StatusPagamentoVH;
+  expose ZC_PC_METODOPAG_VH as MetodoPagamentoVH;
+  expose ZC_PC_STATUSREEMB_VH as StatusReembolsoVH;
+}

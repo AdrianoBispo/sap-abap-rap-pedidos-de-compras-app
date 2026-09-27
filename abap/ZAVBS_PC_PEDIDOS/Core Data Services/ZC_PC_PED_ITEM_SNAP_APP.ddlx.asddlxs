@@ -1,0 +1,79 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Snapshot do item',
+                typeNamePlural: 'Snapshots dos itens',
+                title:          { type: #STANDARD, value: 'Nome' },
+                description:    { type: #STANDARD, value: 'Sku' } }
+}
+annotate entity ZC_PC_PED_ITEM_SNAP_APP with
+{
+  @UI.facet: [
+    { id: 'Historico', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'Dados congelados no encerramento (somente leitura)', position: 10 }
+  ]
+
+  @UI.hidden: true
+  SnapshotItemUUID;
+
+  @UI.hidden: true
+  PedidoUUID;
+
+  @UI.hidden: true
+  ItemPedidoUUID;
+
+  @UI.hidden: true
+  ItemUUID;
+
+  @UI: { lineItem: [{ position: 10, label: 'SKU' }],
+         identification: [{ position: 10, label: 'SKU' }] }
+  @EndUserText.label: 'SKU'
+  Sku;
+
+  @UI: { lineItem: [{ position: 20, label: 'Nome' }],
+         identification: [{ position: 20, label: 'Nome' }] }
+  @EndUserText.label: 'Nome'
+  Nome;
+
+  @UI: { identification: [{ position: 30, label: 'Descrição' }] }
+  @EndUserText.label: 'Descrição'
+  Descricao;
+
+  @UI: { lineItem: [{ position: 30, label: 'Categoria' }],
+         identification: [{ position: 40, label: 'Categoria' }] }
+  @EndUserText.label: 'Categoria'
+  Categoria;
+
+  @UI: { lineItem: [{ position: 40, label: 'Quantidade' }],
+         identification: [{ position: 50, label: 'Quantidade' }] }
+  @EndUserText.label: 'Quantidade'
+  Quantidade;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem: [{ position: 50, label: 'Preço unitário' }],
+         identification: [{ position: 60, label: 'Preço unitário' }] }
+  @EndUserText.label: 'Preço unitário'
+  PrecoUnitario;
+
+  @UI: { lineItem: [{ position: 60, label: 'Total' }],
+         identification: [{ position: 70, label: 'Total' }] }
+  @EndUserText.label: 'Total'
+  ValorTotal;
+
+  @UI.hidden: true
+  CreatedBy;
+
+  @UI: { identification: [{ position: 120, label: 'Gerado em' }] }
+  @EndUserText.label: 'Gerado em'
+  CreatedAt;
+
+  @UI.hidden: true
+  LastChangedBy;
+
+  @UI.hidden: true
+  LastChangedAt;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

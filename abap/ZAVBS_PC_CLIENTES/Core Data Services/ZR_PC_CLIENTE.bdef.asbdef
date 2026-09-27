@@ -1,0 +1,139 @@
+managed implementation in class zbp_r_pc_cliente unique;
+strict ( 2 );
+with draft;
+
+/* ---------------------------------------------------------------------
+   BO Cliente (root) + Endereço (child)
+   - Draft habilitado para cliente e endereço
+   - Autorização global: somente administrador altera (ZCL_PC_AUTH)
+   - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
+   --------------------------------------------------------------------- */
+define behavior for ZR_PC_CLIENTE alias Cliente
+persistent table zta_pc_cliente
+draft table zta_pc_cliente_d
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+authorization master ( global )
+{
+  create;
+  update;
+  delete ( features : instance, precheck );
+
+  association _Endereco { create; with draft; }
+
+  field ( numbering : managed, readonly ) ClienteUUID;
+  field ( readonly ) ScoreCliente, CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+  field ( mandatory ) Cpf, Nome, Email, Telefone, DataNascimento;
+
+  determination DefinirValoresIniciais on modify { create; }
+  determination NormalizarDados on modify { create; field Cpf, Telefone, Email; }
+
+  validation ValidarCpf on save { create; field Cpf; }
+  validation ValidarDadosObrigatorios on save { create; field Nome, Email, Telefone, DataNascimento; }
+  validation ValidarEmail on save { create; field Email; }
+  validation ValidarTelefone on save { create; field Telefone; }
+  validation ValidarDataNascimento on save { create; field DataNascimento; }
+  validation ValidarGenero on save { create; field Genero; }
+  validation ValidarFoto on save { create; field FotoCliente, FotoMimeType, FotoFileName; }
+
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Edit;
+  draft action Resume;
+  draft determine action Prepare
+  {
+    validation ValidarCpf;
+    validation ValidarDadosObrigatorios;
+    validation ValidarEmail;
+    validation ValidarTelefone;
+    validation ValidarDataNascimento;
+    validation ValidarGenero;
+    validation ValidarFoto;
+    validation Endereco~ValidarNumero;
+    validation Endereco~ValidarCep;
+    validation Endereco~ValidarCepUnico;
+  }
+
+  mapping for zta_pc_cliente
+  {
+    ClienteUUID        = cliente_uuid;
+    FotoCliente        = foto_cliente;
+    FotoMimeType       = foto_mime_type;
+    FotoFileName       = foto_file_name;
+    Cpf                = cpf;
+    Nome               = nome;
+    Email              = email;
+    Telefone           = telefone;
+    Genero             = genero;
+    DataNascimento     = data_nascimento;
+    ClienteAtivo       = cliente_ativo;
+    ScoreCliente       = score_cliente;
+    CreatedBy          = created_by;
+    CreatedAt          = created_at;
+    LastChangedBy      = last_changed_by;
+    LastChangedAt      = last_changed_at;
+    LocalLastChangedAt = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_ENDERECO alias Endereco
+persistent table zta_pc_endereco
+draft table zta_pc_enderec_d
+etag master LocalLastChangedAt
+lock dependent by _Cliente
+/* "dependent by _Cliente" foi trocado por handler próprio: a checagem de
+   autorização "dependent" não é resolvida pelo runtime ao montar as
+   propriedades transacionais (%update/%delete/%action) de uma LIST READ
+   direta em Endereco, e gera RAISE_SHORTDUMP / CX_RAP_HANDLER_NOT_IMPLEMENTED
+   ("Handler not implemented; Method: GLOBAL_AUTHORIZATION"). */
+authorization master ( global )
+{
+  update;
+  delete;
+
+  association _Cliente { with draft; }
+
+  field ( numbering : managed, readonly ) EnderecoUUID;
+  field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, Cidade, Uf, Estado,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+  /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município */
+  field ( features : instance ) Logradouro, Bairro;
+  field ( mandatory ) Cep, Numero;
+
+  action ( features : instance ) DefinirEnderecoPrincipal result [1] $self;
+
+  determination PreencherEnderecoViaCep on modify { create; field Cep; }
+  determination DefinirPrincipalInicial on modify { create; }
+
+  validation ValidarNumero on save { create; field Numero; }
+  validation ValidarCep on save { create; field Cep, Logradouro, Bairro, CepStatus; }
+  validation ValidarCepUnico on save { create; field Cep; }
+
+  side effects
+  {
+    field Cep affects field Logradouro, field Bairro, field Cidade, field Uf, field Estado,
+              field CepGeral, field CepStatus;
+  }
+
+  mapping for zta_pc_endereco
+  {
+    EnderecoUUID       = endereco_uuid;
+    ClienteUUID        = cliente_uuid;
+    Cep                = cep;
+    Logradouro         = logradouro;
+    Numero             = numero;
+    Complemento        = complemento;
+    Bairro             = bairro;
+    Cidade             = cidade;
+    Uf                 = uf;
+    Estado             = estado;
+    CepGeral           = cep_geral;
+    CepStatus          = cep_status;
+    EnderecoPrincipal  = endereco_principal;
+    CreatedBy          = created_by;
+    CreatedAt          = created_at;
+    LastChangedBy      = last_changed_by;
+    LastChangedAt      = last_changed_at;
+    LocalLastChangedAt = local_last_changed_at;
+  }
+}

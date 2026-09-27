@@ -43,7 +43,10 @@
   - [Cenários de teste](#cenários-de-teste)
   - [Testes automatizados](#testes-automatizados)
 - [Endereço do cliente: consulta de CEP](#endereço-do-cliente-consulta-de-cep)
-- [Dicionário de dados e tabelas draft](#dicionário-de-dados-e-tabelas-draft)
+- [Cadastro automático de endereço e CEP único](#cadastro-automático-de-endereço-e-cep-único)
+- [Reembolso de pedidos](#reembolso-de-pedidos)
+- [Tabelas draft](#tabelas-draft)
+- [Limitações conhecidas do release](#limitações-conhecidas-do-release)
 - [Observações sobre o Trial](#observações-sobre-o-trial)
 - [Histórico de versões](#histórico-de-versões)
 - [Documentação](#documentação)
@@ -57,10 +60,10 @@ Código-fonte de três aplicações **Fiori Elements (OData V4)** para o **SAP B
 (Trial)**: backend **RAP** em [`abap/`](abap/) e front-end **SAP Fiori Elements** em [`ui5/`](ui5/).
 
 | App                | O que gerencia                                                      |
-| ------------------ | ------------------------------------------------------------------- |
-| Gestão de Clientes | Clientes e seus endereços, com preenchimento automático via ViaCEP  |
-| Gestão de Estoque  | Itens (SKU, foto, dimensões) e quantidade disponível                |
-| Pedidos de Compras | Pedidos, itens, pagamento simulado e histórico (snapshots)          |
+| ------------------ | -------------------------------------------------------------------- |
+| Gestão de Clientes | Clientes e seus endereços, com preenchimento e cadastro automático via ViaCEP |
+| Gestão de Estoque  | Itens (SKU, foto, categoria, descrição) e quantidade disponível      |
+| Pedidos de Compras | Pedidos, itens, pagamento simulado, reembolso e histórico (snapshots) |
 
 > [!NOTE]
 > Os fontes foram escritos para ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com
@@ -96,15 +99,28 @@ Código-fonte de três aplicações **Fiori Elements (OData V4)** para o **SAP B
 
 - **Clientes**: CRUD com Draft, endereços como composição, ação *Definir endereço principal* e
   bloqueio de exclusão de cliente com pedido.
+- **Score do cliente**: campo somente leitura, atribuído aleatoriamente na criação do cliente e
+  exibido na Object Page como *Process Indicator* (barra de progresso).
 - **Endereço com ViaCEP**: campo CEP customizado (máscara `99999-999`) que consulta o ViaCEP e
-  preenche logradouro, bairro, cidade, UF e estado.
-- **Estoque**: cadastro de itens com SKU numerado automaticamente, foto e dimensões; controle de
-  quantidade disponível e reserva.
+  preenche logradouro, bairro, cidade, UF e estado. Um CEP ainda não cadastrado é gravado
+  automaticamente na tabela de endereços na primeira consulta; o CEP é chave da tabela (`not null`,
+  único por cliente).
+- **Estoque**: cadastro de itens com SKU numerado automaticamente, foto e categoria; controle de
+  quantidade disponível e reserva. Campos de peso e dimensões foram removidos — informações desse
+  tipo cabem na descrição do item.
+- **Precheck de estoque zerado**: ao incluir um item no pedido, um precheck do RAP bloqueia a
+  criação da linha se o item não tiver quantidade disponível, antes mesmo de qualquer determination
+  rodar.
 - **Pedidos**: itens criados *inline*, ciclo de status com ações **Confirmar**, **Simular
   pagamento**, **Aprovar / finalizar** e **Cancelar** (com motivo).
 - **Pagamento simulado** por cartão (VISA / Mastercard) sem persistir dados sensíveis — apenas
   bandeira, últimos 4 dígitos e máscara.
+- **Reembolso**: cancelar um pedido com pagamento aprovado abre um processo de reembolso
+  (`PROCESSAR_REEMBOLSO`) em vez de cancelar direto; ações **Aprovar reembolso** e **Rejeitar
+  reembolso** encerram o fluxo (ver [Reembolso de pedidos](#reembolso-de-pedidos)).
 - **Snapshots** do cliente e dos itens no momento do pedido (histórico imutável).
+- **Textos em vez de UUID**: os campos de cliente, endereço de entrega e item do pedido mostram
+  apenas o texto descritivo (`@UI.textArrangement: #TEXT_ONLY`); o UUID técnico fica oculto.
 - **Autorização** por atividade (`01` criar, `02` alterar, `06` excluir, `16` executar).
 - **Navegação entre apps** via semantic objects (cliente e item viram links no pedido).
 - **Concorrência** tratada: item em edição no Estoque impede a confirmação do pedido.
@@ -138,8 +154,8 @@ flowchart LR
     subgraph BTP["SAP BTP ABAP Environment — RAP"]
         SC["ZUI_PC_CLIENTES_O4"] --> BOC["BO Cliente + Endereço"]
         SE["ZUI_PC_ESTOQUE_O4"] --> BOI["BO Item"]
-        SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · snapshots"]
-        COMMON["01_ZPK_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists · ViaCEP"]
+        SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · reembolso · snapshots"]
+        COMMON["ZAVBS_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists"]
     end
 
     APPC --> SC
@@ -152,7 +168,7 @@ flowchart LR
     BOC --> COMMON
     BOI --> COMMON
     BOP --> COMMON
-    COMMON --> VIACEP[("API ViaCEP")]
+    BOC --> VIACEP[("API ViaCEP")]
 ```
 
 ### Fluxo do pedido
@@ -166,8 +182,10 @@ stateDiagram-v2
     AGUARDANDO_PAGAMENTO --> AGUARDANDO_APROVACAO: Pagamento aprovado
     AGUARDANDO_APROVACAO --> FINALIZADO: Aprovar / finalizar
     CRIADO --> CANCELADO: Cancelar
-    AGUARDANDO_PAGAMENTO --> CANCELADO: Cancelar
-    AGUARDANDO_APROVACAO --> CANCELADO: Cancelar
+    AGUARDANDO_PAGAMENTO --> CANCELADO: Cancelar (sem pagamento aprovado)
+    AGUARDANDO_APROVACAO --> PROCESSAR_REEMBOLSO: Cancelar (pagamento aprovado)
+    PROCESSAR_REEMBOLSO --> CANCELADO: Aprovar reembolso
+    PROCESSAR_REEMBOLSO --> AGUARDANDO_APROVACAO: Rejeitar reembolso
     FINALIZADO --> [*]
     CANCELADO --> [*]
 ```
@@ -179,13 +197,13 @@ stateDiagram-v2
 ```text
 .
 ├── abap/                               backend ABAP Cloud / RAP
-│   └── ZPK_PC_PEDIDOS_COMPRAS          pacote principal (software component ZLOCAL no trial)
-│       ├── 01_ZPK_PC_COMMON            dicionário (domínios, elementos de dados), constantes, mensagens,
-│       │                               utilitários, ViaCEP, autorização, numeração, CodeLists, setup
-│       ├── 02_ZPK_PC_CLIENTES          BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
-│       ├── 03_ZPK_PC_ESTOQUE           BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-│       └── 04_ZPK_PC_PEDIDOS           BO Pedido (+ itens, pagamento, snapshots), pagamento simulado,
-│                                       serviço ZUI_PC_PEDIDOS_COMPRAS
+│   └── ZAVBS_PEDIDOS_COMPRAS           pacote principal (subpacote de ZAVBS_ESTUDOS no trial)
+│       ├── ZAVBS_PC_COMMON             constantes, mensagens, utilitários, autorização,
+│       │                               numeração, CodeLists, setup
+│       ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
+│       ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
+│       └── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens, pagamento, reembolso, snapshots),
+│                                       pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
 │
 ├── ui5/                                front-end Fiori Elements
 │   ├── clientes/                       app Gestão de Clientes (com extensão do campo CEP)
@@ -200,24 +218,31 @@ stateDiagram-v2
 └── README.md
 ```
 
+> [!NOTE]
+> A partir da v1.5 o backend não usa mais domínios/elementos de dados/estruturas próprios: as
+> tabelas usam tipos técnicos embutidos do ABAP (`abap.char`, `abap.cuki`, `xfeld`, etc.), e os
+> pacotes seguem o prefixo `ZAVBS_` (em vez do `ZPK_` das versões anteriores) para refletir o
+> pacote real no sistema onde este projeto foi desenvolvido.
+
 ### Convenção de arquivos
 
 Um arquivo por objeto ADT:
 
 | Extensão                 | Objeto no ADT                                                    |
-| ------------------------ | ---------------------------------------------------------------- |
-| `*.doma`                 | Domain                                                           |
-| `*.dtel`                 | Data Element                                                     |
-| `*.tabl.ddl`             | Database Table ou Structure (editor DDL)                         |
-| `*.ddls.cds`             | Data Definition (CDS view entity / projection / abstract entity) |
-| `*.ddlx.cds`             | Metadata Extension                                               |
+| ------------------------ | ------------------------------------------------------------------ |
+| `*.abap` (em `Dictionary/`) | Database Table (editor de código-fonte)                        |
+| `*.ddls.asddls`          | Data Definition (CDS view entity / projection / abstract entity) |
+| `*.ddlx.asddlxs`         | Metadata Extension                                               |
 | `*.bdef.asbdef`          | Behavior Definition                                              |
 | `*.srvd.srvdsrv`         | Service Definition                                               |
+| `*.srvb.xml`             | Service Binding (OData V4)                                       |
 | `*.clas.abap`            | Classe global (aba *Global Class*)                               |
 | `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools)               |
 | `*.clas.testclasses.abap`| Aba *Test Classes* da mesma classe (ABAP Unit)                   |
 | `*.intf.abap`            | Interface                                                        |
-| `zpc_msg.msag.csv`       | Conteúdo da Message Class ZPC_MSG (criar manualmente)            |
+| `*.doma.xml`             | Domain (só o Number Length Domain `ZPC_NR_NUMC10`)                |
+| `*.susob.xml`            | Authorization Object                                             |
+| `ZPC_MSG.msagn.xml`      | Message Class                                                    |
 
 ---
 
@@ -235,13 +260,16 @@ Um arquivo por objeto ADT:
 
 ### Objetos criados manualmente
 
-Estes objetos não têm código-fonte no repositório:
+Estes objetos não têm código-fonte editável diretamente no repositório (ou exigem um passo manual
+no ADT):
 
-1. **Message Class `ZPC_MSG`** – cadastrar as mensagens 001–047 de
-   `01_ZPK_PC_COMMON/zpc_msg.msag.csv` (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
+1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
+   (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
-3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto. Os intervalos 01
-   (pedido) e 02 (SKU) são criados pela classe `ZCL_PC_SETUP`.
+3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
+   Buffering** habilitado (obrigatório: sem buffer, `GET NUMBER` dispara `UPDATE` síncrono em
+   `NRIV`, proibido dentro de uma transação RAP). Os intervalos 01 (pedido) e 02 (SKU) são criados
+   pela classe `ZCL_PC_SETUP`.
 4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` e `ZPC_PEDIDO`.
 5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
    `ZUI_PC_PEDIDOS_COMPRAS_O4` → **Publish**.
@@ -256,41 +284,37 @@ Estes objetos não têm código-fonte no repositório:
 9. **Índices secundários** (garantia de unicidade no banco — a validation sozinha não protege
    contra duas ativações simultâneas):
 
-   | Tabela            | Campos         | Único |
-   | ----------------- | -------------- | :---: |
-   | `ZTA_PC_CLIENTE`  | `CPF`          |  sim  |
-   | `ZTA_PC_ITEM`     | `SKU`          |  sim  |
-   | `ZTA_PC_ITEM_PED` | `ITEM_UUID`    |  não  |
-   | `ZTA_PC_PEDIDO`   | `CLIENTE_UUID` |  não  |
-   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID` |  não  |
+   | Tabela            | Campos                | Único |
+   | ----------------- | ---------------------- | :---: |
+   | `ZTA_PC_CLIENTE`  | `CPF`                  |  sim  |
+   | `ZTA_PC_ITEM`     | `SKU`                  |  sim  |
+   | `ZTA_PC_ITEM_PED` | `ITEM_UUID`            |  não  |
+   | `ZTA_PC_PEDIDO`   | `CLIENTE_UUID`         |  não  |
+   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID`, `CEP`  | chave |
 
-   No ADT: abrir a tabela → *Add Index* (ou *New → ABAP Dictionary → Database Index*, conforme o
-   release). Os três últimos são de desempenho (feature control e checagens de vínculo).
+   `ZTA_PC_ENDERECO` declara `CEP` como campo adicional da chave primária da tabela (`not null`),
+   garantindo que a combinação cliente + CEP seja única no próprio banco, além da validation
+   `ValidarCepUnico`. No ADT: abrir a tabela → *Add Index* para os demais casos de desempenho.
 
 ### Ordem de criação e ativação
 
 1. Pacotes e objetos manuais 1–4.
-2. Dicionário ([ver seção](#dicionário-de-dados-e-tabelas-draft)): domínios `ZDOM_PC_*` → elementos
-   de dados `ZDE_PC_*` → estruturas `ZS_PC_*`.
-3. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
-4. **Todas** as tabelas ativas `ZTA_*` (inclusive `ZTA_PC_CODELIST`).
-5. CDS base: `ZI_PC_CODELIST` e as 6 value helps de CodeList → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
-   (ativar juntas) → `ZR_PC_ITEM` → as 5 views `ZR_PC_*` do pedido (ativar juntas).
-6. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VALUEHELP`. A custom entity
-   `ZI_PC_CEP_LOOKUP` e a classe `ZCL_PC_CEP_LOOKUP_PROVIDER` referenciam uma à outra: ativar as
-   duas juntas.
-7. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o
-   nome declarado em `draft table` de cada BDEF `ZR_*`
-   ([nomes aqui](#tabelas-draft)).
-8. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
-9. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (colar *Global Class* + *Local Types*)
+2. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
+3. **Todas** as tabelas ativas (pasta `Dictionary/`, inclusive `ZTA_PC_CODELIST`).
+4. CDS base: `ZR_PC_CODELIST` e as 6 value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/
+   `ZR_PC_ENDERECO` (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo
+   `ZR_PC_REEMBOLSO` (ativar juntas).
+5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VH` (inclusive `ZC_PC_CEP_VH`, que expõe os
+   CEPs já cadastrados).
+6. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o
+   nome declarado em `draft table` de cada BDEF `ZR_*` ([nomes aqui](#tabelas-draft)).
+7. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
+8. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (colar *Global Class* + *Local Types*)
    → BDEF de projeção `ZC_*`.
-10. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_SETUP`.
-11. Service Definitions → Service Bindings (publicar).
-12. Executar `ZCL_PC_SETUP` (**F9**): cria intervalos de numeração, CodeLists e dados de
-    demonstração, e marca como consultados (`CONSULTED_CEP = CEP`) os endereços gravados antes da
-    v1.3.
-13. Front-end: ver [Front-end Fiori](#front-end-fiori).
+9. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_SETUP`.
+10. Service Definitions → Service Bindings (publicar).
+11. Executar `ZCL_PC_SETUP` (**F9**): cria intervalos de numeração, CodeLists e dados de demonstração.
+12. Front-end: ver [Front-end Fiori](#front-end-fiori).
 
 > [!IMPORTANT]
 > Há dependências cruzadas intencionais (ex.: o BO Cliente consulta pedidos para bloquear
@@ -304,10 +328,10 @@ Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serv
 está em [`ui5/README.md`](ui5/README.md).
 
 | App                | Pasta          | Serviço                     | Páginas                            | Tile (semantic object)   | BSP            |
-| ------------------ | -------------- | --------------------------- | ---------------------------------- | ------------------------ | -------------- |
-| Gestão de Clientes | `ui5/clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                 | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
-| Gestão de Estoque  | `ui5/estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                               | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
-| Pedidos de Compras | `ui5/pedidos`  | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico de itens | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
+| ------------------ | -------------- | --------------------------- | ----------------------------------- | ------------------------ | -------------- |
+| Gestão de Clientes | `ui5/clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                  | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
+| Gestão de Estoque  | `ui5/estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                                | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
+| Pedidos de Compras | `ui5/pedidos`  | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico / Reembolso | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 
 Em cada app, aponte o `url` do backend em `ui5.yaml` e `ui5-deploy.yaml` (e em
 `pedidos/ui5-launchpad.yaml`) para o seu sistema: `https://<id>.abap.<região>.hana.ondemand.com`.
@@ -318,7 +342,7 @@ npm install
 npm start                   # a app no launchpad local
 npm run start-launchpad     # (só pedidos) launchpad local com os três tiles e navegação entre apps
 npm run lint && npm run build
-npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZPK_PC_* correspondente
+npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* correspondente
 ```
 
 **Depois do deploy:** incluir `ZPC_*_UI5R` nos Business Catalogs `ZPC_BC_*` e publicar. Montar um
@@ -337,14 +361,16 @@ sistema BTP.
 
 Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 
-| Cenário              | Como testar                                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Pagamento aprovado   | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123`                                      |
-| Pagamento recusado   | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO)                                        |
-| Mastercard           | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`)                                                         |
-| Estoque insuficiente | Pedir mais unidades que a *Qtde disponível* do item                                                          |
-| Concorrência         | Deixar o item em edição (draft) na app de Estoque e confirmar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
-| Exclusão de cliente  | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`)                                         |
+| Cenário                | Como testar                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Pagamento aprovado     | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123`                                      |
+| Pagamento recusado     | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO)                                        |
+| Mastercard             | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`)                                                         |
+| Estoque insuficiente   | Precheck bloqueia ao incluir um item com quantidade disponível zerada no pedido                              |
+| Concorrência           | Deixar o item em edição (draft) na app de Estoque e confirmar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
+| Exclusão de cliente    | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`)                                         |
+| CEP duplicado          | Cadastrar dois endereços com o mesmo CEP para o **mesmo** cliente → bloqueado (mensagem 047)                 |
+| Reembolso              | Cancelar um pedido com pagamento aprovado → status `PROCESSAR_REEMBOLSO`; aprovar ou rejeitar o reembolso    |
 
 Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → **Simular pagamento** →
 **Aprovar / finalizar** (ou **Cancelar pedido** com motivo).
@@ -352,9 +378,14 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → *
 ### Testes automatizados
 
 | Tipo              | Onde                                                                    | Como rodar                     |
-| ----------------- | ----------------------------------------------------------------------- | ------------------------------ |
-| ABAP Unit         | `ZCL_PC_UTIL` e `ZCL_PC_PAGAMENTO_SIM` (`*.clas.testclasses.abap`)      | `Ctrl+Shift+F10` no ADT        |
-| QUnit (extensão)  | `ui5/clientes/webapp/test/`                                             | abrir `testsuite.qunit.html`   |
+| ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
+| ABAP Unit         | `ZCL_PC_UTIL` e `ZCL_PC_PAGAMENTO_SIM` (`*.clas.testclasses.abap`)      | `Ctrl+Shift+F10` no ADT         |
+| QUnit (extensão)  | `ui5/clientes/webapp/test/`                                             | abrir `testsuite.qunit.html`    |
+
+As classes de teste de precheck/validação usadas para verificar os ajustes desta rodada (item sem
+estoque, CEP único) foram temporárias e já foram removidas após a confirmação — `ZCL_PC_UTIL`
+mantém apenas seus 3 conjuntos de teste permanentes (CPF/telefone, e-mail/imagem, estoque/endereço),
+todos passando (28/28).
 
 ---
 
@@ -362,7 +393,7 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → *
 
 O CRUD do Endereço (filho de composição de `Cliente`) segue a mesma lógica da aplicação
 [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep). O BO não
-chama o ViaCEP: a consulta é feita por uma custom entity que a UI lê.
+chama o ViaCEP diretamente: a consulta é feita por uma custom entity que a UI lê.
 
 ```mermaid
 sequenceDiagram
@@ -387,7 +418,7 @@ sequenceDiagram
 1. Na Object Page do Endereço, o campo **CEP** do formulário *Endereço* é um campo customizado da
    extensão SAPUI5 (`ui5/clientes/webapp/ext/`, registrado em `controlConfiguration` da
    Identification, antes do Logradouro). Ele aplica a máscara `99999-999` e grava o CEP normalizado
-   no draft.
+   no draft. O value help `ZC_PC_CEP_VH` sugere CEPs já cadastrados na tabela de endereços.
 2. A determination `LimparDadosCep` (on modify, campo `Cep`) apaga logradouro, complemento, bairro,
    cidade, UF, estado, `CepGeral`, `CepStatus` e `ConsultedCep` sempre que o CEP deixa de ser o
    consultado.
@@ -410,10 +441,10 @@ feature control (editáveis e obrigatórios só para CEP geral). Complemento e n
 - **Cardinalidade da ação.** Toda chave de `AplicarDadosCep` precisa sair em `result` ou em
   `failed`. Uma chave que não aparece em nenhum dos dois faz o runtime OData abortar com
   `RAISE_SHORTDUMP`. O caso típico é o draft ativado ou descartado com a chamada ainda em voo
-  (mensagem 047).
+  (mensagem 042).
 - **Rajada de requisições.** O handler usa debounce de 700 ms e um token de sequência que descarta
   respostas fora de ordem. O backend ainda confere se o resultado corresponde ao CEP gravado no
-  draft (mensagem 042).
+  draft.
 - **`@UI.hidden` não é cosmético.** `CepStatus` e `ConsultedCep` ficam fora do `$select` da Object
   Page. O handler usa `requestProperty()` para lê-los.
 - **CEP na tabela de endereços.** A coluna "CEP" da tabela do cliente é `ConsultedCep`, que é
@@ -426,82 +457,98 @@ feature control (editáveis e obrigatórios só para CEP geral). Complemento e n
 
 ---
 
-## Dicionário de dados e tabelas draft
+## Cadastro automático de endereço e CEP único
 
-### Domínios, elementos de dados e estruturas
+Além da consulta ao ViaCEP, dois ajustes de dados garantem que cada endereço registrado seja único
+e reaproveitável:
 
-Todas as tabelas ativas usam elementos de dados próprios. Os campos de negócio ficam numa estrutura
-incluída na tabela:
+- **Registro automático.** Ao consultar um CEP que ainda não existe na tabela `ZTA_PC_ENDERECO`
+  para nenhum cliente, o endereço retornado pelo ViaCEP é persistido normalmente pelo próprio fluxo
+  de criação do Endereço (`AplicarDadosCep` + `Salvar`) — não é necessário nenhum cadastro manual
+  posterior; da próxima vez que qualquer cliente consultar o mesmo CEP, o value help `ZC_PC_CEP_VH`
+  já o sugere.
+- **CEP como chave, único por cliente.** `ZTA_PC_ENDERECO` declara `cep` como campo adicional da
+  chave primária (`abap.char(8) not null`), ao lado de `client` e `endereco_uuid`. A CDS view
+  `ZR_PC_ENDERECO` continua expondo apenas `EnderecoUUID` como chave de negócio — a chave técnica
+  extra não afeta a associação com `Cliente` nem o draft.
+- **Unicidade por cliente, não global.** A validation `ValidarCepUnico` (on save, em
+  `ZR_PC_CLIENTE.bdef.asbdef`, bloco `Endereco`) impede que o **mesmo cliente** tenha dois endereços
+  com o mesmo CEP, mas permite que **clientes diferentes** compartilhem um CEP (ex.: mesmo edifício
+  ou condomínio). A validation lê os irmãos do endereço via `READ ENTITIES ... BY \_Endereco` (não
+  SQL direto), para também ver endereços ainda em draft na mesma sessão de edição. A mensagem
+  047 (`CEP_DUPLICADO_CLIENTE`) é reportada quando a regra é violada.
 
-| Objeto           | Onde                                        | Quantidade |
-| ---------------- | ------------------------------------------- | ---------- |
-| `ZDOM_PC_*`      | `01_ZPK_PC_COMMON/Dominios`                 | 45         |
-| `ZDE_PC_*`       | `01_ZPK_PC_COMMON/Elementos de Dados`       | 64         |
-| `ZS_PC_ADMIN`    | `01_ZPK_PC_COMMON/Estruturas`               | 1          |
-| `ZS_PC_<tabela>` | pasta `Estruturas` do pacote dono da tabela | 9          |
+---
 
-Cada tabela declara `client` e a chave campo a campo e depois faz `include zs_pc_<tabela>` e
-`include zs_pc_admin`. `ZTA_PC_CODELIST` não tem campos administrativos. A chave não pode vir do
-include: uma `key` dentro da estrutura deixaria a chave primária só com `CLIENT`.
+## Reembolso de pedidos
 
-<details>
-<summary><b>Regras seguidas</b></summary>
+Quando o **Cancelar pedido** é acionado sobre um pedido cujo pagamento já está `APROVADO`, o
+cancelamento não é direto: o backend abre um processo de reembolso para preservar o histórico
+financeiro.
 
-- **Mesmos tipos técnicos.** Cada coluna mantém nome, posição e tipo técnico anteriores. A ativação
-  das tabelas não exige conversão de banco.
-- **Minúsculas.** Todo domínio `CHAR` tem *Lowercase* marcado. Sem essa flag, o RAP publica o campo
-  como `IsUpperCase` e o Fiori converteria e-mail, nome, logradouro e tipo MIME para maiúsculas.
-- **Tipos padrão mantidos.** `abap_boolean` (exposto como `Edm.Boolean`), `timestampl`
-  (`Edm.DateTimeOffset`) e os `abp_*` dos campos administrativos continuam como estão. Um domínio
-  próprio faria o OData perder esses tipos.
-- **Valores fixos.** Os domínios de status, método, bandeira, motivo do snapshot, CodeList e
-  criticidade repetem os valores de `ZIF_PC_CONSTANTS`. Gênero e categoria não têm valores fixos:
-  vêm da tabela `ZTA_PC_CODELIST`.
+1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
+   cria uma linha em `ZR_PC_REEMBOLSO` (status `PENDENTE`, guardando `StatusPedidoAnterior`) e move
+   o Pedido para `PROCESSAR_REEMBOLSO`, mantendo a reserva de estoque.
+2. Ação **AprovarReembolso**: libera o estoque reservado, monta os snapshots de cliente/itens, marca
+   o Reembolso como `APROVADO` e o Pedido como `CANCELADO` (grava `DataCancelamento`).
+3. Ação **RejeitarReembolso** (exige `MotivoDecisao`): marca o Reembolso como `REJEITADO` e devolve
+   o Pedido ao `StatusPedidoAnterior` gravado no Reembolso, limpando `MotivoCancelamento`.
 
-Cada arquivo `.doma`/`.dtel` traz no cabeçalho os parâmetros do wizard do ADT (*New → Dictionary →
-Domain / Data Element*): tipo, tamanho, *Lowercase*, valores fixos e rótulos. Use o wizard se o seu
-release não tiver editor de código-fonte para esses objetos.
+Ambas as ações só ficam disponíveis quando `StatusPedido = PROCESSAR_REEMBOLSO`, usando a mesma
+regra de autorização das demais ações de ciclo de vida do pedido.
 
-</details>
+---
 
-### Tabelas draft
+## Tabelas draft
 
 Tabelas draft seguem o nome da tabela ativa com o sufixo `_d`. O ABAP Dictionary limita nomes de
-tabela a 16 caracteres, então cinco delas usam o nome da ativa abreviado:
+tabela a 16 caracteres, então algumas usam o nome da ativa abreviado — e, nesse caso, o nome de
+coluna dentro da tabela draft precisa ser o nome **completo** do elemento CDS (não abreviado):
 
 | Tabela ativa       | Tabela draft       | Entidade              |
-| ------------------ | ------------------ | --------------------- |
-| `ZTA_PC_CLIENTE`   | `ZTA_PC_CLIENTE_D` | `ZR_PC_CLIENTE`       |
-| `ZTA_PC_ENDERECO`  | `ZTA_PC_ENDER_D`   | `ZR_PC_ENDERECO`      |
-| `ZTA_PC_ITEM`      | `ZTA_PC_ITEM_D`    | `ZR_PC_ITEM`          |
-| `ZTA_PC_PEDIDO`    | `ZTA_PC_PEDIDO_D`  | `ZR_PC_PEDIDO`        |
-| `ZTA_PC_ITEM_PED`  | `ZTA_PC_ITPED_D`   | `ZR_PC_ITEM_PEDIDO`   |
-| `ZTA_PC_PAGAMENTO` | `ZTA_PC_PAGTO_D`   | `ZR_PC_PAGAMENTO`     |
-| `ZTA_PC_SNAP_CLI`  | `ZTA_PC_SNPCLI_D`  | `ZR_PC_PED_CLI_SNAP`  |
-| `ZTA_PC_SNAP_ITM`  | `ZTA_PC_SNPITM_D`  | `ZR_PC_PED_ITEM_SNAP` |
+| ------------------ | ------------------ | ---------------------- |
+| `ZTA_PC_CLIENTE`   | `ZTA_PC_CLIENTE_D` | `ZR_PC_CLIENTE`        |
+| `ZTA_PC_ENDERECO`  | `ZTA_PC_ENDEREC_D` | `ZR_PC_ENDERECO`       |
+| `ZTA_PC_ITEM`      | `ZTA_PC_ITEM_D`    | `ZR_PC_ITEM`           |
+| `ZTA_PC_PEDIDO`    | `ZTA_PC_PEDIDO_D`  | `ZR_PC_PEDIDO`         |
+| `ZTA_PC_ITEM_PED`  | `ZTA_PC_ITPED_D`   | `ZR_PC_ITEM_PEDIDO`    |
+| `ZTA_PC_PAGAMENTO` | `ZTA_PC_PAGTO_D`   | `ZR_PC_PAGAMENTO`      |
+| `ZTA_PC_REEMBOLSO` | `ZTA_PC_REEMB_D`   | `ZR_PC_REEMBOLSO`      |
+| `ZTA_PC_SNAP_CLI`  | `ZTA_PC_SNPCLI_D`  | `ZR_PC_PED_CLI_SNAP`   |
+| `ZTA_PC_SNAP_ITM`  | `ZTA_PC_SNPITM_D`  | `ZR_PC_PED_ITEM_SNAP`  |
 
-<details>
-<summary><b>Migração de um sistema que já tinha as tabelas <code>ZD_PC_*</code></b></summary>
+---
 
-1. Ative ou descarte todos os rascunhos abertos nas três apps. Os drafts ficam nas tabelas antigas
-   e não são copiados.
-2. Ative as BDEFs `ZR_PC_CLIENTE`, `ZR_PC_ITEM` e `ZR_PC_PEDIDO` com os novos nomes e gere cada
-   tabela draft pelo *quick fix*.
-3. Ative os behavior pools `ZBP_R_PC_CLIENTE` e `ZBP_R_PC_ITEM`. Eles leem `ZTA_PC_PEDIDO_D` e
-   `ZTA_PC_ITPED_D` para detectar pedidos ainda em rascunho.
-4. Apague as tabelas `ZD_PC_*` antigas.
+## Limitações conhecidas do release
 
-</details>
+Dois ajustes pedidos não puderam ser concluídos neste release do SAP BTP ABAP Trial — são
+limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
+
+- **Ícone/imagem no List Report.** Nenhum valor de enum válido para exibir imagem ou ícone via
+  `@UI.lineItem` (`#FOR_IMAGE`, `#IMAGE`) foi aceito pelo ADT neste release para `FotoItem`
+  (`ZC_PC_ITEM_APP`) e `FotoCliente` (`ZC_PC_CLIENTE_APP`). Os campos continuam expostos como antes
+  (sem anotação de tipo especial na lista); os dados da foto em si (upload, MIME, exibição na
+  Object Page) não foram afetados.
+- **Ocultar seções da Object Page por status.** A ideia era usar `@UI.facet: [{ hidden: 'Campo' }]`
+  para esconder dinamicamente as seções de snapshot/histórico quando o pedido está ativo
+  (`CRIADO`/`AGUARDANDO_PAGAMENTO`/`AGUARDANDO_APROVACAO`) e as seções de itens/pagamento ativos
+  quando o pedido está `FINALIZADO`/`CANCELADO`. Nenhum campo booleano testado — nem mesmo o campo
+  `ItemAtivo`, já existente e funcional em outro contexto — foi aceito por `hidden:` neste release
+  (erro "must be of type 'Boolean'" mesmo com CDS `abap.boolean`/`abap_boolean`/predicado). Os
+  campos `PedidoEncerrado` e `PedidoAtivoSemHistorico` foram implementados como determination (on
+  modify) e ficam disponíveis como campos visíveis de informação na Object Page do Pedido — a
+  lógica de status está pronta e correta, só não há ocultação automática de facet nesta versão do
+  Trial.
 
 ---
 
 ## Observações sobre o Trial
 
 > [!WARNING]
-> `ZIF_PC_CONSTANTS=>c_modo_trial` vem como **`abap_false` (seguro por padrão)**: todas as
-> operações exigem os objetos de autorização `ZPC_ADMIN` / `ZPC_PEDIDO`. No trial compartilhado,
-> onde não é possível manter Business Roles, altere para `abap_true` **apenas nesse sistema** — com
-> `abap_true` qualquer usuário com acesso ao serviço age como administrador.
+> `ZIF_PC_CONSTANTS=>c_modo_trial` está como **`abap_true`** neste sistema trial compartilhado, onde
+> não é possível manter Business Roles: com `abap_true` qualquer usuário com acesso ao serviço age
+> como administrador. Em um sistema com Business Roles configuráveis, mude para `abap_false`
+> (seguro por padrão: todas as operações exigem os objetos de autorização `ZPC_ADMIN` / `ZPC_PEDIDO`).
 
 - `ZCL_PC_AUTH` verifica a atividade correspondente a cada operação: `01` criar, `02` alterar,
   `06` excluir, `16` executar (actions do pedido).
@@ -521,16 +568,34 @@ tabela a 16 caracteres, então cinco delas usam o nome da ativa abreviado:
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v1.5   | Score com Process Indicator, precheck de estoque zerado, remoção de peso/dimensões do item, cadastro automático de endereço, CEP único por cliente, textos em vez de UUID; sincronização do repositório com os pacotes `ZAVBS_*` (sem dicionário próprio) e o fluxo de reembolso |
 | v1.4   | Dicionário de dados próprio (domínios, elementos de dados, estruturas) e novos nomes das tabelas draft                   |
 | v1.3   | Consulta de CEP do endereço movida para custom entity + campo customizado SAPUI5                                         |
 | v1.2   | Front-end Fiori Elements e ajustes de backend para navegação entre apps                                                  |
 | v1.1   | Correções do code review                                                                                                 |
 
 <details>
+<summary><b>v1.5 — Ajustes de UX, integridade de dados e reembolso</b></summary>
+
+| Ajuste                                                                                          | Objetos                                                                 |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `ScoreCliente` somente leitura, valor aleatório na criação, exibido como Process Indicator       | `ZBP_R_PC_CLIENTE`, `ZR_PC_CLIENTE`, `ZC_PC_CLIENTE_APP` (MDE)          |
+| Precheck de item sem estoque disponível ao incluir item no pedido                                | `ZR_PC_PEDIDO` (association `_Itens`), `ZBP_R_PC_PEDIDO` (`lhc_pedido`) |
+| Remoção de Peso/Altura/Largura/Profundidade do item e do snapshot de item                        | `ZR_PC_ITEM`, `ZR_PC_PED_ITEM_SNAP`, tabelas e projeções correspondentes |
+| Cadastro automático de endereço ao consultar CEP novo; CEP como chave `not null`, único por cliente | `ZTA_PC_ENDERECO`, `ZR_PC_CLIENTE` (validation `ValidarCepUnico`), `ZBP_R_PC_CLIENTE` |
+| Campos de status calculados (`PedidoEncerrado`, `PedidoAtivoSemHistorico`) para apoiar a
+personalização da Object Page (ver [limitações](#limitações-conhecidas-do-release))              | `ZTA_PC_PEDIDO`, `ZR_PC_PEDIDO`, `ZBP_R_PC_PEDIDO`                       |
+| UUID oculto em favor do texto descritivo em Cliente, Endereço e Item do Pedido                   | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` (MDE, `@UI.textArrangement`) |
+| Correção do value help `ZC_PC_CEP_VH` (aggregate `MAX()` com `@Search.defaultSearchElement`)      | `ZC_PC_CEP_VH`                                                          |
+| Fluxo de reembolso (`Reembolso`, `AprovarReembolso`, `RejeitarReembolso`)                          | `ZR_PC_REEMBOLSO`, `ZBP_R_PC_PEDIDO`, `ZC_PC_REEMBOLSO_APP`, `ZC_PC_STATUSREEMB_VH` |
+
+</details>
+
+<details>
 <summary><b>v1.1 — Correções do code review</b></summary>
 
 | #   | Correção                                                                                                        | Objetos                                                                       |
-| --- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | B1  | `/UI2/CL_JSON` (API não liberada) substituída por extração via PCRE; alternativa XCO documentada no cabeçalho   | `ZCL_PC_VIACEP`                                                               |
 | B2  | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
 | B3  | Toda chamada EML avalia `FAILED`/`REPORTED`; compensação de reserva e snapshots propagam erro                   | 3 behavior pools                                                              |
@@ -546,7 +611,7 @@ tabela a 16 caracteres, então cinco delas usam o nome da ativa abreviado:
 <summary><b>v1.2 — Ajustes no backend feitos para o front-end</b></summary>
 
 | Ajuste                                                                                                                                                                                                           | Objetos                                     |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | Semantic objects para navegação entre apps: `ZPCCliente` em `ClienteUUID`/`NomeCliente` e `ZPCItemEstoque` em `ItemUUID`/`Sku`                                                                                   | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` |
 | Seções *Pagamento* e *Histórico - cliente* passam de `#LINEITEM_REFERENCE` para `#IDENTIFICATION_REFERENCE`: as composições são `[0..1]`, e Fiori Elements V4 só monta tabela para navegações de cardinalidade N | `ZC_PC_PEDIDO_APP` (MDE)                    |
 

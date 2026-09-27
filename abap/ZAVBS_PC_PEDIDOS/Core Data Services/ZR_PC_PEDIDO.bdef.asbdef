@@ -1,0 +1,315 @@
+managed implementation in class zbp_r_pc_pedido unique;
+strict ( 2 );
+with draft;
+
+/* ---------------------------------------------------------------------
+   BO Pedido de Compra
+   - Draft somente para criação/edição no status CRIADO
+   - Ações de ciclo de vida executadas apenas sobre a instância ATIVA
+     (disponibilidade por status = feature control, não autorização)
+   - Pagamento e snapshots: filhos de composição, criados apenas
+     internamente pelas actions (sem create/update/delete externos).
+     Como o BO é draft, as tabelas draft técnicas ZTA_PC_SNPCLI_D e
+     ZTA_PC_SNPITM_D são obrigatórias e permanecem vazias.
+   - Estoque movimentado via EML nas actions do BO Item (mesma LUW)
+   --------------------------------------------------------------------- */
+define behavior for ZR_PC_PEDIDO alias Pedido
+persistent table zta_pc_pedido
+draft table zta_pc_pedido_d
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+authorization master ( global )
+{
+  create;
+  update;
+  delete ( features : instance );
+
+  association _Itens           { create ( features : instance, precheck ); with draft; }
+  association _Pagamento       { internal create; with draft; }
+  association _ClienteSnapshot { internal create; with draft; }
+  association _ItensSnapshot   { internal create; with draft; }
+  association _Reembolsos      { internal create; with draft; }
+
+  field ( numbering : managed, readonly ) PedidoUUID;
+  field ( readonly ) NumeroPedido, EnderecoUUID, EnderecoPrincipalCompleto, StatusPedido, StatusPagamento,
+                     Currency, ValorTotal, DataFinalizacao, MotivoCancelamento, DataCancelamento, CanceladoPor,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+  field ( mandatory ) ClienteUUID;
+
+  action ( features : instance ) ConfirmarPedido result [1] $self;
+  action ( features : instance ) SimularPagamento parameter ZPC_A_PAGAMENTO_INPUT result [1] $self;
+  action ( features : instance ) AprovarPedido result [1] $self;
+  action ( features : instance ) CancelarPedido parameter ZPC_A_CANCELAMENTO_INPUT result [1] $self;
+  action ( features : instance ) AprovarReembolso  parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
+  action ( features : instance ) RejeitarReembolso parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
+
+  internal action RecalcularTotal;
+
+  determination DefinirStatusInicial on modify { create; }
+  determination AtualizarEndereco on modify { field ClienteUUID; }
+  /* Numeração antecipada (early numbering): ZPC_NR não é bufferizado, e o
+     GET NUMBER faz um COMMIT síncrono na tabela NRIV. Rodar isso na fase
+     on save viola a restrição de transação do RAP (Late Save phase) e
+     gera o dump BEHAVIOR_ILLEGAL_STATEMENT (UPDATE <dbtab> is not allowed
+     with this status). Gerar o número já na fase de interação evita o dump. */
+  determination GerarNumeroPedido on modify { create; }
+  determination CalcularTotalPedido on save { create; update; }
+  /* Personalização dinâmica da Object Page (ver ZC_PC_PEDIDO_APP.ddlx). */
+  determination AtualizarFlagsStatus on modify { create; field StatusPedido; }
+
+  validation ValidarCliente on save { create; field ClienteUUID; }
+
+  draft action ( features : instance ) Edit;
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare
+  {
+    validation ValidarCliente;
+    validation ItemPedido~ValidarItemPedido;
+  }
+
+  side effects
+  {
+    field ClienteUUID affects field EnderecoUUID, field EnderecoPrincipalCompleto;
+    action ConfirmarPedido affects entity _Itens;
+    action SimularPagamento affects entity _Pagamento;
+    action AprovarPedido affects entity _ClienteSnapshot, entity _ItensSnapshot;
+    action CancelarPedido affects entity _ClienteSnapshot, entity _ItensSnapshot, entity _Reembolsos;
+    action AprovarReembolso affects entity _ClienteSnapshot, entity _ItensSnapshot, entity _Reembolsos;
+    action RejeitarReembolso affects entity _Reembolsos;
+  }
+
+  mapping for zta_pc_pedido
+  {
+    PedidoUUID                = pedido_uuid;
+    NumeroPedido              = numero_pedido;
+    ClienteUUID               = cliente_uuid;
+    EnderecoUUID              = endereco_uuid;
+    EnderecoPrincipalCompleto = endereco_completo;
+    StatusPedido              = status_pedido;
+    StatusPagamento           = status_pagamento;
+    Observacao                = observacao;
+    Currency                  = currency;
+    ValorTotal                = valor_total;
+    DataFinalizacao           = data_finalizacao;
+    MotivoCancelamento        = motivo_cancelamento;
+    DataCancelamento          = data_cancelamento;
+    CanceladoPor              = cancelado_por;
+    PedidoEncerrado           = pedido_encerrado;
+    PedidoAtivoSemHistorico   = pedido_ativo_sem_hist;
+    CreatedBy                 = created_by;
+    CreatedAt                 = created_at;
+    LastChangedBy             = last_changed_by;
+    LastChangedAt             = last_changed_at;
+    LocalLastChangedAt        = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_ITEM_PEDIDO alias ItemPedido
+persistent table zta_pc_item_ped
+draft table zta_pc_itped_d
+etag master LocalLastChangedAt
+lock dependent by _Pedido
+authorization dependent by _Pedido
+{
+  update;
+  delete;
+
+  association _Pedido { with draft; }
+
+  field ( numbering : managed, readonly ) ItemPedidoUUID;
+  field ( readonly ) PedidoUUID, Currency, PrecoUnitarioSnapshot, ValorTotal,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+  field ( mandatory ) ItemUUID, QtdeItemPedido;
+
+  determination CalcularValorItem on modify { create; field ItemUUID, QtdeItemPedido; }
+
+  validation ValidarItemPedido on save { create; field ItemUUID, QtdeItemPedido; }
+
+  side effects
+  {
+    field ItemUUID affects field PrecoUnitarioSnapshot, field Currency, field ValorTotal, entity _Pedido;
+    field QtdeItemPedido affects field ValorTotal, entity _Pedido;
+  }
+
+  mapping for zta_pc_item_ped
+  {
+    ItemPedidoUUID        = item_pedido_uuid;
+    PedidoUUID            = pedido_uuid;
+    ItemUUID              = item_uuid;
+    QtdeItemPedido        = qtde_item_pedido;
+    Currency              = currency;
+    PrecoUnitarioSnapshot = preco_unitario_snap;
+    ValorTotal            = valor_total;
+    Observacao            = observacao;
+    CreatedBy             = created_by;
+    CreatedAt             = created_at;
+    LastChangedBy         = last_changed_by;
+    LastChangedAt         = last_changed_at;
+    LocalLastChangedAt    = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_PAGAMENTO alias Pagamento
+persistent table zta_pc_pagamento
+draft table zta_pc_pagto_d
+etag master LocalLastChangedAt
+lock dependent by _Pedido
+authorization dependent by _Pedido
+{
+  /* Somente a última tentativa segura é mantida (atualizada pela action) */
+  internal update;
+
+  association _Pedido { with draft; }
+
+  field ( numbering : managed, readonly ) PagamentoUUID;
+  field ( readonly ) PedidoUUID, MetodoPagamento, StatusPagamento, BandeiraCartao, Ultimos4DigitosCartao,
+                     CartaoMascarado, CodigoAutorizacao, MensagemPagamento, DataPagamento,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+
+  mapping for zta_pc_pagamento
+  {
+    PagamentoUUID         = pagamento_uuid;
+    PedidoUUID            = pedido_uuid;
+    MetodoPagamento       = metodo_pagamento;
+    StatusPagamento       = status_pagamento;
+    BandeiraCartao        = bandeira_cartao;
+    Ultimos4DigitosCartao = ultimos4_digitos;
+    CartaoMascarado       = cartao_mascarado;
+    CodigoAutorizacao     = codigo_autorizacao;
+    MensagemPagamento     = mensagem_pagamento;
+    DataPagamento         = data_pagamento;
+    CreatedBy             = created_by;
+    CreatedAt             = created_at;
+    LastChangedBy         = last_changed_by;
+    LastChangedAt         = last_changed_at;
+    LocalLastChangedAt    = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_REEMBOLSO alias Reembolso
+persistent table zta_pc_reembolso
+draft table zta_pc_reemb_d
+etag master LocalLastChangedAt
+lock dependent by _Pedido
+authorization dependent by _Pedido
+{
+  /* Criação: internal create; na association _Reembolsos do Pedido.
+     Atualização: AprovarReembolso/RejeitarReembolso gravam a decisão. */
+  internal update;
+
+  association _Pedido { with draft; }
+
+  field ( numbering : managed, readonly ) ReembolsoUUID;
+  field ( readonly ) PedidoUUID, StatusReembolso, StatusPedidoAnterior, Currency, ValorReembolso,
+                     MotivoSolicitacao, DataSolicitacao, SolicitadoPor,
+                     MotivoDecisao, DataDecisao, DecididoPor,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+
+  mapping for zta_pc_reembolso
+  {
+    ReembolsoUUID        = reembolso_uuid;
+    PedidoUUID           = pedido_uuid;
+    StatusReembolso      = status_reembolso;
+    StatusPedidoAnterior = status_pedido_anterior;
+    Currency             = currency;
+    ValorReembolso       = valor_reembolso;
+    MotivoSolicitacao    = motivo_solicitacao;
+    DataSolicitacao      = data_solicitacao;
+    SolicitadoPor        = solicitado_por;
+    MotivoDecisao        = motivo_decisao;
+    DataDecisao          = data_decisao;
+    DecididoPor          = decidido_por;
+    CreatedBy            = created_by;
+    CreatedAt            = created_at;
+    LastChangedBy        = last_changed_by;
+    LastChangedAt        = last_changed_at;
+    LocalLastChangedAt   = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_PED_CLI_SNAP alias ClienteSnapshot
+persistent table zta_pc_snap_cli
+draft table zta_pc_snpcli_d
+etag master LocalLastChangedAt
+lock dependent by _Pedido
+authorization dependent by _Pedido
+{
+  /* Histórico imutável: sem update/delete */
+  association _Pedido { with draft; }
+
+  field ( numbering : managed, readonly ) SnapshotUUID;
+  field ( readonly ) PedidoUUID, ClienteUUID, Cpf, Nome, Email, Telefone, Genero, DataNascimento, ClienteAtivo,
+                     ScoreCliente, EnderecoUUID, Cep, Logradouro, Numero, Complemento, Bairro, Cidade, Uf, Estado,
+                     EnderecoCompleto, MotivoSnapshot,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+
+  mapping for zta_pc_snap_cli
+  {
+    SnapshotUUID       = snapshot_uuid;
+    PedidoUUID         = pedido_uuid;
+    ClienteUUID        = cliente_uuid;
+    Cpf                = cpf;
+    Nome               = nome;
+    Email              = email;
+    Telefone           = telefone;
+    Genero             = genero;
+    DataNascimento     = data_nascimento;
+    ClienteAtivo       = cliente_ativo;
+    ScoreCliente       = score_cliente;
+    EnderecoUUID       = endereco_uuid;
+    Cep                = cep;
+    Logradouro         = logradouro;
+    Numero             = numero;
+    Complemento        = complemento;
+    Bairro             = bairro;
+    Cidade             = cidade;
+    Uf                 = uf;
+    Estado             = estado;
+    EnderecoCompleto   = endereco_completo;
+    MotivoSnapshot     = motivo_snapshot;
+    CreatedBy          = created_by;
+    CreatedAt          = created_at;
+    LastChangedBy      = last_changed_by;
+    LastChangedAt      = last_changed_at;
+    LocalLastChangedAt = local_last_changed_at;
+  }
+}
+
+define behavior for ZR_PC_PED_ITEM_SNAP alias ItemSnapshot
+persistent table zta_pc_snap_itm
+draft table zta_pc_snpitm_d
+etag master LocalLastChangedAt
+lock dependent by _Pedido
+authorization dependent by _Pedido
+{
+  /* Histórico imutável: sem update/delete */
+  association _Pedido { with draft; }
+
+  field ( numbering : managed, readonly ) SnapshotItemUUID;
+  field ( readonly ) PedidoUUID, ItemPedidoUUID, ItemUUID, Sku, Nome, Descricao, Categoria, Quantidade, Currency,
+                     PrecoUnitario, ValorTotal,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+
+  mapping for zta_pc_snap_itm
+  {
+    SnapshotItemUUID   = snapshot_item_uuid;
+    PedidoUUID         = pedido_uuid;
+    ItemPedidoUUID     = item_pedido_uuid;
+    ItemUUID           = item_uuid;
+    Sku                = sku;
+    Nome               = nome;
+    Descricao          = descricao;
+    Categoria          = categoria;
+    Quantidade         = quantidade;
+    Currency           = currency;
+    PrecoUnitario      = preco_unitario;
+    ValorTotal         = valor_total;
+    CreatedBy          = created_by;
+    CreatedAt          = created_at;
+    LastChangedBy      = last_changed_by;
+    LastChangedAt      = last_changed_at;
+    LocalLastChangedAt = local_last_changed_at;
+  }
+}
