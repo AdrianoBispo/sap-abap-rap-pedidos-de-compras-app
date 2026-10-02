@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+# Deploy no ABAP Repository do SAP BTP ABAP Environment (npm run deploy):
+# cria/atualiza a aplicação BSP ZPC_REEMBOLSOS e o IAM App ZPC_REEMBOLSOS_UI5R no pacote ZAVBS_PC_PEDIDOS.
+# Pacotes do software component ZLOCAL (trial) não usam transporte.
+
+specVersion: "4.0"
+metadata:
+  name: gestaoreembolsos
+type: application
+builder:
+  resources:
+    excludes:
+      - /test/**
+      - /localService/**
+  customTasks:
+    - name: deploy-to-abap
+      afterTask: generateCachebusterInfo
+      configuration:
+        ignoreCertErrors: false
+        target:
+          url: https://a4796127-12c7-4a21-ae82-e3ced4ab9c3d.abap.us10.hana.ondemand.com
+          client: "100"
+          authenticationType: reentranceTicket
+        app:
+          name: ZPC_REEMBOLSOS
+          description: Gestão de Reembolsos
+          package: ZAVBS_PC_PEDIDOS
+          transport: ""
+        exclude:
+          - /test/

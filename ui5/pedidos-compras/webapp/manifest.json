@@ -143,11 +143,6 @@
           "name": "Pedido__ItensSnapshotObjectPage",
           "pattern": "Pedido({key})/_ItensSnapshot({_ItensSnapshotKey}):?query:",
           "target": "Pedido__ItensSnapshotObjectPage"
-        },
-        {
-          "name": "Pedido__ReembolsosObjectPage",
-          "pattern": "Pedido({key})/_Reembolsos({_ReembolsosKey}):?query:",
-          "target": "Pedido__ReembolsosObjectPage"
         }
       ],
       "targets": {
@@ -195,11 +190,6 @@
                   "detail": {
                     "route": "Pedido__ItensSnapshotObjectPage"
                   }
-                },
-                "_Reembolsos": {
-                  "detail": {
-                    "route": "Pedido__ReembolsosObjectPage"
-                  }
                 }
               },
               "controlConfiguration": {
@@ -209,11 +199,6 @@
                       "name": "Inline",
                       "createAtEnd": true
                     }
-                  }
-                },
-                "_Reembolsos/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "selectionMode": "None"
                   }
                 }
               }
@@ -239,17 +224,6 @@
             "settings": {
               "navigation": {},
               "contextPath": "/Pedido/_ItensSnapshot"
-            }
-          }
-        },
-        "Pedido__ReembolsosObjectPage": {
-          "type": "Component",
-          "id": "Pedido__ReembolsosObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "navigation": {},
-              "contextPath": "/Pedido/_Reembolsos"
             }
           }
         }
