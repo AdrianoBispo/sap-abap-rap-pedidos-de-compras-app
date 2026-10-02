@@ -1,6 +1,6 @@
 # Front-end Fiori – Pedidos de Compras
 
-Três aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)** geradas com o
+Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)** geradas com o
 **SAP Fiori tools** (Application Generator, template `@sap/generator-fiori:lrop`), uma para cada
 serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
@@ -14,6 +14,7 @@ tabelas, tile) e a configuração das ferramentas.
 | Gestão de Clientes | `gestao-clientes/` | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
 | Gestão de Estoque  | `gestao-estoque/`  | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
 | Pedidos de Compras | `pedidos-compras/` | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
+| Gestão de Reembolsos | `gestao-reembolsos/` | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
 
 ## Estrutura de cada app
 
@@ -39,11 +40,12 @@ tabelas, tile) e a configuração das ferramentas.
 | -------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
 | Clientes | `Cliente`                                                                                                | Cliente, com a tabela de endereços e a ação **Definir endereço principal**                                                                                   | `Endereco`                                |
 | Estoque  | `Item`                                                                                                   | Item                                                                                                                                                         | —                                         |
-| Pedidos  | `Pedido`, com as ações Confirmar / Simular pagamento / Aprovar / Cancelar / Aprovar e Rejeitar reembolso | Pedido. Itens criados na própria tabela (*inline*); Pagamento e Histórico do cliente como formulário (composição 0..1); tabela somente leitura de Reembolsos | `ItemPedido`, `ItemSnapshot`, `Reembolso` |
+| Pedidos  | `Pedido`, com as ações Simular pagamento / Aprovar / Cancelar (o Save do rascunho registra o pedido e reserva o estoque) | Pedido. Itens criados na própria tabela (*inline*) só no rascunho; Pagamento e Histórico do cliente como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot` |
+| Reembolsos | `Reembolso`, com as ações Aprovar reembolso / Rejeitar reembolso (lista própria, sem criar/editar/excluir) | Reembolso (identificação, motivos e datas da solicitação e da decisão) | — |
 
 - As ações com parâmetros abrem o diálogo a partir das abstract entities `ZPC_A_PAGAMENTO_INPUT`,
-  `ZPC_A_CANCELAMENTO_INPUT` e `ZPC_A_REEMB_DECISAO_INPUT`. Os botões de reembolso só ficam ativos
-  com o pedido em `PROCESSAR_REEMBOLSO` (feature control do backend).
+  `ZPC_A_CANCELAMENTO_INPUT` e `ZPC_A_REEMB_DECISAO_INPUT`. Os botões da app de Reembolsos só ficam
+  ativos com a solicitação `PENDENTE` (feature control do backend); rejeitar exige motivo.
 - O **CEP** do endereço é um campo padrão: o value help `ZC_PC_CEP_VH` sugere CEPs já cadastrados e
   a determination `PreencherEnderecoViaCep`, com side effects, preenche o restante do endereço.
 
@@ -84,10 +86,31 @@ npm run deploy        # cria/atualiza a BSP ZPC_* e o IAM App ZPC_*_UI5R no paco
 No trial, os pacotes do software component `ZLOCAL` não usam transporte. Em sistemas com
 transporte, preencha `transport:` em `ui5-deploy.yaml`.
 
-### Publicar os tiles no launchpad
+Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 
-1. **Business Catalogs (ADT):** adicionar o IAM App gerado (`ZPC_*_UI5R`) ao catálogo da app e
-   **Publish Locally**.
-2. **Business Roles:** atribuir os catálogos às roles no app *Maintain Business Roles*.
-3. **Spaces e pages:** em *Manage Launchpad Spaces*, criar um espaço com uma página contendo os três
-   tiles e atribuí-lo às roles.
+| App | URL |
+| --- | --- |
+| Gestão de Clientes | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_clientes/index.html` |
+| Gestão de Estoque  | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_estoque/index.html` |
+| Pedidos de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` |
+
+### Acesso pelo SAP Build Work Zone, standard edition
+
+No ABAP trial, o usuário não tem os apps *Maintain Business Roles* e *Manage Launchpad Spaces*,
+então os tiles não podem ser publicados no launchpad do próprio ABAP. O ponto de entrada é o
+**SAP Build Work Zone**, com **tiles do tipo URL** que abrem as apps hospedadas no ABAP (tabela
+acima) em uma nova aba. Cada app funciona isoladamente; a navegação entre apps (pedido → cliente /
+item) depende do shell do launchpad e não funciona nesse modo.
+
+No Site Manager: *Content Manager* → **+ New → App** → aba *Properties*: título, **Open App: In a
+new tab** e a URL; aba *Navigation*: um intent próprio (ex.: `ZPCClienteWeb` / `display`); aba
+*Visualization*: subtítulo e ícone. Depois, atribuir as quatro apps a um grupo e ao role
+**Everyone**, e abrir o site.
+
+> **Por que não publicar as apps no Cloud Foundry (HTML5 repo + managed approuter)?**
+> Foi testado e descartado. O Work Zone da subconta trial só aceita login pelo IAS
+> ("business users", origin `sap.custom`), e o XSUAA emite para esse login um `user_name` que
+> não é o e-mail (`nome (business users)`). O ABAP trial é um sistema compartilhado da SAP e só
+> reconhece o usuário vindo do SAP ID (`sap.default`, `user_name` = e-mail): com o token do IAS,
+> o OData responde 401, inclusive após o `OAuth2UserTokenExchange` da destination. Uma destination
+> `OAuth2Password` com o usuário do SAP ID também não é viável quando a conta tem 2FA.

@@ -1,8 +1,8 @@
 <h1 align="center">Pedidos de Compras – SAP RAP / ABAP Cloud</h1>
 
 <p align="center">
-  Três aplicações SAP Fiori Elements desacopladas — <b>Gestão de Clientes</b>, <b>Gestão de Estoque</b>
-  e <b>Pedidos de Compras</b> — com backend RAP em ABAP Cloud no SAP BTP ABAP Environment.
+  Quatro aplicações SAP Fiori Elements desacopladas — <b>Gestão de Clientes</b>, <b>Gestão de Estoque</b>,
+  <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — com backend RAP em ABAP Cloud no SAP BTP ABAP Environment.
 </p>
 
 <p align="center">
@@ -56,14 +56,15 @@
 
 ## Sobre o projeto
 
-Código-fonte de três aplicações **Fiori Elements (OData V4)** para o **SAP BTP ABAP Environment
+Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP BTP ABAP Environment
 (Trial)**: backend **RAP** em [`abap/`](abap/) e front-end **SAP Fiori Elements** em [`ui5/`](ui5/).
 
 | App                | O que gerencia                                                      |
 | ------------------ | -------------------------------------------------------------------- |
 | Gestão de Clientes | Clientes e seus endereços, com preenchimento e cadastro automático via ViaCEP |
 | Gestão de Estoque  | Itens (SKU, foto, categoria, descrição) e quantidade disponível      |
-| Pedidos de Compras | Pedidos, itens, pagamento simulado, reembolso e histórico (snapshots) |
+| Pedidos de Compras | Pedidos, itens, pagamento simulado, cancelamento e histórico (snapshots) |
+| Gestão de Reembolsos | Aprovação e rejeição das solicitações de reembolso de pedidos cancelados com pagamento aprovado |
 
 > [!NOTE]
 > Os fontes foram escritos para ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com
@@ -111,19 +112,23 @@ Código-fonte de três aplicações **Fiori Elements (OData V4)** para o **SAP B
 - **Precheck de estoque zerado**: ao incluir um item no pedido, um precheck do RAP bloqueia a
   criação da linha se o item não tiver quantidade disponível, antes mesmo de qualquer determination
   rodar.
-- **Pedidos**: itens criados *inline*, ciclo de status com ações **Confirmar**, **Simular
-  pagamento**, **Aprovar / finalizar** e **Cancelar** (com motivo).
+- **Pedidos**: itens criados *inline* no rascunho; ao **Salvar** o pedido é registrado (`CRIADO`) e o
+  estoque dos itens é reservado automaticamente (não há ação de confirmação). O pedido registrado
+  não é mais editado nem excluído — só **Simular pagamento**, **Aprovar / finalizar** e **Cancelar**
+  (com motivo).
+- **SKU** gerado no Save, com as 3 primeiras letras da categoria (`SKU-ELE-0000000001`).
 - **Pagamento simulado** por cartão (VISA / Mastercard) sem persistir dados sensíveis — apenas
   bandeira, últimos 4 dígitos e máscara.
-- **Reembolso**: cancelar um pedido com pagamento aprovado abre um processo de reembolso
-  (`PROCESSAR_REEMBOLSO`) em vez de cancelar direto; ações **Aprovar reembolso** e **Rejeitar
-  reembolso** encerram o fluxo (ver [Reembolso de pedidos](#reembolso-de-pedidos)).
+- **Reembolso**: cancelar um pedido com pagamento aprovado abre uma solicitação de reembolso
+  (`PROCESSAR_REEMBOLSO`) em vez de cancelar direto; ela é decidida numa **app própria, Gestão de
+  Reembolsos**, com as ações **Aprovar reembolso** e **Rejeitar reembolso** (ver
+  [Reembolso de pedidos](#reembolso-de-pedidos)).
 - **Snapshots** do cliente e dos itens no momento do pedido (histórico imutável).
 - **Textos em vez de UUID**: os campos de cliente, endereço de entrega e item do pedido mostram
   apenas o texto descritivo (`@UI.textArrangement: #TEXT_ONLY`); o UUID técnico fica oculto.
 - **Autorização** por atividade (`01` criar, `02` alterar, `06` excluir, `16` executar).
 - **Navegação entre apps** via semantic objects (cliente e item viram links no pedido).
-- **Concorrência** tratada: item em edição no Estoque impede a confirmação do pedido.
+- **Concorrência** tratada: item em edição no Estoque impede o registro do pedido.
 
 ---
 
@@ -149,25 +154,31 @@ flowchart LR
         APPC["Gestão de Clientes"]
         APPE["Gestão de Estoque"]
         APPP["Pedidos de Compras"]
+        APPR["Gestão de Reembolsos"]
     end
 
     subgraph BTP["SAP BTP ABAP Environment — RAP"]
         SC["ZUI_PC_CLIENTES_O4"] --> BOC["BO Cliente + Endereço"]
         SE["ZUI_PC_ESTOQUE_O4"] --> BOI["BO Item"]
-        SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · reembolso · snapshots"]
+        SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · snapshots"]
+        SR["ZUI_PC_REEMBOLSOS_O4"] --> BOR["BO Reembolso"]
         COMMON["ZAVBS_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists"]
     end
 
     APPC --> SC
     APPE --> SE
     APPP --> SP
+    APPR --> SR
     APPP -. semantic object .-> APPC
     APPP -. semantic object .-> APPE
     BOP -- reserva de estoque --> BOI
     BOP -- snapshot --> BOC
+    BOP -- cria solicitação --> BOR
+    BOR -- cancela / retoma pedido --> BOP
     BOC --> COMMON
     BOI --> COMMON
     BOP --> COMMON
+    BOR --> COMMON
     BOC --> VIACEP[("API ViaCEP")]
 ```
 
@@ -176,8 +187,9 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> CRIADO: Criar + Salvar
-    CRIADO --> AGUARDANDO_PAGAMENTO: Confirmar pedido
+    [*] --> CRIADO: Criar + Salvar (reserva o estoque)
+    CRIADO --> AGUARDANDO_PAGAMENTO: Pagamento recusado
+    CRIADO --> AGUARDANDO_APROVACAO: Pagamento aprovado
     AGUARDANDO_PAGAMENTO --> AGUARDANDO_PAGAMENTO: Pagamento recusado
     AGUARDANDO_PAGAMENTO --> AGUARDANDO_APROVACAO: Pagamento aprovado
     AGUARDANDO_APROVACAO --> FINALIZADO: Aprovar / finalizar
@@ -202,13 +214,15 @@ stateDiagram-v2
 │       │                               numeração, CodeLists, setup
 │       ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
 │       ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-│       └── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens, pagamento, reembolso, snapshots),
-│                                       pagamento simulado, serviço ZUI_PC_PEDIDOS_COMPRAS
+│       └── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens, pagamento, snapshots), BO Reembolso,
+│                                       pagamento simulado, serviços ZUI_PC_PEDIDOS_COMPRAS
+│                                       e ZUI_PC_REEMBOLSOS
 │
 ├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
 │   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
 │   ├── gestao-estoque/                 app Gestão de Estoque (projeto isolado)
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
+│   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
 │   └── README.md                       guia do front-end
 │
 ├── docs/
@@ -272,13 +286,13 @@ no ADT):
    pela classe `ZCL_PC_SETUP`.
 4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` e `ZPC_PEDIDO`.
 5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
-   `ZUI_PC_PEDIDOS_COMPRAS_O4` → **Publish**.
-6. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS` (o ADT acrescenta o sufixo
+   `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4` → **Publish**.
+6. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT acrescenta o sufixo
    `_EXT`), com o serviço correspondente e os objetos de autorização.
-7. **Business Catalogs** `ZPC_BC_CLIENTES`, `ZPC_BC_ESTOQUE`, `ZPC_BC_PEDIDOS` (um por IAM App).
+7. **Business Catalogs** `ZPC_BC_CLIENTES`, `ZPC_BC_ESTOQUE`, `ZPC_BC_PEDIDOS`, `ZPC_BC_REEMBOLSOS` (um por IAM App).
    Depois do deploy do front-end, cada catálogo recebe também o IAM App do tile
-   (`ZPC_CLIENTES_UI5R`, `ZPC_ESTOQUE_UI5R`, `ZPC_PEDIDOS_UI5R`) – ver [Front-end Fiori](#front-end-fiori).
-8. **Business Roles** `ZPC_BR_ADMIN` (três catálogos) e `ZPC_BR_COMUM` (somente `ZPC_BC_PEDIDOS`) –
+   (`ZPC_CLIENTES_UI5R`, `ZPC_ESTOQUE_UI5R`, `ZPC_PEDIDOS_UI5R`, `ZPC_REEMBOLSOS_UI5R`) – ver [Front-end Fiori](#front-end-fiori).
+8. **Business Roles** `ZPC_BR_ADMIN` (quatro catálogos) e `ZPC_BR_COMUM` (`ZPC_BC_PEDIDOS` e `ZPC_BC_REEMBOLSOS`) –
    app *Maintain Business Roles* (exige administrador; ver
    [Observações sobre o Trial](#observações-sobre-o-trial)).
 9. **Índices secundários** (garantia de unicidade no banco — a validation sozinha não protege
@@ -303,7 +317,8 @@ no ADT):
 3. **Todas** as tabelas ativas (pasta `Dictionary/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as 6 value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/
    `ZR_PC_ENDERECO` (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo
-   `ZR_PC_REEMBOLSO` (ativar juntas).
+   `ZR_PC_REEMBOLSO` (BO próprio, root) — esta precisa estar ativa, com sua BDEF, antes da behavior
+   pool do Pedido.
 5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VH` (inclusive `ZC_PC_CEP_VH`, que expõe os
    CEPs já cadastrados).
 6. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o
@@ -324,7 +339,7 @@ no ADT):
 
 ## Front-end Fiori
 
-Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serviço, geradas com o
+Quatro apps **Fiori Elements OData V4** (List Report + Object Page), uma por serviço, geradas com o
 **SAP Fiori tools** (Application Generator). Cada uma é um projeto isolado, com `package.json`,
 `node_modules` e configuração próprios. O guia completo está em [`ui5/README.md`](ui5/README.md).
 
@@ -332,10 +347,11 @@ Três apps **Fiori Elements OData V4** (List Report + Object Page), uma por serv
 | ------------------ | --------------------- | --------------------------- | ------------------------------------- | ------------------------ | -------------- |
 | Gestão de Clientes | `ui5/gestao-clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                    | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
 | Gestão de Estoque  | `ui5/gestao-estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                                  | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
-| Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico / Reembolso | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
+| Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico             | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
+| Gestão de Reembolsos | `ui5/gestao-reembolsos` | `ZUI_PC_REEMBOLSOS_O4`    | Reembolso                             | `ZPCReembolso-manage`    | `ZPC_REEMBOLSOS` |
 
 ```bash
-cd ui5/pedidos-compras      # ou ui5/gestao-clientes, ui5/gestao-estoque
+cd ui5/pedidos-compras      # ou ui5/gestao-clientes, ui5/gestao-estoque, ui5/gestao-reembolsos
 npm install
 npm start                   # launchpad local (sandbox) com dados reais; login BTP no navegador
 npm run start-mock          # dados de mock (sem backend)
@@ -343,11 +359,16 @@ npm run lint && npm run build
 npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* correspondente
 ```
 
-**Depois do deploy:** incluir `ZPC_*_UI5R` nos Business Catalogs `ZPC_BC_*` e publicar. Montar um
-espaço/página em *Manage Launchpad Spaces* e atribuí-lo às Business Roles `ZPC_BR_ADMIN` e
-`ZPC_BR_COMUM`.
+**Depois do deploy:** cada app abre direto no ABAP em
+`https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_<clientes|estoque|pedidos|reembolsos>/index.html`.
+No trial, sem acesso a *Maintain Business Roles* / *Manage Launchpad Spaces*, o ponto de entrada é
+o **SAP Build Work Zone, standard edition**, com tiles do tipo URL para essas quatro apps. A publicação
+no Cloud Foundry (HTML5 repo) foi testada e descartada: o ABAP trial não aceita o usuário que o
+Work Zone recebe do IAS. Detalhes em [`ui5/README.md`](ui5/README.md#acesso-pelo-sap-build-work-zone-standard-edition).
+Em um sistema com os apps de administração, o caminho padrão continua sendo: `ZPC_*_UI5R` nos
+Business Catalogs `ZPC_BC_*` → Business Roles → *Manage Launchpad Spaces*.
 
-**Validação:** as três apps passam no `ui5 build`, no ESLint e no UI5 linter (sem achados), e foram
+**Validação:** as apps Clientes, Estoque e Pedidos passam no `ui5 build`, no ESLint e no UI5 linter (sem achados), e foram
 testadas contra o backend real pelo proxy do Fiori tools.
 
 ---
@@ -364,12 +385,13 @@ Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 | Pagamento recusado     | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO)                                        |
 | Mastercard             | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`)                                                         |
 | Estoque insuficiente   | Precheck bloqueia ao incluir um item com quantidade disponível zerada no pedido                              |
-| Concorrência           | Deixar o item em edição (draft) na app de Estoque e confirmar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
+| Concorrência           | Deixar o item em edição (draft) na app de Estoque e salvar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
 | Exclusão de cliente    | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`)                                         |
 | CEP duplicado          | Cadastrar dois endereços com o mesmo CEP para o **mesmo** cliente → bloqueado (mensagem 047)                 |
-| Reembolso              | Cancelar um pedido com pagamento aprovado → status `PROCESSAR_REEMBOLSO`; aprovar ou rejeitar o reembolso    |
+| Reembolso              | Cancelar um pedido com pagamento aprovado → status `PROCESSAR_REEMBOLSO`; na app Gestão de Reembolsos, aprovar ou rejeitar (motivo obrigatório) |
+| Reserva no Save        | Salvar um rascunho válido → pedido `CRIADO` e `QtdeReservada` do item aumenta; salvar com estoque insuficiente → bloqueado |
 
-Fluxo do pedido: **Criar** (draft) → **Salvar** → **Confirmar pedido** → **Simular pagamento** →
+Fluxo do pedido: **Criar** (draft) → **Salvar** (registra e reserva o estoque) → **Simular pagamento** →
 **Aprovar / finalizar** (ou **Cancelar pedido** com motivo).
 
 ### Testes automatizados
@@ -450,16 +472,21 @@ Quando o **Cancelar pedido** é acionado sobre um pedido cujo pagamento já est�
 cancelamento não é direto: o backend abre um processo de reembolso para preservar o histórico
 financeiro.
 
-1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
-   cria uma linha em `ZR_PC_REEMBOLSO` (status `PENDENTE`, guardando `StatusPedidoAnterior`) e move
-   o Pedido para `PROCESSAR_REEMBOLSO`, mantendo a reserva de estoque.
-2. Ação **AprovarReembolso**: libera o estoque reservado, monta os snapshots de cliente/itens, marca
-   o Reembolso como `APROVADO` e o Pedido como `CANCELADO` (grava `DataCancelamento`).
-3. Ação **RejeitarReembolso** (exige `MotivoDecisao`): marca o Reembolso como `REJEITADO` e devolve
-   o Pedido ao `StatusPedidoAnterior` gravado no Reembolso, limpando `MotivoCancelamento`.
+O Reembolso é um BO próprio (`ZR_PC_REEMBOLSO`, root sem draft) com app dedicada, **Gestão de
+Reembolsos** (`ZUI_PC_REEMBOLSOS`). Não é mais filho do Pedido.
 
-Ambas as ações só ficam disponíveis quando `StatusPedido = PROCESSAR_REEMBOLSO`, usando a mesma
-regra de autorização das demais ações de ciclo de vida do pedido.
+1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
+   cria a solicitação no BO Reembolso por EML (status `PENDENTE`, guardando `StatusPedidoAnterior`)
+   e move o Pedido para `PROCESSAR_REEMBOLSO`, mantendo a reserva de estoque.
+2. Ação **AprovarReembolso** (app Gestão de Reembolsos): executa `CancelarPorReembolso` no BO Pedido
+   (libera o estoque reservado, monta os snapshots, Pedido `CANCELADO` com `DataCancelamento`) e
+   marca o Reembolso como `APROVADO`, na mesma transação.
+3. Ação **RejeitarReembolso** (exige `MotivoDecisao`): executa `RetomarPedido` (o Pedido volta ao
+   `StatusPedidoAnterior` e o `MotivoCancelamento` é limpo) e marca o Reembolso como `REJEITADO`.
+
+As duas ações só ficam disponíveis enquanto o Reembolso está `PENDENTE`, e usam a mesma regra de
+autorização das demais ações de ciclo de vida do pedido. As actions `CancelarPorReembolso` e
+`RetomarPedido` do Pedido são internas (`authorization : none`, não expostas na projeção).
 
 ---
 
@@ -477,7 +504,7 @@ coluna dentro da tabela draft precisa ser o nome **completo** do elemento CDS (n
 | `ZTA_PC_PEDIDO`    | `ZTA_PC_PEDIDO_D`  | `ZR_PC_PEDIDO`         |
 | `ZTA_PC_ITEM_PED`  | `ZTA_PC_ITPED_D`   | `ZR_PC_ITEM_PEDIDO`    |
 | `ZTA_PC_PAGAMENTO` | `ZTA_PC_PAGTO_D`   | `ZR_PC_PAGAMENTO`      |
-| `ZTA_PC_REEMBOLSO` | `ZTA_PC_REEMB_D`   | `ZR_PC_REEMBOLSO`      |
+| `ZTA_PC_REEMBOLSO` | — (BO sem draft; `ZTA_PC_REEMB_D` é resíduo e pode ser excluída) | `ZR_PC_REEMBOLSO` |
 | `ZTA_PC_SNAP_CLI`  | `ZTA_PC_SNPCLI_D`  | `ZR_PC_PED_CLI_SNAP`   |
 | `ZTA_PC_SNAP_ITM`  | `ZTA_PC_SNPITM_D`  | `ZR_PC_PED_ITEM_SNAP`  |
 
@@ -532,6 +559,7 @@ limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.1   | Reembolso como BO e app próprios (Gestão de Reembolsos, `ZUI_PC_REEMBOLSOS`); remoção da ação Confirmar pedido (o Save registra o pedido e reserva o estoque; `Activate` não otimizado + `ReservarEstoqueRegistro`/`ValidarRegistro`); SKU gerado no Save com o prefixo da categoria; especificação v2.1 |
 | v1.5   | Score com Process Indicator, precheck de estoque zerado, remoção de peso/dimensões do item, cadastro automático de endereço, CEP único por cliente, textos em vez de UUID; sincronização do repositório com os pacotes `ZAVBS_*` (sem dicionário próprio) e o fluxo de reembolso |
 | v1.4   | Dicionário de dados próprio (domínios, elementos de dados, estruturas) e novos nomes das tabelas draft                   |
 | v1.3   | Consulta de CEP do endereço movida para custom entity + campo customizado SAPUI5                                         |
