@@ -1,4 +1,4 @@
-@EndUserText.label : ''
+@EndUserText.label : 'Draft table for entity ZR_PC_ENDERECO'
 @AbapCatalog.enhancement.category : #EXTENSIBLE_ANY
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A

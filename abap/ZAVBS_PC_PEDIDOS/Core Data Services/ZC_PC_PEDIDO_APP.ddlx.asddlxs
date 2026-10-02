@@ -28,8 +28,6 @@ annotate entity ZC_PC_PEDIDO_APP with
       label: 'Histórico - cliente', position: 50, targetElement: '_ClienteSnapshot' },
     { id: 'SnapItens',       purpose: #STANDARD, type: #LINEITEM_REFERENCE,
       label: 'Histórico - itens', position: 60, targetElement: '_ItensSnapshot' },
-    { id: 'Reembolsos',      purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      label: 'Reembolso', position: 65, targetElement: '_Reembolsos' },
     { id: 'Administrativo',  purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       label: 'Dados administrativos', position: 70, targetQualifier: 'Admin' }
   ]
@@ -52,19 +50,13 @@ annotate entity ZC_PC_PEDIDO_APP with
   PedidoAtivoSemHistorico;
 
   @UI: { lineItem:       [{ position: 10, label: 'Pedido', importance: #HIGH },
-                          { type: #FOR_ACTION, dataAction: 'ConfirmarPedido',   label: 'Confirmar pedido' },
                           { type: #FOR_ACTION, dataAction: 'SimularPagamento',  label: 'Simular pagamento' },
                           { type: #FOR_ACTION, dataAction: 'AprovarPedido',     label: 'Aprovar / finalizar' },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' },
-                          { type: #FOR_ACTION, dataAction: 'AprovarReembolso',  label: 'Aprovar reembolso' },
-                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso' }],
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' }],
          identification: [{ position: 10, label: 'Número do pedido' },
-                          { type: #FOR_ACTION, dataAction: 'ConfirmarPedido',   label: 'Confirmar pedido' },
                           { type: #FOR_ACTION, dataAction: 'SimularPagamento',  label: 'Simular pagamento' },
                           { type: #FOR_ACTION, dataAction: 'AprovarPedido',     label: 'Aprovar / finalizar' },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' },
-                          { type: #FOR_ACTION, dataAction: 'AprovarReembolso',  label: 'Aprovar reembolso' },
-                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso' }] }
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' }] }
   @EndUserText.label: 'Pedido'
   NumeroPedido;
 

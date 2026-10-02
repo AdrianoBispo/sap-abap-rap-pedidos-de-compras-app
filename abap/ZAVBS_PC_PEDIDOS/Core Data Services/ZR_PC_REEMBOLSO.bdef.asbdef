@@ -1,0 +1,55 @@
+managed implementation in class zbp_r_pc_reembolso unique;
+strict ( 2 );
+
+/* ---------------------------------------------------------------------
+   BO Reembolso (solicitações de reembolso de pedidos com pagamento aprovado)
+   - Root próprio, sem draft: não é filho do BO Pedido.
+   - A solicitação é criada pelo BO Pedido (CancelarPedido com pagamento
+     aprovado) via EML; o create não é exposto na projection.
+   - A decisão é tomada na app Gestão de Reembolsos (AprovarReembolso /
+     RejeitarReembolso), que executam as actions CancelarPorReembolso /
+     RetomarPedido do BO Pedido na mesma LUW.
+   --------------------------------------------------------------------- */
+define behavior for ZR_PC_REEMBOLSO alias Reembolso
+persistent table zta_pc_reembolso
+etag master LocalLastChangedAt
+lock master
+authorization master ( global )
+{
+  create;
+  internal update;
+
+  field ( numbering : managed, readonly ) ReembolsoUUID;
+  /* Preenchidos na criação pelo BO Pedido; imutáveis depois */
+  field ( readonly : update ) PedidoUUID, NumeroPedido, ClienteUUID, StatusReembolso,
+                              StatusPedidoAnterior, Currency, ValorReembolso,
+                              MotivoSolicitacao, DataSolicitacao, SolicitadoPor;
+  field ( readonly ) MotivoDecisao, DataDecisao, DecididoPor,
+                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+
+  action ( features : instance ) AprovarReembolso  parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
+  action ( features : instance ) RejeitarReembolso parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
+
+  mapping for zta_pc_reembolso
+  {
+    ReembolsoUUID        = reembolso_uuid;
+    PedidoUUID           = pedido_uuid;
+    NumeroPedido         = numero_pedido;
+    ClienteUUID          = cliente_uuid;
+    StatusReembolso      = status_reembolso;
+    StatusPedidoAnterior = status_pedido_anterior;
+    Currency             = currency;
+    ValorReembolso       = valor_reembolso;
+    MotivoSolicitacao    = motivo_solicitacao;
+    DataSolicitacao      = data_solicitacao;
+    SolicitadoPor        = solicitado_por;
+    MotivoDecisao        = motivo_decisao;
+    DataDecisao          = data_decisao;
+    DecididoPor          = decidido_por;
+    CreatedBy            = created_by;
+    CreatedAt            = created_at;
+    LastChangedBy        = last_changed_by;
+    LastChangedAt        = last_changed_at;
+    LocalLastChangedAt   = local_last_changed_at;
+  }
+}

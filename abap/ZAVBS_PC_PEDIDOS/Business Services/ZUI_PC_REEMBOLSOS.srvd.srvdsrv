@@ -1,0 +1,6 @@
+@EndUserText.label: 'Gestão de Reembolsos'
+define service ZUI_PC_REEMBOLSOS {
+  expose ZC_PC_REEMBOLSO_APP as Reembolso;
+
+  expose ZC_PC_STATUSREEMB_VH as StatusReembolsoVH;
+}

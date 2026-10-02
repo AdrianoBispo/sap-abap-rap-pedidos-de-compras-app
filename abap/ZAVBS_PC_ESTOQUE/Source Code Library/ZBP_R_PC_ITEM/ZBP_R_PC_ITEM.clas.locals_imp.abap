@@ -55,7 +55,7 @@ CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS RecalcularStatusEstoque FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Item~RecalcularStatusEstoque.
 
-    METHODS GerarSku FOR DETERMINE ON MODIFY
+    METHODS GerarSku FOR DETERMINE ON SAVE
       IMPORTING keys FOR Item~GerarSku.
 
     METHODS ValidarItem FOR VALIDATE ON SAVE
@@ -482,12 +482,20 @@ CLASS lhc_item IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
-    DELETE lt_itens WHERE Sku IS NOT INITIAL.
-    CHECK lt_itens IS NOT INITIAL.
-
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_item\\Item.
 
     LOOP AT lt_itens INTO DATA(ls_item).
+      " Sem categoria não há prefixo: ValidarItem acusa o campo obrigatório
+      CHECK ls_item-Categoria IS NOT INITIAL.
+
+      " SKU já gerado para a categoria atual é mantido. Se a categoria mudou
+      " depois da primeira geração, o prefixo (SKU-XXX-...) ficou desatualizado
+      " e o SKU é gerado de novo.
+      IF strlen( ls_item-Sku ) >= 7
+         AND ls_item-Sku+4(3) = zcl_pc_numeracao=>prefixo_categoria( ls_item-Categoria ).
+        CONTINUE.
+      ENDIF.
+
       TRY.
           APPEND VALUE #( %tky         = ls_item-%tky
                           Sku          = zcl_pc_numeracao=>gerar_sku( ls_item-Categoria )

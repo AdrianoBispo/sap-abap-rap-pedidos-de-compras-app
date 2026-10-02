@@ -72,6 +72,5 @@ define root view entity ZC_PC_PEDIDO_APP
       _Itens           : redirected to composition child ZC_PC_ITEM_PEDIDO_APP,
       _Pagamento       : redirected to composition child ZC_PC_PAGAMENTO_APP,
       _ClienteSnapshot : redirected to composition child ZC_PC_PED_CLI_SNAP_APP,
-      _ItensSnapshot   : redirected to composition child ZC_PC_PED_ITEM_SNAP_APP,
-      _Reembolsos      : redirected to composition child ZC_PC_REEMBOLSO_APP
+      _ItensSnapshot   : redirected to composition child ZC_PC_PED_ITEM_SNAP_APP
 }

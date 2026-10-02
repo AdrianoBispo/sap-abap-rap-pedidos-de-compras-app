@@ -34,10 +34,12 @@ authorization master ( global )
 
   determination DefinirValoresIniciais on modify { create; }
   determination RecalcularStatusEstoque on modify { create; field QtdeEstoque; }
-  /* Numeração antecipada (early numbering): ver justificativa em
-     ZR_PC_PEDIDO~GerarNumeroPedido (ZPC_NR não bufferizado + fase on save
-     => BEHAVIOR_ILLEGAL_STATEMENT). */
-  determination GerarSku on modify { create; }
+  /* O SKU usa as 3 primeiras letras da Categoria; por isso só pode ser gerado
+     no Save (Prepare), quando a categoria já foi escolhida. Gerado na criação
+     do rascunho (on modify) a categoria ainda está vazia e o SKU saía SKU-XXX-.
+     Fica no Prepare (fase de interação) porque o GET NUMBER de ZPC_NR não pode
+     rodar na fase de gravação; na gravação o SKU já existe e nada é gerado. */
+  determination GerarSku on save { create; field Categoria; }
 
   validation ValidarItem on save { create; field Nome, Categoria, PrecoUnitario, Currency; }
   validation ValidarQuantidades on save { create; field QtdeEstoque; }
@@ -51,6 +53,7 @@ authorization master ( global )
   draft action Resume;
   draft determine action Prepare
   {
+    determination GerarSku;
     validation ValidarItem;
     validation ValidarQuantidades;
     validation ValidarInativacaoItem;

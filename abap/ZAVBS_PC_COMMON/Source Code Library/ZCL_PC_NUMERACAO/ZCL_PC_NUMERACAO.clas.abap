@@ -24,6 +24,12 @@ CLASS zcl_pc_numeracao DEFINITION
       RETURNING VALUE(rv_sku) TYPE ty_sku
       RAISING   cx_number_ranges.
 
+    "! Prefixo de 3 letras do SKU a partir do código da categoria
+    "! (maiúsculas; categoria curta ou vazia é completada com X).
+    CLASS-METHODS prefixo_categoria
+      IMPORTING iv_categoria     TYPE csequence
+      RETURNING VALUE(rv_prefixo) TYPE string.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
     CLASS-METHODS proximo_numero
@@ -58,12 +64,16 @@ CLASS zcl_pc_numeracao IMPLEMENTATION.
     DATA(lv_numero) = proximo_numero( zif_pc_constants=>c_numeracao-intervalo_sku )
                       - CONV int8( zif_pc_constants=>c_numeracao-sku_de ).
 
-    DATA(lv_prefixo) = to_upper( condense( iv_categoria ) ).
-    IF strlen( lv_prefixo ) < 3.
-      lv_prefixo = |{ lv_prefixo WIDTH = 3 PAD = 'X' }|.
-    ENDIF.
+    rv_sku = |SKU-{ prefixo_categoria( iv_categoria ) }-{ lv_numero WIDTH = 10 ALIGN = RIGHT PAD = '0' }|.
+  ENDMETHOD.
 
-    rv_sku = |SKU-{ substring( val = lv_prefixo off = 0 len = 3 ) }-{ lv_numero WIDTH = 10 ALIGN = RIGHT PAD = '0' }|.
+
+  METHOD prefixo_categoria.
+    rv_prefixo = to_upper( condense( iv_categoria ) ).
+    IF strlen( rv_prefixo ) < 3.
+      rv_prefixo = |{ rv_prefixo WIDTH = 3 PAD = 'X' }|.
+    ENDIF.
+    rv_prefixo = substring( val = rv_prefixo off = 0 len = 3 ).
   ENDMETHOD.
 
 ENDCLASS.

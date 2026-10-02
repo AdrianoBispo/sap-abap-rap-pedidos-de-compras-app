@@ -1,0 +1,9 @@
+projection;
+strict ( 2 );
+
+define behavior for ZC_PC_REEMBOLSO_APP alias Reembolso
+use etag
+{
+  use action AprovarReembolso;
+  use action RejeitarReembolso;
+}

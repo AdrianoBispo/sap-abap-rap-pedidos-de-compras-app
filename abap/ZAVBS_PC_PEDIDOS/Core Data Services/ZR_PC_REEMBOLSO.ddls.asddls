@@ -1,14 +1,17 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Reembolso do pedido - BO child'
+@EndUserText.label: 'Reembolso do pedido - BO root'
 @Metadata.ignorePropagatedAnnotations: true
-define view entity ZR_PC_REEMBOLSO
+define root view entity ZR_PC_REEMBOLSO
   as select from zta_pc_reembolso
-  association to parent ZR_PC_PEDIDO as _Pedido on $projection.PedidoUUID = _Pedido.PedidoUUID
+  association [0..1] to ZR_PC_PEDIDO  as _Pedido  on $projection.PedidoUUID  = _Pedido.PedidoUUID
+  association [0..1] to ZR_PC_CLIENTE as _Cliente on $projection.ClienteUUID = _Cliente.ClienteUUID
   association [0..1] to ZR_PC_CODELIST as _StatusTxt on  _StatusTxt.Lista  = 'STATUS_REEMBOLSO'
                                                     and _StatusTxt.Codigo = $projection.StatusReembolso
 {
   key reembolso_uuid         as ReembolsoUUID,
       pedido_uuid            as PedidoUUID,
+      numero_pedido          as NumeroPedido,
+      cliente_uuid           as ClienteUUID,
       status_reembolso       as StatusReembolso,
       status_pedido_anterior as StatusPedidoAnterior,
       currency               as Currency,
@@ -33,5 +36,6 @@ define view entity ZR_PC_REEMBOLSO
 
       /* Associações */
       _Pedido,
+      _Cliente,
       _StatusTxt
 }

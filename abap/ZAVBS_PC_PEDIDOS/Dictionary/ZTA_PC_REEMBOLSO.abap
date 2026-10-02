@@ -8,6 +8,8 @@ define table zta_pc_reembolso {
   key client             : abap.clnt not null;
   key reembolso_uuid     : sysuuid_x16 not null;
   pedido_uuid            : sysuuid_x16;
+  numero_pedido          : abap.char(10);
+  cliente_uuid           : sysuuid_x16;
   status_reembolso       : abap.char(20);
   status_pedido_anterior : abap.char(40);
   currency               : abap.cuky;

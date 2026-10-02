@@ -28,7 +28,6 @@ authorization master ( global )
   association _Pagamento       { internal create; with draft; }
   association _ClienteSnapshot { internal create; with draft; }
   association _ItensSnapshot   { internal create; with draft; }
-  association _Reembolsos      { internal create; with draft; }
 
   field ( numbering : managed, readonly ) PedidoUUID;
   field ( readonly ) NumeroPedido, EnderecoUUID, EnderecoPrincipalCompleto, StatusPedido, StatusPagamento,
@@ -36,12 +35,14 @@ authorization master ( global )
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
   field ( mandatory ) ClienteUUID;
 
-  action ( features : instance ) ConfirmarPedido result [1] $self;
   action ( features : instance ) SimularPagamento parameter ZPC_A_PAGAMENTO_INPUT result [1] $self;
   action ( features : instance ) AprovarPedido result [1] $self;
   action ( features : instance ) CancelarPedido parameter ZPC_A_CANCELAMENTO_INPUT result [1] $self;
-  action ( features : instance ) AprovarReembolso  parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
-  action ( features : instance ) RejeitarReembolso parameter ZPC_A_REEMB_DECISAO_INPUT result [1] $self;
+
+  /* Chamadas somente pelo BO Reembolso (ZR_PC_REEMBOLSO) via EML quando o
+     pedido em PROCESSAR_REEMBOLSO é decidido. Não são expostas na projection. */
+  action ( authorization : none ) CancelarPorReembolso result [1] $self;
+  action ( authorization : none ) RetomarPedido parameter ZPC_A_RETOMADA_INPUT result [1] $self;
 
   internal action RecalcularTotal;
 
@@ -56,28 +57,33 @@ authorization master ( global )
   determination CalcularTotalPedido on save { create; update; }
   /* Personalização dinâmica da Object Page (ver ZC_PC_PEDIDO_APP.ddlx). */
   determination AtualizarFlagsStatus on modify { create; field StatusPedido; }
+  /* Reserva do estoque ao registrar o pedido: roda quando o rascunho é
+     salvo e o pedido passa a existir como instância ativa (status CRIADO).
+     Sem a action ConfirmarPedido, a reserva acontece aqui. */
+  determination ReservarEstoqueRegistro on modify { create; }
 
   validation ValidarCliente on save { create; field ClienteUUID; }
+  /* Endereço principal, itens e disponibilidade de estoque, checados no
+     Save (Prepare) do rascunho, antes da reserva. */
+  validation ValidarRegistro on save { create; }
 
   draft action ( features : instance ) Edit;
-  draft action Activate optimized;
+  draft action Activate;
   draft action Discard;
   draft action Resume;
   draft determine action Prepare
   {
     validation ValidarCliente;
     validation ItemPedido~ValidarItemPedido;
+    validation ValidarRegistro;
   }
 
   side effects
   {
     field ClienteUUID affects field EnderecoUUID, field EnderecoPrincipalCompleto;
-    action ConfirmarPedido affects entity _Itens;
     action SimularPagamento affects entity _Pagamento;
     action AprovarPedido affects entity _ClienteSnapshot, entity _ItensSnapshot;
-    action CancelarPedido affects entity _ClienteSnapshot, entity _ItensSnapshot, entity _Reembolsos;
-    action AprovarReembolso affects entity _ClienteSnapshot, entity _ItensSnapshot, entity _Reembolsos;
-    action RejeitarReembolso affects entity _Reembolsos;
+    action CancelarPedido affects entity _ClienteSnapshot, entity _ItensSnapshot;
   }
 
   mapping for zta_pc_pedido
@@ -185,47 +191,6 @@ authorization dependent by _Pedido
     LastChangedBy         = last_changed_by;
     LastChangedAt         = last_changed_at;
     LocalLastChangedAt    = local_last_changed_at;
-  }
-}
-
-define behavior for ZR_PC_REEMBOLSO alias Reembolso
-persistent table zta_pc_reembolso
-draft table zta_pc_reemb_d
-etag master LocalLastChangedAt
-lock dependent by _Pedido
-authorization dependent by _Pedido
-{
-  /* Criação: internal create; na association _Reembolsos do Pedido.
-     Atualização: AprovarReembolso/RejeitarReembolso gravam a decisão. */
-  internal update;
-
-  association _Pedido { with draft; }
-
-  field ( numbering : managed, readonly ) ReembolsoUUID;
-  field ( readonly ) PedidoUUID, StatusReembolso, StatusPedidoAnterior, Currency, ValorReembolso,
-                     MotivoSolicitacao, DataSolicitacao, SolicitadoPor,
-                     MotivoDecisao, DataDecisao, DecididoPor,
-                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
-
-  mapping for zta_pc_reembolso
-  {
-    ReembolsoUUID        = reembolso_uuid;
-    PedidoUUID           = pedido_uuid;
-    StatusReembolso      = status_reembolso;
-    StatusPedidoAnterior = status_pedido_anterior;
-    Currency             = currency;
-    ValorReembolso       = valor_reembolso;
-    MotivoSolicitacao    = motivo_solicitacao;
-    DataSolicitacao      = data_solicitacao;
-    SolicitadoPor        = solicitado_por;
-    MotivoDecisao        = motivo_decisao;
-    DataDecisao          = data_decisao;
-    DecididoPor          = decidido_por;
-    CreatedBy            = created_by;
-    CreatedAt            = created_at;
-    LastChangedBy        = last_changed_by;
-    LastChangedAt        = last_changed_at;
-    LocalLastChangedAt   = local_last_changed_at;
   }
 }
 

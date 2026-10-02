@@ -150,6 +150,17 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD calcular_status_estoque.
+    IF iv_qtde_disponivel <= 0.
+      rv_status = zif_pc_constants=>c_status_estoque-sem_estoque.
+    ELSEIF iv_qtde_disponivel <= zif_pc_constants=>c_limite_acabando.
+      rv_status = zif_pc_constants=>c_status_estoque-acabando.
+    ELSE.
+      rv_status = zif_pc_constants=>c_status_estoque-em_estoque.
+    ENDIF.
+  ENDMETHOD.
+
+
   METHOD validar_imagem.
     CONSTANTS lc_assinatura_png  TYPE x LENGTH 8 VALUE '89504E470D0A1A0A'.
     CONSTANTS lc_assinatura_jpeg TYPE x LENGTH 3 VALUE 'FFD8FF'.
@@ -184,17 +195,6 @@ CLASS zcl_pc_util IMPLEMENTATION.
       IF xstrlen( iv_conteudo ) >= 3 AND iv_conteudo(3) = lc_assinatura_jpeg.
         rv_valida = abap_true.
       ENDIF.
-    ENDIF.
-  ENDMETHOD.
-
-
-  METHOD calcular_status_estoque.
-    IF iv_qtde_disponivel <= 0.
-      rv_status = zif_pc_constants=>c_status_estoque-sem_estoque.
-    ELSEIF iv_qtde_disponivel <= zif_pc_constants=>c_limite_acabando.
-      rv_status = zif_pc_constants=>c_status_estoque-acabando.
-    ELSE.
-      rv_status = zif_pc_constants=>c_status_estoque-em_estoque.
     ENDIF.
   ENDMETHOD.
 

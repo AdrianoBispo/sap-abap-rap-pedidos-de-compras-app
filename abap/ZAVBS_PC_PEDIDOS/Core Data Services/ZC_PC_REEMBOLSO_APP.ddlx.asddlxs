@@ -2,8 +2,10 @@
 @UI: {
   headerInfo: { typeName:       'Reembolso',
                 typeNamePlural: 'Reembolsos',
-                title:          { type: #STANDARD, value: 'StatusReembolso' },
-                description:    { type: #STANDARD, value: 'MotivoSolicitacao' } }
+                title:          { type: #STANDARD, value: 'NumeroPedido' },
+                description:    { type: #STANDARD, value: 'NomeCliente' } },
+  presentationVariant: [{ sortOrder: [{ by: 'DataSolicitacao', direction: #DESC }],
+                          visualizations: [{ type: #AS_LINEITEM }] }]
 }
 annotate entity ZC_PC_REEMBOLSO_APP with
 {
@@ -15,9 +17,32 @@ annotate entity ZC_PC_REEMBOLSO_APP with
   ReembolsoUUID;
   @UI.hidden: true
   PedidoUUID;
+  @UI.hidden: true
+  ClienteUUID;
 
-  @UI: { lineItem:       [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality', importance: #HIGH }],
-         identification: [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality' }] }
+  @UI: { lineItem:       [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar', position: 10,
+                            importance: #HIGH },
+                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar', position: 20,
+                            importance: #HIGH },
+                          { position: 10, label: 'Pedido', importance: #HIGH }],
+         identification: [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar reembolso',
+                            position: 1 },
+                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso',
+                            position: 2 },
+                          { position: 5, label: 'Pedido' }],
+         selectionField: [{ position: 10 }] }
+  @EndUserText.label: 'Pedido'
+  NumeroPedido;
+
+  @UI: { lineItem: [{ position: 15, label: 'Cliente', importance: #HIGH }],
+         identification: [{ position: 7, label: 'Cliente' }],
+         selectionField: [{ position: 20 }] }
+  @EndUserText.label: 'Cliente'
+  NomeCliente;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Status', criticality: 'StatusReembolsoCriticality', importance: #HIGH }],
+         identification: [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality' }],
+         selectionField: [{ position: 30 }] }
   @EndUserText.label: 'Status do reembolso'
   StatusReembolso;
   @UI.hidden: true
@@ -32,7 +57,7 @@ annotate entity ZC_PC_REEMBOLSO_APP with
   @UI.hidden: true
   Currency;
 
-  @UI: { lineItem: [{ position: 20, label: 'Valor' }], identification: [{ position: 20, label: 'Valor do reembolso' }] }
+  @UI: { lineItem: [{ position: 25, label: 'Valor' }], identification: [{ position: 20, label: 'Valor do reembolso' }] }
   @EndUserText.label: 'Valor do reembolso'
   ValorReembolso;
 

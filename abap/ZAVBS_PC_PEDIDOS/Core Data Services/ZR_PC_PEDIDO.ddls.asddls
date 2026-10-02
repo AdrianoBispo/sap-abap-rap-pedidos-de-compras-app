@@ -7,7 +7,6 @@ define root view entity ZR_PC_PEDIDO
   composition [0..1] of ZR_PC_PAGAMENTO     as _Pagamento
   composition [0..1] of ZR_PC_PED_CLI_SNAP  as _ClienteSnapshot
   composition [0..*] of ZR_PC_PED_ITEM_SNAP as _ItensSnapshot
-  composition [0..*] of ZR_PC_REEMBOLSO     as _Reembolsos
   association [0..1] to ZR_PC_CLIENTE       as _Cliente  on $projection.ClienteUUID = _Cliente.ClienteUUID
   association [0..1] to ZR_PC_ENDERECO      as _Endereco on $projection.EnderecoUUID = _Endereco.EnderecoUUID
   association [0..1] to ZR_PC_CODELIST as _StatusPedidoTxt on  _StatusPedidoTxt.Lista  = 'STATUS_PEDIDO'
@@ -55,7 +54,6 @@ define root view entity ZR_PC_PEDIDO
       _Pagamento,
       _ClienteSnapshot,
       _ItensSnapshot,
-      _Reembolsos,
       _Cliente,
       _Endereco,
       _StatusPedidoTxt,
