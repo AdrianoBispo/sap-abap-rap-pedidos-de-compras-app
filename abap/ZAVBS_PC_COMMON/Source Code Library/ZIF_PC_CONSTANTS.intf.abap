@@ -18,12 +18,11 @@ INTERFACE zif_pc_constants PUBLIC.
 
   CONSTANTS:
     BEGIN OF c_status_pedido,
-      criado               TYPE ty_status_pedido VALUE 'CRIADO',
-      aguardando_pagamento TYPE ty_status_pedido VALUE 'AGUARDANDO_PAGAMENTO',
-      aguardando_aprovacao TYPE ty_status_pedido VALUE 'AGUARDANDO_APROVACAO',
-      finalizado           TYPE ty_status_pedido VALUE 'FINALIZADO',
-      processar_reembolso  TYPE ty_status_pedido VALUE 'PROCESSAR_REEMBOLSO',
-      cancelado            TYPE ty_status_pedido VALUE 'CANCELADO',
+      aberto                TYPE ty_status_pedido VALUE 'ABERTO',
+      aguardando_aprovacao  TYPE ty_status_pedido VALUE 'AGUARDANDO_APROVACAO',
+      processando_reembolso TYPE ty_status_pedido VALUE 'PROCESSANDO_REEMBOLSO',
+      cancelado             TYPE ty_status_pedido VALUE 'CANCELADO',
+      finalizado            TYPE ty_status_pedido VALUE 'FINALIZADO',
     END OF c_status_pedido.
 
   CONSTANTS:
@@ -31,6 +30,7 @@ INTERFACE zif_pc_constants PUBLIC.
       pendente TYPE ty_status_pagamento VALUE 'PENDENTE',
       aprovado TYPE ty_status_pagamento VALUE 'APROVADO',
       recusado TYPE ty_status_pagamento VALUE 'RECUSADO',
+      devolvido TYPE ty_status_pagamento VALUE 'DEVOLVIDO',
     END OF c_status_pagamento.
 
   TYPES ty_status_reembolso TYPE c LENGTH 20.

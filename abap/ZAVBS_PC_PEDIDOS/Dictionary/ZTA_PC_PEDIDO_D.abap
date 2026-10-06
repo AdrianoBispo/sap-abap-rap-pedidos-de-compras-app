@@ -23,6 +23,8 @@ define table zta_pc_pedido_d {
   canceladopor              : abp_lastchange_user;
   pedidoencerrado           : xfeld;
   pedidoativosemhistorico   : xfeld;
+  pedidonaofinalizado       : xfeld;
+  pedidonaocancelado        : xfeld;
   createdby                 : abp_creation_user;
   createdat                 : abp_creation_tstmpl;
   lastchangedby             : abp_lastchange_user;

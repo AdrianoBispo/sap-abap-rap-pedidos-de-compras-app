@@ -222,9 +222,9 @@ CLASS lhc_item IMPLEMENTATION.
       INNER JOIN zta_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
       FOR ALL ENTRIES IN @it_itens
       WHERE ip~item_uuid = @it_itens-table_line
-        AND p~status_pedido IN ( @zif_pc_constants=>c_status_pedido-criado,
-                                 @zif_pc_constants=>c_status_pedido-aguardando_pagamento,
-                                 @zif_pc_constants=>c_status_pedido-aguardando_aprovacao )
+        AND p~status_pedido IN ( @zif_pc_constants=>c_status_pedido-aberto,
+                                 @zif_pc_constants=>c_status_pedido-aguardando_aprovacao,
+                                 @zif_pc_constants=>c_status_pedido-processando_reembolso )
       INTO TABLE @DATA(lt_ativos).
 
     " Pedidos em draft (ainda não ativados) também contam como ativos

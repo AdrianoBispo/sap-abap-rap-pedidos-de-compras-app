@@ -7,6 +7,8 @@
 "!     ZCL_SETUP_CLIENTE (100 clientes), ZCL_SETUP_ESTOQUE (100 itens) e
 "!     ZCL_SETUP_PEDIDOS (100 pedidos, 10 deles com reembolso pendente)
 "!  4. Marca como validados (CepStatus V) os endereços gravados antes do CepStatus
+"!  5. Migra pedidos do modelo antigo de status (CRIADO, AGUARDANDO_PAGAMENTO,
+"!     PROCESSAR_REEMBOLSO) para o atual (ABERTO, PROCESSANDO_REEMBOLSO)
 CLASS zcl_pc_setup DEFINITION
   PUBLIC
   FINAL
@@ -21,6 +23,8 @@ CLASS zcl_pc_setup DEFINITION
     METHODS carregar_codelists
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
     METHODS migrar_enderecos_cep
+      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
+    METHODS migrar_status_pedidos
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
 ENDCLASS.
 
@@ -38,6 +42,7 @@ CLASS zcl_pc_setup IMPLEMENTATION.
         out->write( |Erro nos dados demo: { lx->get_text( ) }| ).
     ENDTRY.
     migrar_enderecos_cep( out ).
+    migrar_status_pedidos( out ).
     COMMIT WORK.
     out->write( `Setup concluído.` ).
   ENDMETHOD.
@@ -100,16 +105,16 @@ CLASS zcl_pc_setup IMPLEMENTATION.
       ( lista = 'CATEGORIA' codigo = 'ALIMENTOS'   descricao = 'Alimentos'             ordem = 6 )
       ( lista = 'CATEGORIA' codigo = 'OUTROS'      descricao = 'Outros'                ordem = 7 )
       " Status do pedido (criticality: 0 neutro, 1 vermelho, 2 amarelo, 3 verde)
-      ( lista = 'STATUS_PEDIDO' codigo = 'CRIADO'               descricao = 'Criado'                criticality = 0 ordem = 1 )
-      ( lista = 'STATUS_PEDIDO' codigo = 'AGUARDANDO_PAGAMENTO' descricao = 'Aguardando pagamento'  criticality = 2 ordem = 2 )
-      ( lista = 'STATUS_PEDIDO' codigo = 'AGUARDANDO_APROVACAO' descricao = 'Aguardando aprovação'  criticality = 2 ordem = 3 )
-      ( lista = 'STATUS_PEDIDO' codigo = 'FINALIZADO'           descricao = 'Finalizado'            criticality = 3 ordem = 4 )
-      ( lista = 'STATUS_PEDIDO' codigo = 'PROCESSAR_REEMBOLSO'  descricao = 'Processar reembolso'   criticality = 2 ordem = 5 )
-      ( lista = 'STATUS_PEDIDO' codigo = 'CANCELADO'            descricao = 'Cancelado'             criticality = 1 ordem = 6 )
+      ( lista = 'STATUS_PEDIDO' codigo = 'ABERTO'                descricao = 'Aberto'                criticality = 0 ordem = 1 )
+      ( lista = 'STATUS_PEDIDO' codigo = 'AGUARDANDO_APROVACAO'  descricao = 'Aguardando aprovação'  criticality = 2 ordem = 2 )
+      ( lista = 'STATUS_PEDIDO' codigo = 'PROCESSANDO_REEMBOLSO' descricao = 'Processando reembolso' criticality = 2 ordem = 3 )
+      ( lista = 'STATUS_PEDIDO' codigo = 'CANCELADO'             descricao = 'Cancelado'             criticality = 1 ordem = 4 )
+      ( lista = 'STATUS_PEDIDO' codigo = 'FINALIZADO'            descricao = 'Finalizado'            criticality = 3 ordem = 5 )
       " Status do pagamento
-      ( lista = 'STATUS_PAGAMENTO' codigo = 'PENDENTE' descricao = 'Pendente' criticality = 2 ordem = 1 )
-      ( lista = 'STATUS_PAGAMENTO' codigo = 'APROVADO' descricao = 'Aprovado' criticality = 3 ordem = 2 )
-      ( lista = 'STATUS_PAGAMENTO' codigo = 'RECUSADO' descricao = 'Recusado' criticality = 1 ordem = 3 )
+      ( lista = 'STATUS_PAGAMENTO' codigo = 'PENDENTE'  descricao = 'Pendente'  criticality = 2 ordem = 1 )
+      ( lista = 'STATUS_PAGAMENTO' codigo = 'APROVADO'  descricao = 'Aprovado'  criticality = 3 ordem = 2 )
+      ( lista = 'STATUS_PAGAMENTO' codigo = 'RECUSADO'  descricao = 'Recusado'  criticality = 1 ordem = 3 )
+      ( lista = 'STATUS_PAGAMENTO' codigo = 'DEVOLVIDO' descricao = 'Devolvido' criticality = 0 ordem = 4 )
       " Status do reembolso
       ( lista = 'STATUS_REEMBOLSO' codigo = 'PENDENTE'  descricao = 'Pendente'  criticality = 2 ordem = 1 )
       ( lista = 'STATUS_REEMBOLSO' codigo = 'APROVADO'  descricao = 'Aprovado'  criticality = 3 ordem = 2 )
@@ -137,6 +142,42 @@ CLASS zcl_pc_setup IMPLEMENTATION.
         AND cidade     <> @space
         AND uf         <> @space.
     io_out->write( |Endereços marcados como CEP validado: { sy-dbcnt }| ).
+  ENDMETHOD.
+
+
+  METHOD migrar_status_pedidos.
+    " Modelo antigo (CRIADO / AGUARDANDO_PAGAMENTO / PROCESSAR_REEMBOLSO) para o
+    " novo (ABERTO / PROCESSANDO_REEMBOLSO). Idempotente: sem linhas antigas, nada muda.
+    UPDATE zta_pc_pedido SET status_pedido = @zif_pc_constants=>c_status_pedido-aberto
+      WHERE status_pedido IN ( 'CRIADO', 'AGUARDANDO_PAGAMENTO' ).
+    DATA(lv_abertos) = sy-dbcnt.
+    UPDATE zta_pc_pedido SET status_pedido = @zif_pc_constants=>c_status_pedido-processando_reembolso
+      WHERE status_pedido = 'PROCESSAR_REEMBOLSO'.
+    DATA(lv_reembolso) = sy-dbcnt.
+    UPDATE zta_pc_reembolso SET status_pedido_anterior = @zif_pc_constants=>c_status_pedido-aguardando_aprovacao
+      WHERE status_pedido_anterior = 'PROCESSAR_REEMBOLSO'.
+
+    " Indicadores usados para exibir/esconder as seções da Object Page
+    UPDATE zta_pc_pedido
+      SET pedido_encerrado      = @abap_false,
+          pedido_ativo_sem_hist = @abap_true,
+          pedido_nao_finalizado = @abap_true,
+          pedido_nao_cancelado  = @abap_true
+      WHERE status_pedido NOT IN ( @zif_pc_constants=>c_status_pedido-finalizado,
+                                   @zif_pc_constants=>c_status_pedido-cancelado ).
+    UPDATE zta_pc_pedido
+      SET pedido_encerrado      = @abap_true,
+          pedido_ativo_sem_hist = @abap_false,
+          pedido_nao_finalizado = @abap_false,
+          pedido_nao_cancelado  = @abap_true
+      WHERE status_pedido = @zif_pc_constants=>c_status_pedido-finalizado.
+    UPDATE zta_pc_pedido
+      SET pedido_encerrado      = @abap_true,
+          pedido_ativo_sem_hist = @abap_false,
+          pedido_nao_finalizado = @abap_true,
+          pedido_nao_cancelado  = @abap_false
+      WHERE status_pedido = @zif_pc_constants=>c_status_pedido-cancelado.
+    io_out->write( |Pedidos migrados para ABERTO: { lv_abertos }; para PROCESSANDO_REEMBOLSO: { lv_reembolso }.| ).
   ENDMETHOD.
 
 ENDCLASS.

@@ -45,7 +45,7 @@ annotate entity ZC_PC_ITEM_PEDIDO_APP with
   Currency;
 
   @UI: { lineItem:       [{ position: 50, label: 'Preço unitário' }],
-         identification: [{ position: 50, label: 'Preço unitário (fixado na confirmação)' }] }
+         identification: [{ position: 50, label: 'Preço unitário' }] }
   @EndUserText.label: 'Preço unitário'
   PrecoUnitarioSnapshot;
 

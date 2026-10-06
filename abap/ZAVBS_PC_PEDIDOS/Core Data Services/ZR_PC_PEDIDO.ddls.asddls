@@ -30,6 +30,8 @@ define root view entity ZR_PC_PEDIDO
          o annotation "hidden" do Fiori Elements. */
       pedido_encerrado      as PedidoEncerrado,
       pedido_ativo_sem_hist as PedidoAtivoSemHistorico,
+      pedido_nao_finalizado as PedidoNaoFinalizado,
+      pedido_nao_cancelado  as PedidoNaoCancelado,
       observacao            as Observacao,
       currency              as Currency,
       @Semantics.amount.currencyCode: 'Currency'

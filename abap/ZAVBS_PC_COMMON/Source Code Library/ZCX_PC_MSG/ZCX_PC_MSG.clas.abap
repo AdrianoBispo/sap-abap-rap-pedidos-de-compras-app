@@ -355,7 +355,7 @@ CLASS zcx_pc_msg DEFINITION
         attr3 TYPE scx_attrname VALUE '',
         attr4 TYPE scx_attrname VALUE '',
       END OF item_reserva_inconsistente,
-      "! 039 - Pedido só pode ser editado ou excluído no status CRIADO.
+      "! 039 - Pedido só pode ser editado ou excluído no status ABERTO.
       BEGIN OF pedido_edicao_bloqueada,
         msgid TYPE symsgid VALUE 'ZPC_MSG',
         msgno TYPE symsgno VALUE '039',

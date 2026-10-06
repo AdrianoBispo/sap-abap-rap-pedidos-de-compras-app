@@ -4,7 +4,7 @@ with draft;
 
 /* ---------------------------------------------------------------------
    BO Pedido de Compra
-   - Draft somente para criação/edição no status CRIADO
+   - Draft somente para criação/edição no status ABERTO
    - Ações de ciclo de vida executadas apenas sobre a instância ATIVA
      (disponibilidade por status = feature control, não autorização)
    - Pagamento e snapshots: filhos de composição, criados apenas
@@ -33,14 +33,19 @@ authorization master ( global )
   field ( readonly ) NumeroPedido, EnderecoUUID, EnderecoPrincipalCompleto, StatusPedido, StatusPagamento,
                      Currency, ValorTotal, DataFinalizacao, MotivoCancelamento, DataCancelamento, CanceladoPor,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
-  field ( mandatory ) ClienteUUID;
+  /* Indicadores de status mantidos por AtualizarFlagsStatus: dirigem a
+     exibição dinâmica das seções da Object Page (ver ZC_PC_PEDIDO_APP.ddlx) */
+  field ( readonly ) PedidoEncerrado, PedidoAtivoSemHistorico, PedidoNaoFinalizado, PedidoNaoCancelado;
+  /* O cliente é escolhido na criação; depois só os itens podem ser alterados */
+  field ( mandatory : create ) ClienteUUID;
+  field ( readonly : update ) ClienteUUID;
 
   action ( features : instance ) SimularPagamento parameter ZPC_A_PAGAMENTO_INPUT result [1] $self;
   action ( features : instance ) AprovarPedido result [1] $self;
   action ( features : instance ) CancelarPedido parameter ZPC_A_CANCELAMENTO_INPUT result [1] $self;
 
   /* Chamadas somente pelo BO Reembolso (ZR_PC_REEMBOLSO) via EML quando o
-     pedido em PROCESSAR_REEMBOLSO é decidido. Não são expostas na projection. */
+     pedido em PROCESSANDO_REEMBOLSO é decidido. Não são expostas na projection. */
   action ( authorization : none ) CancelarPorReembolso result [1] $self;
   action ( authorization : none ) RetomarPedido parameter ZPC_A_RETOMADA_INPUT result [1] $self;
 
@@ -48,7 +53,7 @@ authorization master ( global )
 
   /* Importação em massa por planilha (.xlsx ou .csv): uma linha por item;
      linhas com a mesma referência formam um pedido. Cria pedidos ativos
-     (CRIADO) e reserva o estoque, como o registro pela tela. Tudo ou nada. */
+     (ABERTO) e reserva o estoque, como o registro pela tela. Tudo ou nada. */
   static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
 
   determination DefinirStatusInicial on modify { create; }
@@ -62,18 +67,19 @@ authorization master ( global )
   determination CalcularTotalPedido on save { create; update; }
   /* Personalização dinâmica da Object Page (ver ZC_PC_PEDIDO_APP.ddlx). */
   determination AtualizarFlagsStatus on modify { create; field StatusPedido; }
-  /* Reserva do estoque ao registrar o pedido: roda quando o rascunho é
-     salvo e o pedido passa a existir como instância ativa (status CRIADO).
-     Sem a action ConfirmarPedido, a reserva acontece aqui. */
-  determination ReservarEstoqueRegistro on modify { create; }
+  /* Reserva do estoque: roda quando o rascunho é salvo e o pedido passa a
+     existir como instância ativa (status ABERTO) e também quando itens de um
+     pedido aberto são alterados (Edit + Save). Aplica só a diferença entre
+     o que já estava reservado e os itens atuais. */
+  determination ReservarEstoqueRegistro on modify { create; update; }
 
   validation ValidarCliente on save { create; field ClienteUUID; }
   /* Endereço principal, itens e disponibilidade de estoque, checados no
      Save (Prepare) do rascunho, antes da reserva. */
-  validation ValidarRegistro on save { create; }
+  validation ValidarRegistro on save { create; update; }
 
   draft action ( features : instance ) Edit;
-  draft action Activate;
+  draft action Activate with additional implementation;
   draft action Discard;
   draft action Resume;
   draft determine action Prepare
@@ -109,6 +115,8 @@ authorization master ( global )
     CanceladoPor              = cancelado_por;
     PedidoEncerrado           = pedido_encerrado;
     PedidoAtivoSemHistorico   = pedido_ativo_sem_hist;
+    PedidoNaoFinalizado       = pedido_nao_finalizado;
+    PedidoNaoCancelado        = pedido_nao_cancelado;
     CreatedBy                 = created_by;
     CreatedAt                 = created_at;
     LastChangedBy             = last_changed_by;

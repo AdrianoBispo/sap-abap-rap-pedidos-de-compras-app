@@ -14,62 +14,73 @@ annotate entity ZC_PC_PEDIDO_APP with
     { id: 'HeaderPagamento', purpose: #HEADER,   type: #DATAPOINT_REFERENCE, targetQualifier: 'StatusPagamento', position: 20 },
     { id: 'HeaderTotal',     purpose: #HEADER,   type: #DATAPOINT_REFERENCE, targetQualifier: 'ValorTotal',      position: 30 },
 
-    { id: 'DadosPedido',     purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
-      label: 'Dados do pedido', position: 10 },
-    { id: 'Itens',           purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      label: 'Itens', position: 20, targetElement: '_Itens' },
+    /* Ordem das seções: 1. Dados do Cliente, 2. Dados do Pedido, 3. Itens,
+       4. Pagamento, 5. Finalização / Cancelamento.
+       Cliente e Itens existem em duas versões com o mesmo título e o mesmo
+       layout: pedido aberto, aguardando aprovação ou processando reembolso
+       lê as tabelas principais; finalizado ou cancelado lê os snapshots.
+       A exibição é dinâmica pelos indicadores PedidoEncerrado /
+       PedidoAtivoSemHistorico (mantidos por AtualizarFlagsStatus). */
+    { id: 'DadosCliente',     purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Dados do Cliente', position: 10, targetQualifier: 'Cliente',
+      hidden: #(PedidoEncerrado) },
+    { id: 'DadosClienteSnap', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'Dados do Cliente', position: 10, targetElement: '_ClienteSnapshot',
+      hidden: #(PedidoAtivoSemHistorico) },
+    { id: 'DadosPedido',      purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'Dados do Pedido', position: 20 },
+    { id: 'Itens',            purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      label: 'Itens', position: 30, targetElement: '_Itens',
+      hidden: #(PedidoEncerrado) },
+    { id: 'ItensSnap',        purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      label: 'Itens', position: 30, targetElement: '_ItensSnapshot',
+      hidden: #(PedidoAtivoSemHistorico) },
     /* Composições [0..1] viram seções de formulário: Fiori Elements V4 só
        renderiza tabela (LINEITEM) para navegações de cardinalidade N. */
-    { id: 'Pagamento',       purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
-      label: 'Pagamento (última tentativa)', position: 30, targetElement: '_Pagamento' },
-    { id: 'Encerramento',    purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      label: 'Finalização / cancelamento', position: 40, targetQualifier: 'Encerramento' },
-    { id: 'SnapCliente',     purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
-      label: 'Histórico - cliente', position: 50, targetElement: '_ClienteSnapshot' },
-    { id: 'SnapItens',       purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      label: 'Histórico - itens', position: 60, targetElement: '_ItensSnapshot' },
-    { id: 'Administrativo',  purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      label: 'Dados administrativos', position: 70, targetQualifier: 'Admin' }
+    { id: 'Pagamento',        purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'Pagamento (última tentativa)', position: 40, targetElement: '_Pagamento' },
+    { id: 'Finalizacao',      purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Finalização', position: 50, targetQualifier: 'Finalizacao',
+      hidden: #(PedidoNaoFinalizado) },
+    { id: 'Cancelamento',     purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      label: 'Cancelamento', position: 60, targetQualifier: 'Cancelamento',
+      hidden: #(PedidoNaoCancelado) }
   ]
 
   @UI.hidden: true
   PedidoUUID;
 
-  /* Personalização por status: SAP BTP ABAP Trial não reconheceu nenhuma
-     variante testada (abap_boolean, xfeld, CASE/CAST) como 'Boolean' para
-     o annotation @UI.facet.hidden (mesmo em campos físicos já existentes
-     como ItemAtivo) - não foi possível ocultar/exibir seções da Object
-     Page dinamicamente por anotação neste ambiente. Os indicadores ficam
-     disponíveis como campos informativos. */
-  @UI.fieldGroup: [{ qualifier: 'Encerramento', position: 50, label: 'Pedido encerrado?' }]
-  @EndUserText.label: 'Pedido encerrado?'
+  /* Indicadores que dirigem a exibição dinâmica das seções (hidden: #(campo)) */
+  @UI.hidden: true
   PedidoEncerrado;
-
-  @UI.fieldGroup: [{ qualifier: 'Encerramento', position: 60, label: 'Sem histórico ainda?' }]
-  @EndUserText.label: 'Sem histórico ainda?'
+  @UI.hidden: true
   PedidoAtivoSemHistorico;
+  @UI.hidden: true
+  PedidoNaoFinalizado;
+  @UI.hidden: true
+  PedidoNaoCancelado;
 
   @UI: { lineItem:       [{ position: 10, label: 'Pedido', importance: #HIGH },
                           { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Simular pagamento',
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento',
                             actionGroupId: 'AcoesPedido', position: 10 },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar / finalizar',
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',
                             actionGroupId: 'AcoesPedido', position: 20 },
                           { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
                             actionGroupId: 'AcoesPedido', position: 30 },
                           { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 10, label: 'Número do pedido' },
                           { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Simular pagamento',
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento',
                             actionGroupId: 'AcoesPedido', position: 10 },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar / finalizar',
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',
                             actionGroupId: 'AcoesPedido', position: 20 },
                           { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
                             actionGroupId: 'AcoesPedido', position: 30 }] }
   @EndUserText.label: 'Pedido'
   NumeroPedido;
 
-  @UI: { identification: [{ position: 20, label: 'Cliente' }],
+  @UI: { fieldGroup:     [{ qualifier: 'Cliente', position: 10, label: 'Cliente' }],
          selectionField: [{ position: 10 }] }
   @UI.textArrangement: #TEXT_ONLY
   @EndUserText.label: 'Cliente'
@@ -80,11 +91,28 @@ annotate entity ZC_PC_PEDIDO_APP with
   NomeCliente;
 
   @UI: { lineItem:       [{ position: 20, label: 'CPF' }],
+         fieldGroup:     [{ qualifier: 'Cliente', position: 20, label: 'CPF' }],
          selectionField: [{ position: 20 }] }
   @EndUserText.label: 'CPF'
   CpfCliente;
 
-  @UI: { identification: [{ position: 30, label: 'Endereço de entrega (principal)' }] }
+  @UI: { fieldGroup: [{ qualifier: 'Cliente', position: 30, label: 'E-mail' }] }
+  @EndUserText.label: 'E-mail'
+  EmailCliente;
+
+  @UI: { fieldGroup: [{ qualifier: 'Cliente', position: 40, label: 'Telefone' }] }
+  @EndUserText.label: 'Telefone'
+  TelefoneCliente;
+
+  @UI: { fieldGroup: [{ qualifier: 'Cliente', position: 50, label: 'Gênero' }] }
+  @EndUserText.label: 'Gênero'
+  GeneroCliente;
+
+  @UI: { fieldGroup: [{ qualifier: 'Cliente', position: 60, label: 'Data de nascimento' }] }
+  @EndUserText.label: 'Data de nascimento'
+  DataNascimentoCliente;
+
+  @UI: { fieldGroup: [{ qualifier: 'Cliente', position: 70, label: 'Endereço de entrega (principal)' }] }
   @UI.textArrangement: #TEXT_ONLY
   @EndUserText.label: 'Endereço'
   EnderecoUUID;
@@ -133,32 +161,32 @@ annotate entity ZC_PC_PEDIDO_APP with
 
   @UI: { lineItem:   [{ position: 70, label: 'Data do pedido' }],
          selectionField: [{ position: 50 }],
-         fieldGroup: [{ qualifier: 'Admin', position: 10, label: 'Criado em' }] }
+         identification: [{ position: 80, label: 'Criado em' }] }
   @EndUserText.label: 'Data do pedido'
   CreatedAt;
 
   @UI: { lineItem:   [{ position: 80, label: 'Data de finalização' }],
-         fieldGroup: [{ qualifier: 'Encerramento', position: 10, label: 'Data de finalização' }] }
+         fieldGroup: [{ qualifier: 'Finalizacao', position: 10, label: 'Data de finalização' }] }
   @EndUserText.label: 'Data de finalização'
   DataFinalizacao;
 
-  @UI.fieldGroup: [{ qualifier: 'Encerramento', position: 20, label: 'Motivo do cancelamento' }]
+  @UI.fieldGroup: [{ qualifier: 'Cancelamento', position: 10, label: 'Motivo do cancelamento' }]
   @EndUserText.label: 'Motivo do cancelamento'
   MotivoCancelamento;
 
-  @UI.fieldGroup: [{ qualifier: 'Encerramento', position: 30, label: 'Data do cancelamento' }]
+  @UI.fieldGroup: [{ qualifier: 'Cancelamento', position: 20, label: 'Data do cancelamento' }]
   @EndUserText.label: 'Data do cancelamento'
   DataCancelamento;
 
-  @UI.fieldGroup: [{ qualifier: 'Encerramento', position: 40, label: 'Cancelado por' }]
+  @UI.fieldGroup: [{ qualifier: 'Cancelamento', position: 30, label: 'Cancelado por' }]
   @EndUserText.label: 'Cancelado por'
   CanceladoPor;
 
-  @UI.fieldGroup: [{ qualifier: 'Admin', position: 20, label: 'Criado por' }]
+  @UI.identification: [{ position: 90, label: 'Criado por' }]
   CreatedBy;
-  @UI.fieldGroup: [{ qualifier: 'Admin', position: 30, label: 'Alterado em' }]
+  @UI.identification: [{ position: 100, label: 'Alterado em' }]
   LastChangedAt;
-  @UI.fieldGroup: [{ qualifier: 'Admin', position: 40, label: 'Alterado por' }]
+  @UI.identification: [{ position: 110, label: 'Alterado por' }]
   LastChangedBy;
   @UI.hidden: true
   LocalLastChangedAt;

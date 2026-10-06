@@ -27,6 +27,13 @@ define root view entity ZC_PC_PEDIDO_APP
       @Search.defaultSearchElement: true
       _Cliente.Cpf                    as CpfCliente,
 
+      /* Dados do cliente exibidos na seção "Dados do Cliente" enquanto o pedido
+         não foi encerrado (depois vêm do snapshot) */
+      _Cliente.Email                  as EmailCliente,
+      _Cliente.Telefone               as TelefoneCliente,
+      _Cliente._GeneroTxt.Descricao   as GeneroCliente,
+      _Cliente.DataNascimento         as DataNascimentoCliente,
+
       @ObjectModel.text.element: [ 'EnderecoPrincipalCompleto' ]
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ENDERECO_VH', element: 'EnderecoUUID' },
                                            additionalBinding: [{ localElement: 'ClienteUUID',
@@ -48,6 +55,8 @@ define root view entity ZC_PC_PEDIDO_APP
          básica ZR_PC_PEDIDO (projections aqui não suportam CASE/CAST). */
       PedidoEncerrado,
       PedidoAtivoSemHistorico,
+      PedidoNaoFinalizado,
+      PedidoNaoCancelado,
 
       @ObjectModel.text.element: [ 'StatusPagamentoTexto' ]
       @UI.textArrangement: #TEXT_ONLY

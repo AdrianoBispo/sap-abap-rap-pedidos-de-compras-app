@@ -22,12 +22,12 @@ annotate entity ZC_PC_PED_CLI_SNAP_APP with
   ClienteUUID;
 
   @UI: { lineItem: [{ position: 10, label: 'CPF' }],
-         identification: [{ position: 10, label: 'CPF' }] }
+         identification: [{ position: 20, label: 'CPF' }] }
   @EndUserText.label: 'CPF'
   Cpf;
 
   @UI: { lineItem: [{ position: 20, label: 'Nome' }],
-         identification: [{ position: 20, label: 'Nome' }] }
+         identification: [{ position: 10, label: 'Cliente' }] }
   @EndUserText.label: 'Nome'
   Nome;
 
@@ -49,64 +49,43 @@ annotate entity ZC_PC_PED_CLI_SNAP_APP with
   @EndUserText.label: 'Data de nascimento'
   DataNascimento;
 
-  @UI: { identification: [{ position: 70, label: 'Ativo no encerramento' }] }
-  @EndUserText.label: 'Ativo no encerramento'
+  /* Mesmos campos e ordem da seção "Dados do Cliente" dos dados principais */
+  @UI.hidden: true
   ClienteAtivo;
-
-  @UI: { identification: [{ position: 80, label: 'Score' }] }
-  @EndUserText.label: 'Score'
+  @UI.hidden: true
   ScoreCliente;
-
   @UI.hidden: true
   EnderecoUUID;
-
-  @UI: { identification: [{ position: 90, label: 'CEP' }] }
-  @EndUserText.label: 'CEP'
+  @UI.hidden: true
   Cep;
-
-  @UI: { identification: [{ position: 100, label: 'Logradouro' }] }
-  @EndUserText.label: 'Logradouro'
+  @UI.hidden: true
   Logradouro;
-
-  @UI: { identification: [{ position: 110, label: 'Número' }] }
-  @EndUserText.label: 'Número'
+  @UI.hidden: true
   Numero;
-
-  @UI: { identification: [{ position: 120, label: 'Complemento' }] }
-  @EndUserText.label: 'Complemento'
+  @UI.hidden: true
   Complemento;
-
-  @UI: { identification: [{ position: 130, label: 'Bairro' }] }
-  @EndUserText.label: 'Bairro'
+  @UI.hidden: true
   Bairro;
-
-  @UI: { identification: [{ position: 140, label: 'Cidade' }] }
-  @EndUserText.label: 'Cidade'
+  @UI.hidden: true
   Cidade;
-
-  @UI: { identification: [{ position: 150, label: 'UF' }] }
-  @EndUserText.label: 'UF'
+  @UI.hidden: true
   Uf;
-
-  @UI: { identification: [{ position: 160, label: 'Estado' }] }
-  @EndUserText.label: 'Estado'
+  @UI.hidden: true
   Estado;
 
   @UI: { lineItem: [{ position: 50, label: 'Endereço completo' }],
-         identification: [{ position: 170, label: 'Endereço completo' }] }
+         identification: [{ position: 70, label: 'Endereço de entrega (principal)' }] }
   @EndUserText.label: 'Endereço completo'
   EnderecoCompleto;
 
-  @UI: { lineItem: [{ position: 60, label: 'Motivo' }],
-         identification: [{ position: 180, label: 'Motivo' }] }
+  @UI: { lineItem: [{ position: 60, label: 'Motivo' }] }
   @EndUserText.label: 'Motivo'
   MotivoSnapshot;
 
   @UI.hidden: true
   CreatedBy;
 
-  @UI: { lineItem: [{ position: 70, label: 'Gerado em' }],
-         identification: [{ position: 190, label: 'Gerado em' }] }
+  @UI: { lineItem: [{ position: 70, label: 'Gerado em' }] }
   @EndUserText.label: 'Gerado em'
   CreatedAt;
 

@@ -1,9 +1,8 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Carga de pedidos de demonstração</p>
 "! Insere 100 pedidos sobre os clientes e itens já carregados (executar depois de
 "! ZCL_SETUP_CLIENTE e ZCL_SETUP_ESTOQUE). Os registros seguem o fluxo real:
-"!  - status distribuídos entre CRIADO, AGUARDANDO_PAGAMENTO, AGUARDANDO_APROVACAO,
-"!    FINALIZADO e CANCELADO;
-"!  - 10 pedidos em PROCESSAR_REEMBOLSO, cada um com uma solicitação de reembolso
+"!  - status distribuídos entre ABERTO, AGUARDANDO_APROVACAO, FINALIZADO e CANCELADO;
+"!  - 10 pedidos em PROCESSANDO_REEMBOLSO, cada um com uma solicitação de reembolso
 "!    PENDENTE (exibida no app de Gestão de Reembolsos);
 "!  - pagamento, snapshots (finalizados/cancelados) e estoque (reserva/baixa)
 "!    coerentes com o status.
@@ -116,15 +115,15 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
-    " Padrão de 20 pedidos (repetido 5x): 6 FIN, 4 AG_APR, 3 CRIADO, 3 AG_PAG, 2 REEMB, 2 CANC
+    " Padrão de 20 pedidos (repetido 5x): 6 FIN, 4 AG_APR, 6 ABERTO, 2 REEMB, 2 CANC
     DATA(lc_ped) = zif_pc_constants=>c_status_pedido.
     lt_padrao = VALUE #(
-      ( lc_ped-finalizado )           ( lc_ped-aguardando_aprovacao ) ( lc_ped-criado )
-      ( lc_ped-finalizado )           ( lc_ped-aguardando_pagamento ) ( lc_ped-processar_reembolso )
+      ( lc_ped-finalizado )           ( lc_ped-aguardando_aprovacao ) ( lc_ped-aberto )
+      ( lc_ped-finalizado )           ( lc_ped-aberto )               ( lc_ped-processando_reembolso )
       ( lc_ped-finalizado )           ( lc_ped-aguardando_aprovacao ) ( lc_ped-cancelado )
-      ( lc_ped-criado )               ( lc_ped-finalizado )           ( lc_ped-aguardando_pagamento )
-      ( lc_ped-aguardando_aprovacao ) ( lc_ped-processar_reembolso )  ( lc_ped-finalizado )
-      ( lc_ped-criado )               ( lc_ped-aguardando_pagamento ) ( lc_ped-cancelado )
+      ( lc_ped-aberto )               ( lc_ped-finalizado )           ( lc_ped-aberto )
+      ( lc_ped-aguardando_aprovacao ) ( lc_ped-processando_reembolso ) ( lc_ped-finalizado )
+      ( lc_ped-aberto )               ( lc_ped-aberto )               ( lc_ped-cancelado )
       ( lc_ped-finalizado )           ( lc_ped-aguardando_aprovacao ) ).
 
     DATA(lt_motivos_cancel) = VALUE string_table(
@@ -152,7 +151,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
 
       DATA(lv_fin)   = xsdbool( lv_status = lc_ped-finalizado ).
       DATA(lv_canc)  = xsdbool( lv_status = lc_ped-cancelado ).
-      DATA(lv_reemb) = xsdbool( lv_status = lc_ped-processar_reembolso ).
+      DATA(lv_reemb) = xsdbool( lv_status = lc_ped-processando_reembolso ).
 
       " ---- Escolha dos itens (1 a 3 linhas) com saldo disponível
       CLEAR lt_linhas.
@@ -239,10 +238,11 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
 
       " ---- Pedido
       DATA(lv_status_pag) = COND zif_pc_constants=>ty_status_pagamento(
-        WHEN lv_status = lc_ped-criado OR lv_status = lc_ped-cancelado
-          THEN zif_pc_constants=>c_status_pagamento-pendente
-        WHEN lv_status = lc_ped-aguardando_pagamento
+        " Aberto: pagamento ainda não feito (pendente) ou tentativa recusada
+        WHEN lv_status = lc_ped-aberto AND lv_i MOD 3 = 0
           THEN zif_pc_constants=>c_status_pagamento-recusado
+        WHEN lv_status = lc_ped-aberto OR lv_status = lc_ped-cancelado
+          THEN zif_pc_constants=>c_status_pagamento-pendente
         ELSE zif_pc_constants=>c_status_pagamento-aprovado ).
 
       DATA(ls_pedido) = VALUE zta_pc_pedido(
@@ -263,9 +263,9 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
         currency              = zif_pc_constants=>c_moeda_padrao
         valor_total           = lv_total
         pedido_encerrado      = xsdbool( lv_fin = abap_true OR lv_canc = abap_true )
-        pedido_ativo_sem_hist = xsdbool( lv_status = lc_ped-criado
-                                      OR lv_status = lc_ped-aguardando_pagamento
-                                      OR lv_status = lc_ped-aguardando_aprovacao )
+        pedido_ativo_sem_hist = xsdbool( lv_fin = abap_false AND lv_canc = abap_false )
+        pedido_nao_finalizado = xsdbool( lv_fin = abap_false )
+        pedido_nao_cancelado  = xsdbool( lv_canc = abap_false )
         created_by            = lv_usuario
         created_at            = lv_criado
         last_changed_by       = lv_usuario
@@ -389,9 +389,9 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
     ENDLOOP.
 
     io_out->write( |Pedidos de demonstração criados: { lines( lt_pedidos ) }.| ).
-    DATA(lt_resumo) = VALUE tt_status( ( lc_ped-criado ) ( lc_ped-aguardando_pagamento )
-                                       ( lc_ped-aguardando_aprovacao ) ( lc_ped-finalizado )
-                                       ( lc_ped-processar_reembolso ) ( lc_ped-cancelado ) ).
+    DATA(lt_resumo) = VALUE tt_status( ( lc_ped-aberto ) ( lc_ped-aguardando_aprovacao )
+                                       ( lc_ped-processando_reembolso ) ( lc_ped-cancelado )
+                                       ( lc_ped-finalizado ) ).
     LOOP AT lt_resumo INTO DATA(lv_resumo).
       io_out->write( |  { lv_resumo }: { contar( it_pedidos = lt_pedidos iv_status = lv_resumo ) }| ).
     ENDLOOP.

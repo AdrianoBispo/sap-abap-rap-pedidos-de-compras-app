@@ -9,7 +9,7 @@ CLASS lhc_reembolso DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Reembolso RESULT result.
 
-    "! Aprova a solicitação: o pedido (PROCESSAR_REEMBOLSO) é cancelado pelo
+    "! Aprova a solicitação: o pedido (PROCESSANDO_REEMBOLSO) é cancelado pelo
     "! BO Pedido (libera a reserva e gera os snapshots) na mesma LUW.
     METHODS AprovarReembolso FOR MODIFY
       IMPORTING keys FOR ACTION Reembolso~AprovarReembolso RESULT result.
