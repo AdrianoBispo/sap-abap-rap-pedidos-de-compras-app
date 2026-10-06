@@ -106,17 +106,23 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 - **Endereço com ViaCEP**: campo CEP customizado (máscara `99999-999`) que consulta o ViaCEP e
   preenche logradouro, bairro, cidade, UF e estado. Um CEP ainda não cadastrado é gravado
   automaticamente na tabela de endereços na primeira consulta; o CEP é chave da tabela (`not null`,
-  único por cliente).
+  único por cliente). Como o CEP faz parte da chave primária, ele **não pode ser alterado depois que
+  o endereço é gravado** (campo somente leitura): para trocar, exclua o endereço e cadastre outro.
 - **Estoque**: cadastro de itens com SKU numerado automaticamente, foto e categoria; controle de
   quantidade disponível e reserva. Campos de peso e dimensões foram removidos — informações desse
   tipo cabem na descrição do item.
 - **Precheck de estoque zerado**: ao incluir um item no pedido, um precheck do RAP bloqueia a
   criação da linha se o item não tiver quantidade disponível, antes mesmo de qualquer determination
   rodar.
-- **Pedidos**: itens criados *inline* no rascunho; ao **Salvar** o pedido é registrado (`CRIADO`) e o
-  estoque dos itens é reservado automaticamente (não há ação de confirmação). O pedido registrado
-  não é mais editado nem excluído — só **Simular pagamento**, **Aprovar / finalizar** e **Cancelar**
-  (com motivo).
+- **Pedidos**: itens criados *inline* no rascunho; ao **Salvar** o pedido é registrado (`ABERTO`) e o
+  estoque dos itens é reservado automaticamente (não há ação de confirmação). Enquanto está
+  `ABERTO`, só os **itens** podem ser alterados (o cliente fica travado): incluir, remover ou mudar a
+  quantidade de um item ajusta a reserva pela **diferença** (*Editar* + *Salvar*). O pedido não é
+  excluído — só **Efetuar Pagamento**, **Aprovar pedido** e **Cancelar** (com motivo).
+- **Object Page dinâmica do pedido**: seções *Dados do Cliente*, *Dados do Pedido* (inclui os campos
+  administrativos), *Itens*, *Pagamento* e, conforme o status, *Finalização* ou *Cancelamento*. Cliente
+  e itens vêm dos **snapshots** quando o pedido está `FINALIZADO` ou `CANCELADO`, e das tabelas
+  principais nos demais status.
 - **Fotos** de clientes e itens: JPEG, PNG ou WEBP (valida MIME, extensão e assinatura binária). Cliente sem foto mostra um avatar.
 - **Score** do cliente em %, com barra vermelha (até 40), amarela (de 40 a 70) e verde (a partir de 70).
 - **Ações do pedido** agrupadas no menu "Ações" (anotação `#FOR_ACTION_GROUP`, aparece também no preview do ADT).
@@ -125,7 +131,7 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 - **Pagamento simulado** por cartão (VISA / Mastercard) sem persistir dados sensíveis — apenas
   bandeira, últimos 4 dígitos e máscara.
 - **Reembolso**: cancelar um pedido com pagamento aprovado abre uma solicitação de reembolso
-  (`PROCESSAR_REEMBOLSO`) em vez de cancelar direto; ela é decidida numa **app própria, Gestão de
+  (`PROCESSANDO_REEMBOLSO`) em vez de cancelar direto; ela é decidida numa **app própria, Gestão de
   Reembolsos**, com as ações **Aprovar reembolso** e **Rejeitar reembolso** (ver
   [Reembolso de pedidos](#reembolso-de-pedidos)).
 - **Snapshots** do cliente e dos itens no momento do pedido (histórico imutável).
@@ -189,20 +195,21 @@ flowchart LR
 
 ### Fluxo do pedido
 
+Cinco status: `ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO` e `FINALIZADO`.
+Status do pagamento: `PENDENTE`, `APROVADO`, `RECUSADO` e `DEVOLVIDO` (quando o reembolso é aprovado).
+
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> CRIADO: Criar + Salvar (reserva o estoque)
-    CRIADO --> AGUARDANDO_PAGAMENTO: Pagamento recusado
-    CRIADO --> AGUARDANDO_APROVACAO: Pagamento aprovado
-    AGUARDANDO_PAGAMENTO --> AGUARDANDO_PAGAMENTO: Pagamento recusado
-    AGUARDANDO_PAGAMENTO --> AGUARDANDO_APROVACAO: Pagamento aprovado
-    AGUARDANDO_APROVACAO --> FINALIZADO: Aprovar / finalizar
-    CRIADO --> CANCELADO: Cancelar
-    AGUARDANDO_PAGAMENTO --> CANCELADO: Cancelar (sem pagamento aprovado)
-    AGUARDANDO_APROVACAO --> PROCESSAR_REEMBOLSO: Cancelar (pagamento aprovado)
-    PROCESSAR_REEMBOLSO --> CANCELADO: Aprovar reembolso
-    PROCESSAR_REEMBOLSO --> AGUARDANDO_APROVACAO: Rejeitar reembolso
+    [*] --> ABERTO: Criar + Salvar (reserva o estoque)
+    ABERTO --> ABERTO: Editar itens (ajusta a reserva) / Pagamento recusado
+    ABERTO --> AGUARDANDO_APROVACAO: Efetuar Pagamento aprovado
+    AGUARDANDO_APROVACAO --> FINALIZADO: Aprovar pedido
+    ABERTO --> CANCELADO: Cancelar
+    AGUARDANDO_APROVACAO --> CANCELADO: Cancelar (sem pagamento aprovado)
+    AGUARDANDO_APROVACAO --> PROCESSANDO_REEMBOLSO: Cancelar (pagamento aprovado)
+    PROCESSANDO_REEMBOLSO --> CANCELADO: Aprovar reembolso
+    PROCESSANDO_REEMBOLSO --> AGUARDANDO_APROVACAO: Rejeitar reembolso
     FINALIZADO --> [*]
     CANCELADO --> [*]
 ```
@@ -223,12 +230,16 @@ stateDiagram-v2
 │       │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
 │       │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
 │       └── ZAVBS_PC_REEMBOLSOS         BO Reembolso, serviço ZUI_PC_REEMBOLSOS
+│       (analítico: cubos ZI_PC_*_CUBE e consultas ZC_PC_*_ANALISE em cada pacote de domínio;
+│        serviço ZUI_PC_ANALITICO em ZAVBS_PC_COMMON)
 │
 ├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
 │   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
 │   ├── gestao-estoque/                 app Gestão de Estoque (projeto isolado)
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
+│   ├── analise-*/                      20 apps ALP somente leitura (um gráfico por cenário)
+│   ├── painel-compras/                 Overview Page (OVP) com 20 cards, listas de ação e atalhos
 │   └── README.md                       guia do front-end
 │
 ├── docs/
@@ -355,7 +366,7 @@ Quatro apps **Fiori Elements OData V4** (List Report + Object Page), uma por ser
 | ------------------ | --------------------- | --------------------------- | ------------------------------------- | ------------------------ | -------------- |
 | Gestão de Clientes | `ui5/gestao-clientes` | `ZUI_PC_CLIENTES_O4`        | Cliente → Endereço                    | `ZPCCliente-manage`      | `ZPC_CLIENTES` |
 | Gestão de Estoque  | `ui5/gestao-estoque`  | `ZUI_PC_ESTOQUE_O4`         | Item                                  | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE`  |
-| Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Histórico             | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
+| Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Pagamento             | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 | Gestão de Reembolsos | `ui5/gestao-reembolsos` | `ZUI_PC_REEMBOLSOS_O4`    | Reembolso                             | `ZPCReembolso-manage`    | `ZPC_REEMBOLSOS` |
 
 ```bash
@@ -390,29 +401,48 @@ Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 | Cenário                | Como testar                                                                                                  |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Pagamento aprovado     | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123`                                      |
-| Pagamento recusado     | Mesmo cartão com CVV `000` (pedido permanece em AGUARDANDO_PAGAMENTO)                                        |
+| Pagamento recusado     | Mesmo cartão com CVV `000` (pedido permanece `ABERTO`; pagamento `RECUSADO`)                                   |
 | Mastercard             | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`)                                                         |
 | Estoque insuficiente   | Precheck bloqueia ao incluir um item com quantidade disponível zerada no pedido                              |
 | Concorrência           | Deixar o item em edição (draft) na app de Estoque e salvar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
 | Exclusão de cliente    | Tentar excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`)                                         |
 | CEP duplicado          | Cadastrar dois endereços com o mesmo CEP para o **mesmo** cliente → bloqueado (mensagem 047)                 |
-| Reembolso              | Cancelar um pedido com pagamento aprovado → status `PROCESSAR_REEMBOLSO`; na app Gestão de Reembolsos, aprovar ou rejeitar (motivo obrigatório) |
-| Reserva no Save        | Salvar um rascunho válido → pedido `CRIADO` e `QtdeReservada` do item aumenta; salvar com estoque insuficiente → bloqueado |
+| Reembolso              | Cancelar um pedido com pagamento aprovado → status `PROCESSANDO_REEMBOLSO`; na app Gestão de Reembolsos, aprovar (pedido `CANCELADO`, pagamento `DEVOLVIDO`) ou rejeitar (motivo obrigatório; pedido volta ao status anterior) |
+| Reserva no Save        | Salvar um rascunho válido → pedido `ABERTO` e `QtdeReservada` do item aumenta; salvar com estoque insuficiente → bloqueado |
+| Edição de itens        | Em pedido `ABERTO`: *Editar* → alterar quantidade, incluir ou remover item → *Salvar* ajusta a reserva só pela diferença; o cliente fica somente leitura |
+| CEP de endereço gravado | Em endereço já salvo o CEP é somente leitura (é parte da chave da tabela); para trocar, exclua e cadastre outro |
 
-Fluxo do pedido: **Criar** (draft) → **Salvar** (registra e reserva o estoque) → **Simular pagamento** →
-**Aprovar / finalizar** (ou **Cancelar pedido** com motivo).
+Fluxo do pedido: **Criar** (draft) → **Salvar** (registra e reserva o estoque) → **Efetuar Pagamento** →
+**Aprovar pedido** (ou **Cancelar pedido** com motivo).
 
 ### Testes automatizados
 
 | Tipo              | Onde                                                                    | Como rodar                     |
 | ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
-| ABAP Unit         | `ZCL_PC_UTIL` e `ZCL_PC_PAGAMENTO_SIM` (`*.clas.testclasses.abap`)      | `Ctrl+Shift+F10` no ADT         |
+| ABAP Unit         | `ZCL_PC_UTIL`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_IMPORTACAO` e `ZCL_PC_PLANILHA` (`*.clas.testclasses.abap`) | `Ctrl+Shift+F10` no ADT |
 | OPA5 (gerados)    | `ui5/<app>/webapp/test/integration/`                                    | `npm run int-test` (mock)       |
 
-As classes de teste de precheck/validação usadas para verificar os ajustes desta rodada (item sem
-estoque, CEP único) foram temporárias e já foram removidas após a confirmação — `ZCL_PC_UTIL`
-mantém apenas seus 3 conjuntos de teste permanentes (CPF/telefone, e-mail/imagem, estoque/endereço),
-todos passando (28/28).
+**As classes de teste são permanentes**: ficam no SAP e neste repositório, e são ajustadas quando a
+funcionalidade que cobrem muda. `ZCL_PC_UTIL` tem 50 testes, todos passando:
+
+| Classe de teste (local)        | Cobre                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `ltcl_digitos_cpf`             | CPF e telefone                                                                              |
+| `ltcl_email_imagem`            | e-mail, JPEG/PNG/WEBP (MIME, extensão e assinatura binária)                                 |
+| `ltcl_estoque_endereco`        | status de estoque e endereço formatado                                                      |
+| `ltcl_edicao_pedido`           | alterar, incluir e remover item com reserva incremental; só pedido `ABERTO` é editável      |
+| `ltcl_registro_pedido`         | Save cria o pedido `ABERTO`, número, reserva; nunca reserva acima do estoque                |
+| `ltcl_ciclo_pedido`            | pagamento aprovado/recusado, aprovar (baixa de estoque), cancelar (com e sem pagamento)     |
+| `ltcl_reembolso`               | aprovar (cancela, devolve, libera), rejeitar (motivo obrigatório, retoma o pedido)          |
+| `ltcl_sku_item`                | SKU com prefixo da categoria e sequencial único                                             |
+| `ltcl_persistencia_endereco`   | save real (`COMMIT ENTITIES`) de endereços; CEP gravado é somente leitura                   |
+
+Os testes de integração semeiam os próprios dados por `INSERT` (o ABAP Unit desfaz a gravação) e usam
+um `Edit` por teste, porque um rascunho sobrevive ao `Activate` na mesma LUW. Os de persistência usam
+`cl_cds_test_environment` (entidades `ZR_*`) e `cl_osql_test_environment` (tabelas de rascunho), o
+que permite `COMMIT ENTITIES`. Eles exigem o objeto `ZPC_NR` configurado (ver
+[Objetos criados manualmente](#objetos-criados-manualmente)). Depois de editar um include de testes,
+ative também o include `testclasses`, senão o ABAP Unit roda a versão antiga.
 
 ---
 
@@ -485,10 +515,10 @@ Reembolsos** (`ZUI_PC_REEMBOLSOS`). Não é mais filho do Pedido.
 
 1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
    cria a solicitação no BO Reembolso por EML (status `PENDENTE`, guardando `StatusPedidoAnterior`)
-   e move o Pedido para `PROCESSAR_REEMBOLSO`, mantendo a reserva de estoque.
+   e move o Pedido para `PROCESSANDO_REEMBOLSO`, mantendo a reserva de estoque.
 2. Ação **AprovarReembolso** (app Gestão de Reembolsos): executa `CancelarPorReembolso` no BO Pedido
-   (libera o estoque reservado, monta os snapshots, Pedido `CANCELADO` com `DataCancelamento`) e
-   marca o Reembolso como `APROVADO`, na mesma transação.
+   (libera o estoque reservado, monta os snapshots, Pedido `CANCELADO` com `DataCancelamento` e
+   pagamento `DEVOLVIDO`) e marca o Reembolso como `APROVADO`, na mesma transação.
 3. Ação **RejeitarReembolso** (exige `MotivoDecisao`): executa `RetomarPedido` (o Pedido volta ao
    `StatusPedidoAnterior` e o `MotivoCancelamento` é limpo) e marca o Reembolso como `REJEITADO`.
 
@@ -536,7 +566,7 @@ ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
   um CEP inexistente (ou ViaCEP fora do ar) cancela a importação.
 - **Estoque**: o SKU é gerado na hora; um nome de item já cadastrado (ou repetido na planilha) é
   erro, o que evita duplicar o estoque ao reenviar o mesmo arquivo.
-- **Pedidos**: nasce `CRIADO`, com o endereço principal do cliente e o estoque reservado. Todas as
+- **Pedidos**: nasce `ABERTO`, com o endereço principal do cliente e o estoque reservado. Todas as
   linhas de um pedido precisam ter o mesmo CPF; o cliente deve estar ativo e ter endereço
   principal; o estoque disponível tem de cobrir a soma pedida em **toda** a planilha.
 - Permissões: Clientes e Estoque exigem a atividade de criação de `ZPC_ADMIN`; Pedidos, a de
@@ -592,16 +622,39 @@ limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
   (`ZC_PC_ITEM_APP`) e `FotoCliente` (`ZC_PC_CLIENTE_APP`). Os campos continuam expostos como antes
   (sem anotação de tipo especial na lista); os dados da foto em si (upload, MIME, exibição na
   Object Page) não foram afetados.
-- **Ocultar seções da Object Page por status.** A ideia era usar `@UI.facet: [{ hidden: 'Campo' }]`
-  para esconder dinamicamente as seções de snapshot/histórico quando o pedido está ativo
-  (`CRIADO`/`AGUARDANDO_PAGAMENTO`/`AGUARDANDO_APROVACAO`) e as seções de itens/pagamento ativos
-  quando o pedido está `FINALIZADO`/`CANCELADO`. Nenhum campo booleano testado — nem mesmo o campo
-  `ItemAtivo`, já existente e funcional em outro contexto — foi aceito por `hidden:` neste release
-  (erro "must be of type 'Boolean'" mesmo com CDS `abap.boolean`/`abap_boolean`/predicado). Os
-  campos `PedidoEncerrado` e `PedidoAtivoSemHistorico` foram implementados como determination (on
-  modify) e ficam disponíveis como campos visíveis de informação na Object Page do Pedido — a
-  lógica de status está pronta e correta, só não há ocultação automática de facet nesta versão do
-  Trial.
+- **Ocultar seções da Object Page por status.** Resolvido na v2.2: o que funciona é a **expressão de
+  anotação** `hidden: #(Campo)` na `@UI.facet` do DDLX, sobre um campo persistido (a forma textual
+  `hidden: 'Campo'`, usada na primeira tentativa, foi rejeitada). Por isso os indicadores
+  (`PedidoEncerrado`, `PedidoAtivoSemHistorico`, `PedidoNaoFinalizado`, `PedidoNaoCancelado`) são
+  colunas `xfeld` da tabela do pedido, mantidas pela determination `AtualizarFlagsStatus`
+  (`ZCL_PC_SETUP` recalcula os pedidos existentes).
+- **CEP não muda depois de gravado.** `ZTA_PC_ENDERECO` tem `cep` na chave primária, mas a entidade
+  só tem `EnderecoUUID` como chave: um `UPDATE` que alterasse o CEP procurava a linha com o CEP novo
+  e gerava `RAISE_SHORTDUMP` (`CX_CSP_ACT_INTERNAL`, "UPDATE returned unexpected sy-subrc 4"). O CEP
+  de endereço gravado é somente leitura (feature de instância). Mudar a chave da tabela exigiria
+  recriá-la, pois o ABAP Cloud não ativa uma tabela implantada com a chave alterada.
+
+---
+
+## Análises (ALP e Overview Page)
+
+Camada analítica **somente leitura**, independente dos apps de gestão: cubos `ZI_PC_*_CUBE` e
+consultas `ZC_PC_*_ANALISE` (com `@Aggregation.default` nas medidas e metadata extensions com
+`UI.Chart`/`UI.PresentationVariant`) publicadas no serviço `ZUI_PC_ANALITICO`
+(binding `ZUI_PC_ANALITICO_O4`, OData V4 – UI, pacote `ZAVBS_PC_COMMON`):
+
+| Domínio    | Cubo / consulta                                  | Pacote              |
+| ---------- | ------------------------------------------------ | ------------------- |
+| Pedidos    | `ZI_PC_PEDIDO_CUBE` → `ZC_PC_PEDIDO_ANALISE`     | `ZAVBS_PC_PEDIDOS`  |
+| Clientes   | `ZI_PC_CLIENTE_CUBE` → `ZC_PC_CLIENTE_ANALISE`   | `ZAVBS_PC_CLIENTES` |
+| Estoque    | `ZI_PC_ITEM_CUBE` → `ZC_PC_ITEM_ANALISE`         | `ZAVBS_PC_ESTOQUE`  |
+| Reembolsos | `ZI_PC_REEMB_CUBE` → `ZC_PC_REEMB_ANALISE`       | `ZAVBS_PC_REEMBOLSOS` |
+
+No front-end são 20 apps ALP (`ui5/analise-*`, um gráfico por cenário) e o **Painel de Compras**
+(`ui5/painel-compras`, Overview Page com 20 cards de gráfico, 3 listas de ação e atalhos para os apps
+de gestão). A tabela completa de cenários, BSPs e intents está em [`ui5/README.md`](ui5/README.md).
+Para ter dados nos gráficos, carregue os dados de demonstração (`ZCL_PC_SETUP`). Os apps analíticos
+ainda precisam ser implantados e verificados em execução no launchpad do sistema.
 
 ---
 
@@ -631,6 +684,7 @@ limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas, 20 ALPs e Overview Page); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |
 | v2.1   | Reembolso como BO e app próprios (Gestão de Reembolsos, `ZUI_PC_REEMBOLSOS`); remoção da ação Confirmar pedido (o Save registra o pedido e reserva o estoque; `Activate` não otimizado + `ReservarEstoqueRegistro`/`ValidarRegistro`); SKU gerado no Save com o prefixo da categoria; especificação v2.1 |
 | v1.5   | Score com Process Indicator, precheck de estoque zerado, remoção de peso/dimensões do item, cadastro automático de endereço, CEP único por cliente, textos em vez de UUID; sincronização do repositório com os pacotes `ZAVBS_*` (sem dicionário próprio) e o fluxo de reembolso |
 | v1.4   | Dicionário de dados próprio (domínios, elementos de dados, estruturas) e novos nomes das tabelas draft                   |
