@@ -106,6 +106,7 @@ INTERFACE zif_pc_constants PUBLIC.
     BEGIN OF c_mime,
       jpeg TYPE string VALUE `image/jpeg`,
       png  TYPE string VALUE `image/png`,
+      webp TYPE string VALUE `image/webp`,
     END OF c_mime.
 
 ENDINTERFACE.

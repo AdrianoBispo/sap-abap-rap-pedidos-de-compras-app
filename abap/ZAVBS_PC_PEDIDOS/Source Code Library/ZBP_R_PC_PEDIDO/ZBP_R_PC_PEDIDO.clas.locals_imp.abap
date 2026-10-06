@@ -54,6 +54,25 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Pedido RESULT result.
 
+    "! Importação em massa por planilha (.xlsx/.csv): uma linha por item, com a
+    "! mesma referência para os itens de um pedido. Cria pedidos ativos (CRIADO)
+    "! e reserva o estoque, como o registro pela tela. Tudo ou nada.
+    METHODS ImportarPlanilha FOR MODIFY
+      IMPORTING keys FOR ACTION Pedido~ImportarPlanilha.
+
+    "! Reporta os erros da importação (primeiro o resumo) e falha a action,
+    "! o que descarta qualquer pedido já criado no buffer.
+    METHODS falhar_importacao
+      IMPORTING it_erros    TYPE string_table
+                iv_cid      TYPE abp_behv_cid
+      CHANGING  cs_failed   TYPE ty_failed
+                cs_reported TYPE ty_reported.
+
+    "! "Linha N: " a partir do %cid (PED ou ITM seguido do número da linha).
+    METHODS linha_do_cid
+      IMPORTING iv_cid          TYPE csequence
+      RETURNING VALUE(rv_texto) TYPE string.
+
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Pedido RESULT result.
 
@@ -217,6 +236,11 @@ CLASS lhc_pedido IMPLEMENTATION.
     ENDIF.
     IF requested_authorizations-%action-CancelarPedido = if_abap_behv=>mk-on.
       result-%action-CancelarPedido = lv_exec.
+    ENDIF.
+    IF requested_authorizations-%action-ImportarPlanilha = if_abap_behv=>mk-on.
+      result-%action-ImportarPlanilha = COND #( WHEN zcl_pc_auth=>pedido_pode_criar( ) = abap_true
+                                                THEN if_abap_behv=>auth-allowed
+                                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
   ENDMETHOD.
 
@@ -594,6 +618,315 @@ CLASS lhc_pedido IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
     ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD ImportarPlanilha.
+    TYPES:
+      BEGIN OF ty_linha,
+        linha        TYPE i,
+        ref          TYPE string,
+        cpf          TYPE zr_pc_cliente-Cpf,
+        sku          TYPE zr_pc_item-Sku,
+        qtde         TYPE i,
+        obs          TYPE string,
+        cliente_uuid TYPE sysuuid_x16,
+        item_uuid    TYPE sysuuid_x16,
+      END OF ty_linha.
+    TYPES:
+      BEGIN OF ty_grupo,
+        ref          TYPE string,
+        linha        TYPE i,
+        cpf          TYPE zr_pc_cliente-Cpf,
+        cliente_uuid TYPE sysuuid_x16,
+        obs          TYPE string,
+      END OF ty_grupo.
+    TYPES:
+      BEGIN OF ty_cli_status,
+        cpf          TYPE zr_pc_cliente-Cpf,
+        cliente_uuid TYPE sysuuid_x16,
+        motivo       TYPE string,
+      END OF ty_cli_status.
+    TYPES:
+      BEGIN OF ty_demanda,
+        item_uuid  TYPE sysuuid_x16,
+        solicitado TYPE i,
+      END OF ty_demanda.
+
+    CONSTANTS:
+      BEGIN OF c_col,
+        ref        TYPE string VALUE `Pedido`,
+        cpf        TYPE string VALUE `CPF`,
+        sku        TYPE string VALUE `SKU`,
+        quantidade TYPE string VALUE `Quantidade`,
+        obs        TYPE string VALUE `Observação`,
+      END OF c_col.
+
+    FIELD-SYMBOLS <ls_dem> TYPE ty_demanda.
+
+    DATA lt_colunas    TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_erros      TYPE string_table.
+    DATA lt_linhas     TYPE STANDARD TABLE OF ty_linha WITH EMPTY KEY.
+    DATA lt_grupos     TYPE STANDARD TABLE OF ty_grupo WITH EMPTY KEY.
+    DATA lt_cpfs       TYPE STANDARD TABLE OF zr_pc_cliente-Cpf WITH NON-UNIQUE KEY table_line.
+    DATA lt_skus       TYPE STANDARD TABLE OF zr_pc_item-Sku WITH NON-UNIQUE KEY table_line.
+    DATA lt_cli_status TYPE SORTED TABLE OF ty_cli_status WITH UNIQUE KEY cpf.
+    DATA lt_demanda    TYPE SORTED TABLE OF ty_demanda WITH UNIQUE KEY item_uuid.
+
+    lt_colunas = VALUE #(
+      ( campo = c_col-ref        sinonimos = `REFERENCIA|REFERENCIADOPEDIDO|NUMEROPEDIDO|NUMERO|IDPEDIDO|ID|AGRUPADOR` obrigatoria = abap_true )
+      ( campo = c_col-cpf        sinonimos = `CPFCLIENTE|CPFDOCLIENTE`                                                obrigatoria = abap_true )
+      ( campo = c_col-sku        sinonimos = `CODIGOSKU|CODIGO|ITEM`                                                  obrigatoria = abap_true )
+      ( campo = c_col-quantidade sinonimos = `QTDE|QTD|QUANTIDADEITEM`                                                obrigatoria = abap_true )
+      ( campo = c_col-obs        sinonimos = `OBS|OBSERVACOES` ) ).
+
+    LOOP AT keys INTO DATA(ls_key).
+      CLEAR: lt_erros, lt_linhas, lt_grupos, lt_cpfs, lt_skus, lt_cli_status, lt_demanda.
+
+      IF zcl_pc_auth=>pedido_pode_criar( ) = abap_false.
+        APPEND VALUE #( %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>sem_autorizacao ) ) TO reported-pedido.
+        APPEND VALUE #( %cid = ls_key-%cid ) TO failed-pedido.
+        CONTINUE.
+      ENDIF.
+
+      " 1) Leitura do arquivo (XLSX ou CSV)
+      zcl_pc_planilha=>ler( EXPORTING iv_conteudo  = ls_key-%param-_StreamProperties-StreamProperty
+                                      it_colunas   = lt_colunas
+                            IMPORTING et_registros = DATA(lt_registros)
+                                      et_erros     = lt_erros ).
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 2) Formato de cada linha
+      LOOP AT lt_registros INTO DATA(ls_reg).
+        DATA(lv_pref)  = |Linha { ls_reg-linha }: |.
+        DATA(lv_antes) = lines( lt_erros ).
+        DATA(ls_lin)   = VALUE ty_linha( linha = ls_reg-linha ).
+
+        ls_lin-ref = to_upper( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-ref ) ).
+        IF ls_lin-ref IS INITIAL.
+          APPEND |{ lv_pref }Pedido (referência que agrupa os itens) é obrigatório.| TO lt_erros.
+        ENDIF.
+
+        DATA(lv_cpf_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cpf ).
+        ls_lin-cpf = zcl_pc_importacao=>normalizar_cpf( lv_cpf_txt ).
+        IF zcl_pc_util=>validar_cpf( ls_lin-cpf ) = abap_false.
+          APPEND |{ lv_pref }CPF inválido ({ lv_cpf_txt }).| TO lt_erros.
+        ENDIF.
+
+        ls_lin-sku = to_upper( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-sku ) ).
+        IF ls_lin-sku IS INITIAL.
+          APPEND |{ lv_pref }SKU é obrigatório.| TO lt_erros.
+        ENDIF.
+
+        DATA(lv_qtde_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-quantidade ).
+        zcl_pc_planilha=>para_inteiro( EXPORTING iv_texto  = lv_qtde_txt
+                                       IMPORTING ev_valor  = DATA(lv_qtde)
+                                                 ev_valido = DATA(lv_qtde_ok) ).
+        IF lv_qtde_ok = abap_false OR lv_qtde <= 0.
+          APPEND |{ lv_pref }Quantidade inválida ({ lv_qtde_txt }). Informe um inteiro maior que zero.| TO lt_erros.
+        ELSE.
+          ls_lin-qtde = lv_qtde.
+        ENDIF.
+
+        ls_lin-obs = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-obs ).
+        IF strlen( ls_lin-obs ) > 500.
+          APPEND |{ lv_pref }Observação excede 500 caracteres.| TO lt_erros.
+        ENDIF.
+
+        IF lines( lt_erros ) = lv_antes.
+          APPEND ls_lin TO lt_linhas.
+        ENDIF.
+      ENDLOOP.
+
+      " 3) Cliente, item, consistência do pedido e estoque (nas linhas bem formadas)
+      IF lt_linhas IS NOT INITIAL.
+        lt_cpfs = VALUE #( FOR l IN lt_linhas ( l-cpf ) ).
+        SORT lt_cpfs.
+        DELETE ADJACENT DUPLICATES FROM lt_cpfs.
+        lt_skus = VALUE #( FOR l IN lt_linhas ( l-sku ) ).
+        SORT lt_skus.
+        DELETE ADJACENT DUPLICATES FROM lt_skus.
+
+        SELECT ClienteUUID, Cpf, ClienteAtivo
+          FROM zr_pc_cliente
+          FOR ALL ENTRIES IN @lt_cpfs
+          WHERE Cpf = @lt_cpfs-table_line
+          INTO TABLE @DATA(lt_clientes).
+
+        SELECT ItemUUID, Sku, ItemAtivo, QtdeEstoque, QtdeReservada
+          FROM zr_pc_item
+          FOR ALL ENTRIES IN @lt_skus
+          WHERE Sku = @lt_skus-table_line
+          INTO TABLE @DATA(lt_itens_db).
+      ENDIF.
+
+      LOOP AT lt_cpfs INTO DATA(lv_cpf).
+        DATA(ls_status) = VALUE ty_cli_status( cpf = lv_cpf ).
+        READ TABLE lt_clientes INTO DATA(ls_cli) WITH KEY Cpf = lv_cpf.
+        IF sy-subrc <> 0.
+          ls_status-motivo = `cliente não encontrado`.
+        ELSEIF ls_cli-ClienteAtivo = abap_false.
+          ls_status-motivo = `cliente inativo`.
+        ELSEIF endereco_principal( ls_cli-ClienteUUID )-endereco_uuid IS INITIAL.
+          ls_status-motivo = `cliente sem endereço principal`.
+        ELSE.
+          ls_status-cliente_uuid = ls_cli-ClienteUUID.
+        ENDIF.
+        INSERT ls_status INTO TABLE lt_cli_status.
+      ENDLOOP.
+
+      LOOP AT lt_linhas ASSIGNING FIELD-SYMBOL(<ls_lin>).
+        lv_pref = |Linha { <ls_lin>-linha }: |.
+
+        DATA(ls_cli_st) = lt_cli_status[ cpf = <ls_lin>-cpf ].
+        IF ls_cli_st-motivo IS NOT INITIAL.
+          APPEND |{ lv_pref }CPF { zcl_pc_util=>formatar_cpf( <ls_lin>-cpf ) }: { ls_cli_st-motivo }.| TO lt_erros.
+        ELSE.
+          <ls_lin>-cliente_uuid = ls_cli_st-cliente_uuid.
+        ENDIF.
+
+        READ TABLE lt_itens_db INTO DATA(ls_it) WITH KEY Sku = <ls_lin>-sku.
+        IF sy-subrc <> 0.
+          APPEND |{ lv_pref }SKU { <ls_lin>-sku } não encontrado.| TO lt_erros.
+        ELSEIF ls_it-ItemAtivo = abap_false.
+          APPEND |{ lv_pref }SKU { <ls_lin>-sku } está inativo.| TO lt_erros.
+        ELSE.
+          <ls_lin>-item_uuid = ls_it-ItemUUID.
+        ENDIF.
+
+        " Todas as linhas de um pedido pertencem ao mesmo cliente
+        READ TABLE lt_grupos ASSIGNING FIELD-SYMBOL(<ls_grupo>) WITH KEY ref = <ls_lin>-ref.
+        IF sy-subrc <> 0.
+          APPEND VALUE #( ref          = <ls_lin>-ref
+                          linha        = <ls_lin>-linha
+                          cpf          = <ls_lin>-cpf
+                          cliente_uuid = <ls_lin>-cliente_uuid
+                          obs          = <ls_lin>-obs ) TO lt_grupos.
+        ELSE.
+          IF <ls_grupo>-cpf <> <ls_lin>-cpf.
+            APPEND |{ lv_pref }o pedido "{ <ls_lin>-ref }" tem CPFs diferentes (linha { <ls_grupo>-linha } usa { zcl_pc_util=>formatar_cpf( <ls_grupo>-cpf ) }).| TO lt_erros.
+          ENDIF.
+          IF <ls_grupo>-obs IS INITIAL AND <ls_lin>-obs IS NOT INITIAL.
+            <ls_grupo>-obs = <ls_lin>-obs.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      " O estoque disponível tem de cobrir o total pedido na planilha inteira
+      LOOP AT lt_linhas INTO DATA(ls_lin_est) WHERE item_uuid IS NOT INITIAL.
+        READ TABLE lt_demanda ASSIGNING <ls_dem> WITH TABLE KEY item_uuid = ls_lin_est-item_uuid.
+        IF sy-subrc <> 0.
+          INSERT VALUE #( item_uuid = ls_lin_est-item_uuid ) INTO TABLE lt_demanda ASSIGNING <ls_dem>.
+        ENDIF.
+        <ls_dem>-solicitado = <ls_dem>-solicitado + ls_lin_est-qtde.
+
+        READ TABLE lt_itens_db INTO DATA(ls_it_est) WITH KEY ItemUUID = ls_lin_est-item_uuid.
+        DATA(lv_disponivel) = ls_it_est-QtdeEstoque - ls_it_est-QtdeReservada.
+        IF <ls_dem>-solicitado > lv_disponivel.
+          APPEND |Linha { ls_lin_est-linha }: estoque insuficiente para o SKU { ls_it_est-Sku } (disponível: { lv_disponivel }; pedido na planilha até aqui: { <ls_dem>-solicitado }).| TO lt_erros.
+        ENDIF.
+      ENDLOOP.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 4) Criação (instâncias ativas): as determinations definem status inicial,
+      "    endereço principal, número do pedido e reservam o estoque, igual ao
+      "    registro pela tela; as validations rodam no save.
+      DATA lt_cria_ped TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido.
+      DATA lt_cria_itm TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido\_Itens.
+      CLEAR: lt_cria_ped, lt_cria_itm.
+
+      LOOP AT lt_grupos INTO DATA(ls_grupo).
+        APPEND VALUE #( %cid        = |PED{ ls_grupo-linha }|
+                        ClienteUUID = ls_grupo-cliente_uuid
+                        Observacao  = ls_grupo-obs ) TO lt_cria_ped.
+        APPEND VALUE #( %cid_ref = |PED{ ls_grupo-linha }|
+                        %target  = VALUE #( FOR l IN lt_linhas WHERE ( ref = ls_grupo-ref )
+                                            ( %cid           = |ITM{ l-linha }|
+                                              ItemUUID       = l-item_uuid
+                                              QtdeItemPedido = l-qtde ) ) ) TO lt_cria_itm.
+      ENDLOOP.
+
+      CLEAR gt_falhas_registro.
+
+      MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
+        ENTITY Pedido
+          CREATE FIELDS ( ClienteUUID Observacao )
+          WITH lt_cria_ped
+          CREATE BY \_Itens FIELDS ( ItemUUID QtdeItemPedido )
+          WITH lt_cria_itm
+        MAPPED   DATA(ls_mapped)
+        FAILED   DATA(ls_failed)
+        REPORTED DATA(ls_reported).
+
+      IF ls_failed-pedido IS NOT INITIAL OR ls_failed-itempedido IS NOT INITIAL.
+        APPEND `Não foi possível criar os pedidos.` TO lt_erros.
+        LOOP AT ls_reported-pedido INTO DATA(ls_rep_ped) WHERE %msg IS BOUND.
+          APPEND |{ linha_do_cid( ls_rep_ped-%cid ) }{ ls_rep_ped-%msg->if_message~get_text( ) }| TO lt_erros.
+        ENDLOOP.
+        LOOP AT ls_reported-itempedido INTO DATA(ls_rep_itm) WHERE %msg IS BOUND.
+          APPEND |{ linha_do_cid( ls_rep_itm-%cid ) }{ ls_rep_itm-%msg->if_message~get_text( ) }| TO lt_erros.
+        ENDLOOP.
+      ENDIF.
+
+      " A reserva de estoque (determination) não pode falhar o save sozinha:
+      " guarda as falhas em GT_FALHAS_REGISTRO. Aqui elas cancelam a importação.
+      LOOP AT gt_falhas_registro INTO DATA(ls_falha).
+        APPEND ls_falha-msg->if_message~get_text( ) TO lt_erros.
+      ENDLOOP.
+      CLEAR gt_falhas_registro.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 5) Resumo com a faixa de números gerados
+      READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
+        ENTITY Pedido
+          FIELDS ( NumeroPedido )
+          WITH CORRESPONDING #( ls_mapped-pedido )
+        RESULT DATA(lt_criados).
+      SORT lt_criados BY NumeroPedido.
+
+      DATA(lv_faixa) = COND string(
+        WHEN lt_criados IS INITIAL THEN ``
+        WHEN lines( lt_criados ) = 1 THEN | ({ lt_criados[ 1 ]-NumeroPedido })|
+        ELSE | ({ lt_criados[ 1 ]-NumeroPedido } a { lt_criados[ lines( lt_criados ) ]-NumeroPedido })| ).
+
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                               iv_texto    = |Importação concluída: { lines( lt_grupos ) } pedido(s) criado(s){ lv_faixa } com { lines( lt_linhas ) } item(ns). Estoque reservado.|
+                               iv_severity = if_abap_behv_message=>severity-success ) )
+             TO reported-pedido.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD falhar_importacao.
+    APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                             |Importação cancelada: nenhum pedido foi gravado ({ lines( it_erros ) } erro(s)).| ) )
+           TO cs_reported-pedido.
+
+    LOOP AT zcl_pc_importacao=>resumir_erros( it_erros ) INTO DATA(lv_erro).
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto( lv_erro ) ) TO cs_reported-pedido.
+    ENDLOOP.
+
+    APPEND VALUE #( %cid = iv_cid ) TO cs_failed-pedido.
+  ENDMETHOD.
+
+
+  METHOD linha_do_cid.
+    DATA(lv_numero) = match( val = iv_cid pcre = `\d+` ).
+    rv_texto = COND #( WHEN lv_numero IS NOT INITIAL THEN |Linha { lv_numero }: | ).
   ENDMETHOD.
 
 

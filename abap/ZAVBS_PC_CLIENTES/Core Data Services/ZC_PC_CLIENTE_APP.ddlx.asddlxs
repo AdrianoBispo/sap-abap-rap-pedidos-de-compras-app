@@ -4,7 +4,8 @@
                 typeNamePlural: 'Clientes',
                 title:          { type: #STANDARD, value: 'Nome' },
                 description:    { type: #STANDARD, value: 'CpfFormatado' },
-                imageUrl:       'FotoCliente' },
+                imageUrl:       'FotoCliente',
+                typeImageUrl:   'sap-icon://person-placeholder' },
   presentationVariant: [{ sortOrder:      [{ by: 'Nome', direction: #ASC }],
                           visualizations: [{ type: #AS_LINEITEM }] }]
 }
@@ -25,7 +26,7 @@ annotate entity ZC_PC_CLIENTE_APP with
   ClienteUUID;
 
   @UI: { lineItem:       [{ position: 10, label: 'Foto', importance: #HIGH }],
-         identification: [{ position: 10, label: 'Foto (JPEG ou PNG)' }] }
+         identification: [{ position: 10, label: 'Foto (JPEG, PNG ou WEBP)' }] }
   FotoCliente;
 
   @UI.hidden: true
@@ -42,7 +43,8 @@ annotate entity ZC_PC_CLIENTE_APP with
   @UI: { lineItem: [{ position: 20, label: 'CPF', importance: #HIGH }] }
   CpfFormatado;
 
-  @UI: { lineItem:       [{ position: 30, label: 'Nome', importance: #HIGH }],
+  @UI: { lineItem:       [{ position: 30, label: 'Nome', importance: #HIGH },
+                          { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 30, label: 'Nome completo' }],
          selectionField: [{ position: 10 }] }
   @EndUserText.label: 'Nome'
@@ -78,9 +80,19 @@ annotate entity ZC_PC_CLIENTE_APP with
   @EndUserText.label: 'Ativo'
   ClienteAtivo;
 
-  @UI.dataPoint: { qualifier: 'Score', title: 'Score do cliente', visualization: #PROGRESS, targetValue: 100 }
-  @EndUserText.label: 'Score'
+  /* Score 0-100 em %. Cor da barra pelo campo ScoreCriticality: até 40 vermelho,
+     de 40 a 70 amarelo, a partir de 70 verde. */
+  @UI.dataPoint: { qualifier: 'Score', title: 'Score do cliente', visualization: #PROGRESS, targetValue: 100,
+                   valueFormat: { numberOfFractionalDigits: 0 },
+                   criticality: 'ScoreCriticality' }
+  @EndUserText.label: 'Score (%)'
   ScoreCliente;
+
+  @UI.hidden: true
+  ScoreUnidade;
+
+  @UI.hidden: true
+  ScoreCriticality;
 
   @UI: { lineItem:       [{ position: 70, label: 'Cidade' }],
          selectionField: [{ position: 50 }] }

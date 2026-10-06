@@ -35,6 +35,7 @@ define root view entity ZC_PC_CLIENTE_APP
       virtual TelefoneFormatado : abap.char(15),
 
       @ObjectModel.text.element: [ 'GeneroTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_GENERO_VH', element: 'Codigo' },
                                            useForValidation: true }]
       Genero,
@@ -42,7 +43,17 @@ define root view entity ZC_PC_CLIENTE_APP
 
       DataNascimento,
       ClienteAtivo,
+
+      /* Score 0-100 exibido em % (unidade vem do virtual element ScoreUnidade) */
+      @Semantics.quantity.unitOfMeasure: 'ScoreUnidade'
       ScoreCliente,
+      @ObjectModel.virtualElementCalculatedBy: 'ABAP:ZCL_PC_VE_CLIENTE'
+      @EndUserText.label: 'Unidade do score'
+      virtual ScoreUnidade      : abap.unit(3),
+      /* Cor da barra: 1 vermelho (até 40), 2 amarelo (acima de 40 até 70), 3 verde (acima de 70) */
+      @ObjectModel.virtualElementCalculatedBy: 'ABAP:ZCL_PC_VE_CLIENTE'
+      @EndUserText.label: 'Criticidade do score'
+      virtual ScoreCriticality  : abap.int1,
 
       /* Endereço principal (somente leitura, para lista e filtros) */
       _EnderecoPrincipal.Cidade as CidadePrincipal,

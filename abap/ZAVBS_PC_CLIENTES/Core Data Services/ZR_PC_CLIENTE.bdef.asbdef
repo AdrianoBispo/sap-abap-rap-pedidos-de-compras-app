@@ -21,6 +21,10 @@ authorization master ( global )
 
   association _Endereco { create; with draft; }
 
+  /* Importação em massa por planilha (.xlsx ou .csv): cria clientes ativos,
+     cada um com o endereço principal. Tudo ou nada (ver ImportarPlanilha). */
+  static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
+
   field ( numbering : managed, readonly ) ClienteUUID;
   field ( readonly ) ScoreCliente, CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
   field ( mandatory ) Cpf, Nome, Email, Telefone, DataNascimento;

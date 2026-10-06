@@ -15,9 +15,29 @@ CLASS lhc_cliente DEFINITION INHERITING FROM cl_abap_behavior_handler.
       END OF c_area.
 
     TYPES tt_uuid TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
+    TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_cliente.
+    TYPES ty_reported TYPE RESPONSE FOR REPORTED EARLY zr_pc_cliente.
 
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Cliente RESULT result.
+
+    "! Importação em massa por planilha (.xlsx/.csv): cria clientes ativos, cada
+    "! um com o endereço principal. Tudo ou nada: qualquer erro cancela a importação.
+    METHODS ImportarPlanilha FOR MODIFY
+      IMPORTING keys FOR ACTION Cliente~ImportarPlanilha.
+
+    "! Reporta os erros da importação (primeiro o resumo) e falha a action,
+    "! o que descarta qualquer cliente já criado no buffer.
+    METHODS falhar_importacao
+      IMPORTING it_erros     TYPE string_table
+                iv_cid       TYPE abp_behv_cid
+      CHANGING  cs_failed    TYPE ty_failed
+                cs_reported  TYPE ty_reported.
+
+    "! "Linha N: " a partir do %cid (CLI ou END seguido do número da linha).
+    METHODS linha_do_cid
+      IMPORTING iv_cid          TYPE csequence
+      RETURNING VALUE(rv_texto) TYPE string.
 
     "! Endereco usa authorization master(global) (ver comentário na BDEF):
     "! mesma regra de negócio de Cliente (ZPC_ADMIN via ZCL_PC_AUTH).
@@ -92,6 +112,11 @@ CLASS lhc_cliente IMPLEMENTATION.
       result-%action-Edit = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                     THEN if_abap_behv=>auth-allowed
                                     ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    IF requested_authorizations-%action-ImportarPlanilha = if_abap_behv=>mk-on.
+      result-%action-ImportarPlanilha = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
+                                                THEN if_abap_behv=>auth-allowed
+                                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
   ENDMETHOD.
 
@@ -454,6 +479,268 @@ CLASS lhc_cliente IMPLEMENTATION.
                         %element-FotoCliente = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD ImportarPlanilha.
+    TYPES:
+      BEGIN OF ty_cliente,
+        linha       TYPE i,
+        cpf         TYPE zr_pc_cliente-Cpf,
+        nome        TYPE zr_pc_cliente-Nome,
+        email       TYPE zr_pc_cliente-Email,
+        telefone    TYPE zr_pc_cliente-Telefone,
+        genero      TYPE zr_pc_cliente-Genero,
+        nascimento  TYPE zr_pc_cliente-DataNascimento,
+        cep         TYPE zr_pc_endereco-Cep,
+        numero      TYPE zr_pc_endereco-Numero,
+        complemento TYPE zr_pc_endereco-Complemento,
+      END OF ty_cliente.
+
+    CONSTANTS:
+      BEGIN OF c_col,
+        cpf         TYPE string VALUE `CPF`,
+        nome        TYPE string VALUE `Nome`,
+        email       TYPE string VALUE `E-mail`,
+        telefone    TYPE string VALUE `Telefone`,
+        genero      TYPE string VALUE `Gênero`,
+        nascimento  TYPE string VALUE `Data de nascimento`,
+        cep         TYPE string VALUE `CEP`,
+        numero      TYPE string VALUE `Número`,
+        complemento TYPE string VALUE `Complemento`,
+      END OF c_col.
+
+    DATA lt_colunas TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_erros   TYPE string_table.
+    DATA lt_cli     TYPE STANDARD TABLE OF ty_cliente WITH EMPTY KEY.
+    DATA lt_cpf_arq TYPE SORTED TABLE OF zr_pc_cliente-Cpf WITH UNIQUE KEY table_line.
+
+    lt_colunas = VALUE #(
+      ( campo = c_col-cpf        obrigatoria = abap_true )
+      ( campo = c_col-nome       sinonimos = `NOMECOMPLETO|NOMEDOCLIENTE`                obrigatoria = abap_true )
+      ( campo = c_col-email      sinonimos = `EMAILDOCLIENTE`                            obrigatoria = abap_true )
+      ( campo = c_col-telefone   sinonimos = `CELULAR|FONE|TELEFONECELULAR`              obrigatoria = abap_true )
+      ( campo = c_col-genero     sinonimos = `SEXO` )
+      ( campo = c_col-nascimento sinonimos = `NASCIMENTO|DATANASC|DTNASCIMENTO`          obrigatoria = abap_true )
+      ( campo = c_col-cep        obrigatoria = abap_true )
+      ( campo = c_col-numero     sinonimos = `NUM|NRO|NUMEROENDERECO`                    obrigatoria = abap_true )
+      ( campo = c_col-complemento ) ).
+
+    LOOP AT keys INTO DATA(ls_key).
+      CLEAR: lt_erros, lt_cli, lt_cpf_arq.
+
+      IF zcl_pc_auth=>admin_pode_criar( ) = abap_false.
+        APPEND VALUE #( %msg = msg( zcx_pc_msg=>sem_autorizacao ) ) TO reported-cliente.
+        APPEND VALUE #( %cid = ls_key-%cid ) TO failed-cliente.
+        CONTINUE.
+      ENDIF.
+
+      " 1) Leitura do arquivo (XLSX ou CSV)
+      zcl_pc_planilha=>ler( EXPORTING iv_conteudo  = ls_key-%param-_StreamProperties-StreamProperty
+                                      it_colunas   = lt_colunas
+                            IMPORTING et_registros = DATA(lt_registros)
+                                      et_erros     = lt_erros ).
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 2) Validação linha a linha (todas as linhas são avaliadas antes de gravar)
+      SELECT cpf FROM zta_pc_cliente INTO TABLE @DATA(lt_cpf_db).
+      DATA(lv_hoje) = cl_abap_context_info=>get_system_date( ).
+
+      LOOP AT lt_registros INTO DATA(ls_reg).
+        DATA(lv_pref)   = |Linha { ls_reg-linha }: |.
+        DATA(lv_antes)  = lines( lt_erros ).
+        DATA(ls_cli)    = VALUE ty_cliente( linha = ls_reg-linha ).
+
+        DATA(lv_cpf_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cpf ).
+        ls_cli-cpf = zcl_pc_importacao=>normalizar_cpf( lv_cpf_txt ).
+        IF zcl_pc_util=>validar_cpf( ls_cli-cpf ) = abap_false.
+          APPEND |{ lv_pref }CPF inválido ({ lv_cpf_txt }).| TO lt_erros.
+        ELSEIF line_exists( lt_cpf_db[ cpf = ls_cli-cpf ] ).
+          APPEND |{ lv_pref }já existe cliente com o CPF { zcl_pc_util=>formatar_cpf( ls_cli-cpf ) }.| TO lt_erros.
+        ELSEIF line_exists( lt_cpf_arq[ table_line = ls_cli-cpf ] ).
+          APPEND |{ lv_pref }CPF { zcl_pc_util=>formatar_cpf( ls_cli-cpf ) } repetido na planilha.| TO lt_erros.
+        ELSE.
+          INSERT ls_cli-cpf INTO TABLE lt_cpf_arq.
+        ENDIF.
+
+        DATA(lv_nome) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-nome ).
+        IF lv_nome IS INITIAL.
+          APPEND |{ lv_pref }Nome é obrigatório.| TO lt_erros.
+        ELSEIF strlen( lv_nome ) > 255.
+          APPEND |{ lv_pref }Nome excede 255 caracteres.| TO lt_erros.
+        ELSE.
+          ls_cli-nome = lv_nome.
+        ENDIF.
+
+        DATA(lv_email) = to_lower( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-email ) ).
+        IF lv_email IS INITIAL OR zcl_pc_util=>validar_email( lv_email ) = abap_false.
+          APPEND |{ lv_pref }E-mail inválido ({ lv_email }).| TO lt_erros.
+        ELSEIF strlen( lv_email ) > 100.
+          APPEND |{ lv_pref }E-mail excede 100 caracteres.| TO lt_erros.
+        ELSE.
+          ls_cli-email = lv_email.
+        ENDIF.
+
+        DATA(lv_tel) = zcl_pc_util=>somente_digitos( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-telefone ) ).
+        IF strlen( lv_tel ) < 10 OR strlen( lv_tel ) > 11.
+          APPEND |{ lv_pref }Telefone deve ter 10 ou 11 dígitos (DDD + número).| TO lt_erros.
+        ELSE.
+          ls_cli-telefone = lv_tel.
+        ENDIF.
+
+        DATA(lv_genero_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-genero ).
+        IF lv_genero_txt IS NOT INITIAL.
+          DATA(lv_genero) = zcl_pc_importacao=>converter_codelist( iv_lista = zif_pc_constants=>c_codelist-genero
+                                                                   iv_texto = lv_genero_txt ).
+          IF lv_genero IS INITIAL.
+            APPEND |{ lv_pref }Gênero inválido ({ lv_genero_txt }). Use: { zcl_pc_importacao=>opcoes_codelist( zif_pc_constants=>c_codelist-genero ) }.| TO lt_erros.
+          ELSE.
+            ls_cli-genero = lv_genero.
+          ENDIF.
+        ENDIF.
+
+        DATA(lv_nasc_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-nascimento ).
+        DATA(lv_nasc)     = zcl_pc_planilha=>para_data( lv_nasc_txt ).
+        IF lv_nasc IS INITIAL.
+          APPEND |{ lv_pref }Data de nascimento inválida ({ lv_nasc_txt }). Use AAAA-MM-DD ou DD/MM/AAAA.| TO lt_erros.
+        ELSEIF lv_nasc > lv_hoje.
+          APPEND |{ lv_pref }Data de nascimento não pode ser futura.| TO lt_erros.
+        ELSE.
+          ls_cli-nascimento = lv_nasc.
+        ENDIF.
+
+        DATA(lv_cep) = zcl_pc_importacao=>normalizar_cep( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cep ) ).
+        IF strlen( lv_cep ) <> 8.
+          APPEND |{ lv_pref }CEP deve ter 8 dígitos.| TO lt_erros.
+        ELSE.
+          ls_cli-cep = lv_cep.
+        ENDIF.
+
+        DATA(lv_numero) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-numero ).
+        IF lv_numero IS INITIAL.
+          APPEND |{ lv_pref }Número do endereço é obrigatório.| TO lt_erros.
+        ELSEIF strlen( lv_numero ) > 20.
+          APPEND |{ lv_pref }Número do endereço excede 20 caracteres.| TO lt_erros.
+        ELSE.
+          ls_cli-numero = lv_numero.
+        ENDIF.
+
+        DATA(lv_compl) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-complemento ).
+        IF strlen( lv_compl ) > 100.
+          APPEND |{ lv_pref }Complemento excede 100 caracteres.| TO lt_erros.
+        ELSE.
+          ls_cli-complemento = lv_compl.
+        ENDIF.
+
+        IF lines( lt_erros ) = lv_antes.
+          APPEND ls_cli TO lt_cli.
+        ENDIF.
+      ENDLOOP.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 3) Criação (instâncias ativas): as determinations normalizam os dados,
+      "    consultam o CEP (ViaCEP) e definem o endereço principal; as
+      "    validations rodam no save. Um erro em qualquer linha cancela tudo.
+      DATA lt_cria_cli TYPE TABLE FOR CREATE zr_pc_cliente\\Cliente.
+      DATA lt_cria_end TYPE TABLE FOR CREATE zr_pc_cliente\\Cliente\_Endereco.
+      CLEAR: lt_cria_cli, lt_cria_end.
+
+      LOOP AT lt_cli INTO ls_cli.
+        APPEND VALUE #( %cid           = |CLI{ ls_cli-linha }|
+                        Cpf            = ls_cli-cpf
+                        Nome           = ls_cli-nome
+                        Email          = ls_cli-email
+                        Telefone       = ls_cli-telefone
+                        Genero         = ls_cli-genero
+                        DataNascimento = ls_cli-nascimento ) TO lt_cria_cli.
+        APPEND VALUE #( %cid_ref = |CLI{ ls_cli-linha }|
+                        %target  = VALUE #( ( %cid        = |END{ ls_cli-linha }|
+                                              Cep         = ls_cli-cep
+                                              Numero      = ls_cli-numero
+                                              Complemento = ls_cli-complemento ) ) ) TO lt_cria_end.
+      ENDLOOP.
+
+      MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
+        ENTITY Cliente
+          CREATE FIELDS ( Cpf Nome Email Telefone Genero DataNascimento )
+          WITH lt_cria_cli
+          CREATE BY \_Endereco FIELDS ( Cep Numero Complemento )
+          WITH lt_cria_end
+        MAPPED   DATA(ls_mapped)
+        FAILED   DATA(ls_failed)
+        REPORTED DATA(ls_reported).
+
+      IF ls_failed-cliente IS NOT INITIAL OR ls_failed-endereco IS NOT INITIAL.
+        APPEND `Não foi possível criar os clientes.` TO lt_erros.
+        LOOP AT ls_reported-cliente INTO DATA(ls_rep_cli) WHERE %msg IS BOUND.
+          APPEND |{ linha_do_cid( ls_rep_cli-%cid ) }{ ls_rep_cli-%msg->if_message~get_text( ) }| TO lt_erros.
+        ENDLOOP.
+        LOOP AT ls_reported-endereco INTO DATA(ls_rep_end) WHERE %msg IS BOUND.
+          APPEND |{ linha_do_cid( ls_rep_end-%cid ) }{ ls_rep_end-%msg->if_message~get_text( ) }| TO lt_erros.
+        ENDLOOP.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 4) CEP: o ViaCEP é consultado nas determinations; CEP não validado
+      "    (inexistente ou serviço fora do ar) cancela a importação agora, em
+      "    vez de falhar no save sem dizer qual linha.
+      READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
+        ENTITY Endereco
+          FIELDS ( Cep CepStatus )
+          WITH CORRESPONDING #( ls_mapped-endereco )
+        RESULT DATA(lt_enderecos).
+
+      LOOP AT lt_enderecos INTO DATA(ls_end)
+           WHERE CepStatus <> zif_pc_constants=>c_status_cep-validado.
+        READ TABLE ls_mapped-endereco INTO DATA(ls_map_end) WITH KEY EnderecoUUID = ls_end-EnderecoUUID.
+        DATA(lv_motivo) = COND string(
+          WHEN ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel
+          THEN `consulta de CEP indisponível no momento, tente novamente`
+          ELSE `CEP inexistente` ).
+        APPEND |{ linha_do_cid( ls_map_end-%cid ) }CEP { ls_end-Cep }: { lv_motivo }.| TO lt_erros.
+      ENDLOOP.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                               iv_texto    = |Importação concluída: { lines( lt_cli ) } cliente(s) criado(s). Atualize a lista.|
+                               iv_severity = if_abap_behv_message=>severity-success ) )
+             TO reported-cliente.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD falhar_importacao.
+    APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                             |Importação cancelada: nenhum cliente foi gravado ({ lines( it_erros ) } erro(s)).| ) )
+           TO cs_reported-cliente.
+
+    LOOP AT zcl_pc_importacao=>resumir_erros( it_erros ) INTO DATA(lv_erro).
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto( lv_erro ) ) TO cs_reported-cliente.
+    ENDLOOP.
+
+    APPEND VALUE #( %cid = iv_cid ) TO cs_failed-cliente.
+  ENDMETHOD.
+
+
+  METHOD linha_do_cid.
+    DATA(lv_numero) = match( val = iv_cid pcre = `\d+` ).
+    rv_texto = COND #( WHEN lv_numero IS NOT INITIAL THEN |Linha { lv_numero }: | ).
   ENDMETHOD.
 
 

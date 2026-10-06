@@ -46,6 +46,11 @@ authorization master ( global )
 
   internal action RecalcularTotal;
 
+  /* Importação em massa por planilha (.xlsx ou .csv): uma linha por item;
+     linhas com a mesma referência formam um pedido. Cria pedidos ativos
+     (CRIADO) e reserva o estoque, como o registro pela tela. Tudo ou nada. */
+  static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
+
   determination DefinirStatusInicial on modify { create; }
   determination AtualizarEndereco on modify { field ClienteUUID; }
   /* Numeração antecipada (early numbering): ZPC_NR não é bufferizado, e o

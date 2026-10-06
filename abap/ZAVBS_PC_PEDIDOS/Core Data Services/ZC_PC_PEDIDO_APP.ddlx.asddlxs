@@ -50,13 +50,22 @@ annotate entity ZC_PC_PEDIDO_APP with
   PedidoAtivoSemHistorico;
 
   @UI: { lineItem:       [{ position: 10, label: 'Pedido', importance: #HIGH },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento',  label: 'Simular pagamento' },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',     label: 'Aprovar / finalizar' },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' }],
+                          { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Simular pagamento',
+                            actionGroupId: 'AcoesPedido', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar / finalizar',
+                            actionGroupId: 'AcoesPedido', position: 20 },
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
+                            actionGroupId: 'AcoesPedido', position: 30 },
+                          { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 10, label: 'Número do pedido' },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento',  label: 'Simular pagamento' },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',     label: 'Aprovar / finalizar' },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',    label: 'Cancelar pedido' }] }
+                          { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Simular pagamento',
+                            actionGroupId: 'AcoesPedido', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar / finalizar',
+                            actionGroupId: 'AcoesPedido', position: 20 },
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
+                            actionGroupId: 'AcoesPedido', position: 30 }] }
   @EndUserText.label: 'Pedido'
   NumeroPedido;
 

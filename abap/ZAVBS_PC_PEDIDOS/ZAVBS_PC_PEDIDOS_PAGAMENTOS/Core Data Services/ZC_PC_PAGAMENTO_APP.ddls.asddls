@@ -8,10 +8,12 @@ define view entity ZC_PC_PAGAMENTO_APP
       PedidoUUID,
 
       @ObjectModel.text.element: [ 'MetodoPagamentoTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       MetodoPagamento,
       _MetodoTxt.Descricao  as MetodoPagamentoTexto,
 
       @ObjectModel.text.element: [ 'StatusPagamentoTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       StatusPagamento,
       _StatusTxt.Descricao  as StatusPagamentoTexto,
       _StatusTxt.Criticality as StatusPagamentoCriticality,

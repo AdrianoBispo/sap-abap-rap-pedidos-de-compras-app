@@ -19,17 +19,15 @@ annotate entity ZC_PC_ITEM_APP with
       label: 'Dados do item', position: 10 },
     { id: 'Estoque',       purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       label: 'Estoque', targetQualifier: 'Estoque', position: 20 },
-    { id: 'Dimensoes',     purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      label: 'Peso e dimensões', targetQualifier: 'Dimensoes', position: 30 },
     { id: 'Administrativo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      label: 'Dados administrativos', targetQualifier: 'Admin', position: 40 }
+      label: 'Dados administrativos', targetQualifier: 'Admin', position: 30 }
   ]
 
   @UI.hidden: true
   ItemUUID;
 
   @UI: { lineItem:       [{ position: 5, label: 'Foto' }],
-         identification: [{ position: 5, label: 'Foto (JPEG ou PNG)' }] }
+         identification: [{ position: 5, label: 'Foto (JPEG, PNG ou WEBP)' }] }
   FotoItem;
 
   @UI.hidden: true
@@ -44,7 +42,8 @@ annotate entity ZC_PC_ITEM_APP with
   @EndUserText.label: 'SKU'
   Sku;
 
-  @UI: { lineItem:       [{ position: 20, label: 'Nome', importance: #HIGH }],
+  @UI: { lineItem:       [{ position: 20, label: 'Nome', importance: #HIGH },
+                          { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 20, label: 'Nome' }],
          selectionField: [{ position: 20 }] }
   @EndUserText.label: 'Nome'
@@ -96,9 +95,9 @@ annotate entity ZC_PC_ITEM_APP with
   QtdeDisponivel;
 
   @UI: { lineItem:       [{ position: 55, label: 'Status', criticality: 'StatusEstoqueCriticality', importance: #HIGH }],
-         fieldGroup:     [{ qualifier: 'Estoque', position: 40, label: 'Status do estoque',
+         fieldGroup:     [{ qualifier: 'Estoque', position: 40, label: 'Status',
                             criticality: 'StatusEstoqueCriticality' }],
-         dataPoint:      { qualifier: 'Status', title: 'Status do estoque', criticality: 'StatusEstoqueCriticality' },
+         dataPoint:      { qualifier: 'Status', title: 'Status', criticality: 'StatusEstoqueCriticality' },
          selectionField: [{ position: 40 }] }
   @EndUserText.label: 'Status'
   StatusEstoque;

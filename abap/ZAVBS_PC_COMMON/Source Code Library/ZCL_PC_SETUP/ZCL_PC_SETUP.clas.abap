@@ -3,7 +3,9 @@
 "! ativar todos os objetos. Pode ser executada mais de uma vez.
 "!  1. Cria os intervalos 01 (pedido) e 02 (SKU) do objeto ZPC_NR
 "!  2. Recarrega a tabela ZTA_PC_CODELIST
-"!  3. Insere dados de demonstração se as tabelas estiverem vazias
+"!  3. Carrega os dados de demonstração, cada um em sua classe:
+"!     ZCL_SETUP_CLIENTE (100 clientes), ZCL_SETUP_ESTOQUE (100 itens) e
+"!     ZCL_SETUP_PEDIDOS (100 pedidos, 10 deles com reembolso pendente)
 "!  4. Marca como validados (CepStatus V) os endereços gravados antes do CepStatus
 CLASS zcl_pc_setup DEFINITION
   PUBLIC
@@ -18,9 +20,6 @@ CLASS zcl_pc_setup DEFINITION
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
     METHODS carregar_codelists
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
-    METHODS carregar_dados_demo
-      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out
-      RAISING   cx_uuid_error cx_number_ranges.
     METHODS migrar_enderecos_cep
       IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out.
 ENDCLASS.
@@ -30,8 +29,11 @@ CLASS zcl_pc_setup IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
     criar_intervalos( out ).
     carregar_codelists( out ).
+    " Ordem importa: pedidos dependem de clientes e itens já gravados
     TRY.
-        carregar_dados_demo( out ).
+        NEW zcl_setup_cliente( )->carregar_dados( out ).
+        NEW zcl_setup_estoque( )->carregar_dados( out ).
+        NEW zcl_setup_pedidos( )->carregar_dados( out ).
       CATCH cx_uuid_error cx_number_ranges INTO DATA(lx).
         out->write( |Erro nos dados demo: { lx->get_text( ) }| ).
     ENDTRY.
@@ -123,100 +125,6 @@ CLASS zcl_pc_setup IMPLEMENTATION.
     DELETE FROM zta_pc_codelist.
     INSERT zta_pc_codelist FROM TABLE @lt_codelist.
     io_out->write( |CodeLists carregadas: { lines( lt_codelist ) } registros.| ).
-  ENDMETHOD.
-
-
-  METHOD carregar_dados_demo.
-    DATA lv_agora TYPE timestampl.
-    GET TIME STAMP FIELD lv_agora.
-
-    DATA(lv_usuario) = CONV abp_creation_user( 'SETUP' ).
-    TRY.
-        lv_usuario = cl_abap_context_info=>get_user_technical_name( ).
-      CATCH cx_abap_context_info_error.
-        " mantém 'SETUP'
-    ENDTRY.
-
-    " ---------------------------------------------------------------- Clientes
-    SELECT COUNT( * ) FROM zta_pc_cliente INTO @DATA(lv_qtd_clientes).
-    IF lv_qtd_clientes = 0.
-      DATA(lv_cli1) = cl_system_uuid=>create_uuid_x16_static( ).
-      DATA(lv_cli2) = cl_system_uuid=>create_uuid_x16_static( ).
-
-      DATA lt_clientes TYPE STANDARD TABLE OF zta_pc_cliente WITH EMPTY KEY.
-      lt_clientes = VALUE #(
-        ( cliente_uuid = lv_cli1 cpf = zcl_pc_util=>calcular_dv_cpf( '529982247' )
-          nome = 'Maria Aparecida Souza' email = 'maria.souza@example.com' telefone = '11987654321'
-          genero = 'FEMININO' data_nascimento = '19900415' cliente_ativo = abap_true score_cliente = '87.50'
-          created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
-          last_changed_at = lv_agora local_last_changed_at = lv_agora )
-        ( cliente_uuid = lv_cli2 cpf = zcl_pc_util=>calcular_dv_cpf( '390533447' )
-          nome = 'João Carlos Pereira' email = 'joao.pereira@example.com' telefone = '11912345678'
-          genero = 'MASCULINO' data_nascimento = '19851120' cliente_ativo = abap_true score_cliente = '72.00'
-          created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
-          last_changed_at = lv_agora local_last_changed_at = lv_agora ) ).
-      INSERT zta_pc_cliente FROM TABLE @lt_clientes.
-
-      DATA lt_enderecos TYPE STANDARD TABLE OF zta_pc_endereco WITH EMPTY KEY.
-      lt_enderecos = VALUE #(
-        ( endereco_uuid = cl_system_uuid=>create_uuid_x16_static( ) cliente_uuid = lv_cli1
-          cep = '01001000' logradouro = 'Praça da Sé' numero = '100' complemento = 'Sala 1'
-          bairro = 'Sé' cidade = 'São Paulo' uf = 'SP' estado = 'São Paulo' endereco_principal = abap_true
-          cep_status = zif_pc_constants=>c_status_cep-validado
-          created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
-          last_changed_at = lv_agora local_last_changed_at = lv_agora )
-        ( endereco_uuid = cl_system_uuid=>create_uuid_x16_static( ) cliente_uuid = lv_cli2
-          cep = '01310100' logradouro = 'Avenida Paulista' numero = '1000'
-          bairro = 'Bela Vista' cidade = 'São Paulo' uf = 'SP' estado = 'São Paulo' endereco_principal = abap_true
-          cep_status = zif_pc_constants=>c_status_cep-validado
-          created_by = lv_usuario created_at = lv_agora last_changed_by = lv_usuario
-          last_changed_at = lv_agora local_last_changed_at = lv_agora ) ).
-      INSERT zta_pc_endereco FROM TABLE @lt_enderecos.
-
-      io_out->write( `Clientes e endereços de demonstração criados.` ).
-    ENDIF.
-
-    " ------------------------------------------------------------------ Itens
-    SELECT COUNT( * ) FROM zta_pc_item INTO @DATA(lv_qtd_itens).
-    IF lv_qtd_itens = 0.
-      TYPES:
-        BEGIN OF ty_demo,
-          nome      TYPE zta_pc_item-nome,
-          descricao TYPE zta_pc_item-descricao,
-          categoria TYPE zta_pc_item-categoria,
-          estoque   TYPE i,
-          preco     TYPE zta_pc_item-preco_unitario,
-        END OF ty_demo.
-      DATA lt_demo TYPE STANDARD TABLE OF ty_demo WITH EMPTY KEY.
-      DATA lt_itens TYPE STANDARD TABLE OF zta_pc_item WITH EMPTY KEY.
-
-      lt_demo = VALUE #(
-        ( nome = 'Notebook 14 polegadas' descricao = 'Notebook para uso educacional' categoria = 'INFORMATICA' estoque = 25 preco = '3499.90' )
-        ( nome = 'Mouse sem fio'         descricao = 'Mouse óptico sem fio'           categoria = 'INFORMATICA' estoque = 8  preco = '89.90' )
-        ( nome = 'Fone Bluetooth'        descricao = 'Fone de ouvido Bluetooth'       categoria = 'ELETRONICOS' estoque = 0  preco = '199.00' )
-        ( nome = 'Cadeira de escritório' descricao = 'Cadeira ergonômica'             categoria = 'ESCRITORIO'  estoque = 12 preco = '899.00' ) ).
-
-      LOOP AT lt_demo INTO DATA(ls_demo).
-        APPEND VALUE #( item_uuid       = cl_system_uuid=>create_uuid_x16_static( )
-                        sku             = zcl_pc_numeracao=>gerar_sku( ls_demo-categoria )
-                        nome            = ls_demo-nome
-                        descricao       = ls_demo-descricao
-                        categoria       = ls_demo-categoria
-                        qtde_estoque    = ls_demo-estoque
-                        qtde_reservada  = 0
-                        qtde_disponivel = ls_demo-estoque
-                        status_estoque  = zcl_pc_util=>calcular_status_estoque( ls_demo-estoque )
-                        currency        = zif_pc_constants=>c_moeda_padrao
-                        preco_unitario  = ls_demo-preco
-                        item_ativo      = abap_true
-                        created_by      = lv_usuario created_at = lv_agora
-                        last_changed_by = lv_usuario last_changed_at = lv_agora
-                        local_last_changed_at = lv_agora ) TO lt_itens.
-      ENDLOOP.
-      INSERT zta_pc_item FROM TABLE @lt_itens.
-
-      io_out->write( `Itens de estoque de demonstração criados.` ).
-    ENDIF.
   ENDMETHOD.
 
 

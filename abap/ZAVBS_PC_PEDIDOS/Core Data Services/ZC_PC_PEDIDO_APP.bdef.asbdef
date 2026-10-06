@@ -19,6 +19,7 @@ use etag
   use action SimularPagamento;
   use action AprovarPedido;
   use action CancelarPedido;
+  use action ImportarPlanilha;
 
   use association _Itens           { create; with draft; }
   use association _Pagamento       { with draft; }

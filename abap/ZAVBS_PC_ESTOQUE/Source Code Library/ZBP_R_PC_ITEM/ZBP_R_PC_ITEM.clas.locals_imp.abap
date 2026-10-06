@@ -34,6 +34,24 @@ CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Item RESULT result.
 
+    "! Importação em massa por planilha (.xlsx/.csv): cria itens ativos, com SKU
+    "! gerado na hora. Tudo ou nada: qualquer erro cancela a importação.
+    METHODS ImportarPlanilha FOR MODIFY
+      IMPORTING keys FOR ACTION Item~ImportarPlanilha.
+
+    "! Reporta os erros da importação (primeiro o resumo) e falha a action,
+    "! o que descarta qualquer item já criado no buffer.
+    METHODS falhar_importacao
+      IMPORTING it_erros     TYPE string_table
+                iv_cid       TYPE abp_behv_cid
+      CHANGING  cs_failed    TYPE s_failed
+                cs_reported  TYPE s_reported.
+
+    "! "Linha N: " a partir do %cid (ITM seguido do número da linha).
+    METHODS linha_do_cid
+      IMPORTING iv_cid          TYPE csequence
+      RETURNING VALUE(rv_texto) TYPE string.
+
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Item RESULT result.
 
@@ -116,6 +134,11 @@ CLASS lhc_item IMPLEMENTATION.
       result-%action-Edit = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                     THEN if_abap_behv=>auth-allowed
                                     ELSE if_abap_behv=>auth-unauthorized ).
+    ENDIF.
+    IF requested_authorizations-%action-ImportarPlanilha = if_abap_behv=>mk-on.
+      result-%action-ImportarPlanilha = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
+                                                THEN if_abap_behv=>auth-allowed
+                                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
   ENDMETHOD.
 
@@ -664,6 +687,221 @@ CLASS lhc_item IMPLEMENTATION.
       ENDIF.
       CLEAR lv_duplicado.
     ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD ImportarPlanilha.
+    TYPES:
+      BEGIN OF ty_item,
+        linha     TYPE i,
+        nome      TYPE zr_pc_item-Nome,
+        descricao TYPE zr_pc_item-Descricao,
+        categoria TYPE zr_pc_item-Categoria,
+        estoque   TYPE zr_pc_item-QtdeEstoque,
+        preco     TYPE zr_pc_item-PrecoUnitario,
+        moeda     TYPE zr_pc_item-Currency,
+      END OF ty_item.
+
+    CONSTANTS:
+      BEGIN OF c_col,
+        nome      TYPE string VALUE `Nome`,
+        descricao TYPE string VALUE `Descrição`,
+        categoria TYPE string VALUE `Categoria`,
+        estoque   TYPE string VALUE `Quantidade em estoque`,
+        preco     TYPE string VALUE `Preço unitário`,
+        moeda     TYPE string VALUE `Moeda`,
+      END OF c_col.
+
+    DATA lt_colunas   TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_erros     TYPE string_table.
+    DATA lt_itens     TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
+    DATA lt_nomes_arq TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.
+
+    lt_colunas = VALUE #(
+      ( campo = c_col-nome      sinonimos = `NOMEDOITEM|PRODUTO|NOMEDOPRODUTO`                obrigatoria = abap_true )
+      ( campo = c_col-descricao )
+      ( campo = c_col-categoria obrigatoria = abap_true )
+      ( campo = c_col-estoque   sinonimos = `ESTOQUE|QTDEESTOQUE|QUANTIDADE|QTDE|QUANTIDADEESTOQUE` obrigatoria = abap_true )
+      ( campo = c_col-preco     sinonimos = `PRECO|VALOR|VALORUNITARIO|PRECOUNIT`             obrigatoria = abap_true )
+      ( campo = c_col-moeda     sinonimos = `CURRENCY|MOEDACODIGO` ) ).
+
+    LOOP AT keys INTO DATA(ls_key).
+      CLEAR: lt_erros, lt_itens, lt_nomes_arq.
+
+      IF zcl_pc_auth=>admin_pode_criar( ) = abap_false.
+        APPEND VALUE #( %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>sem_autorizacao ) ) TO reported-item.
+        APPEND VALUE #( %cid = ls_key-%cid ) TO failed-item.
+        CONTINUE.
+      ENDIF.
+
+      " 1) Leitura do arquivo (XLSX ou CSV)
+      zcl_pc_planilha=>ler( EXPORTING iv_conteudo  = ls_key-%param-_StreamProperties-StreamProperty
+                                      it_colunas   = lt_colunas
+                            IMPORTING et_registros = DATA(lt_registros)
+                                      et_erros     = lt_erros ).
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 2) Validação linha a linha (todas as linhas são avaliadas antes de gravar)
+      SELECT nome FROM zta_pc_item INTO TABLE @DATA(lt_nomes_db).
+
+      LOOP AT lt_registros INTO DATA(ls_reg).
+        DATA(lv_pref)  = |Linha { ls_reg-linha }: |.
+        DATA(lv_antes) = lines( lt_erros ).
+        DATA(ls_item)  = VALUE ty_item( linha = ls_reg-linha ).
+
+        DATA(lv_nome) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-nome ).
+        IF lv_nome IS INITIAL.
+          APPEND |{ lv_pref }Nome é obrigatório.| TO lt_erros.
+        ELSEIF strlen( lv_nome ) > 120.
+          APPEND |{ lv_pref }Nome excede 120 caracteres.| TO lt_erros.
+        ELSE.
+          " Evita criar o mesmo item duas vezes ao reenviar a mesma planilha
+          DATA(lv_chave) = to_upper( lv_nome ).
+          IF line_exists( lt_nomes_db[ nome = lv_nome ] ).
+            APPEND |{ lv_pref }item "{ lv_nome }" já cadastrado.| TO lt_erros.
+          ELSEIF line_exists( lt_nomes_arq[ table_line = lv_chave ] ).
+            APPEND |{ lv_pref }item "{ lv_nome }" repetido na planilha.| TO lt_erros.
+          ELSE.
+            INSERT lv_chave INTO TABLE lt_nomes_arq.
+            ls_item-nome = lv_nome.
+          ENDIF.
+        ENDIF.
+
+        DATA(lv_descricao) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-descricao ).
+        IF strlen( lv_descricao ) > 500.
+          APPEND |{ lv_pref }Descrição excede 500 caracteres.| TO lt_erros.
+        ELSE.
+          ls_item-descricao = lv_descricao.
+        ENDIF.
+
+        DATA(lv_categoria_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-categoria ).
+        DATA(lv_categoria) = zcl_pc_importacao=>converter_codelist( iv_lista = zif_pc_constants=>c_codelist-categoria
+                                                                    iv_texto = lv_categoria_txt ).
+        IF lv_categoria IS INITIAL.
+          APPEND |{ lv_pref }Categoria inválida ({ lv_categoria_txt }). Use: { zcl_pc_importacao=>opcoes_codelist( zif_pc_constants=>c_codelist-categoria ) }.| TO lt_erros.
+        ELSE.
+          ls_item-categoria = lv_categoria.
+        ENDIF.
+
+        DATA(lv_estoque_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-estoque ).
+        zcl_pc_planilha=>para_inteiro( EXPORTING iv_texto  = lv_estoque_txt
+                                       IMPORTING ev_valor  = DATA(lv_estoque)
+                                                 ev_valido = DATA(lv_estoque_ok) ).
+        IF lv_estoque_ok = abap_false OR lv_estoque < 0.
+          APPEND |{ lv_pref }Quantidade em estoque inválida ({ lv_estoque_txt }). Informe um inteiro maior ou igual a zero.| TO lt_erros.
+        ELSE.
+          ls_item-estoque = lv_estoque.
+        ENDIF.
+
+        DATA(lv_preco_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-preco ).
+        zcl_pc_planilha=>para_decimal( EXPORTING iv_texto  = lv_preco_txt
+                                       IMPORTING ev_valor  = DATA(lv_preco)
+                                                 ev_valido = DATA(lv_preco_ok) ).
+        IF lv_preco_ok = abap_false OR lv_preco < 0 OR lv_preco > 9999999999999.
+          APPEND |{ lv_pref }Preço unitário inválido ({ lv_preco_txt }). Informe um valor maior ou igual a zero.| TO lt_erros.
+        ELSE.
+          ls_item-preco = lv_preco.
+        ENDIF.
+
+        DATA(lv_moeda) = CONV waers( to_upper( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-moeda ) ) ).
+        IF lv_moeda IS INITIAL.
+          lv_moeda = zif_pc_constants=>c_moeda_padrao.
+        ENDIF.
+        SELECT SINGLE @abap_true FROM i_currency WHERE Currency = @lv_moeda INTO @DATA(lv_moeda_ok).
+        IF lv_moeda_ok = abap_false.
+          APPEND |{ lv_pref }Moeda inválida ({ lv_moeda }). Use o código ISO, por exemplo BRL.| TO lt_erros.
+        ELSE.
+          ls_item-moeda = lv_moeda.
+        ENDIF.
+        CLEAR lv_moeda_ok.
+
+        IF lines( lt_erros ) = lv_antes.
+          APPEND ls_item TO lt_itens.
+        ENDIF.
+      ENDLOOP.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      " 3) Criação (instâncias ativas). O SKU é gerado aqui, na fase de interação
+      "    (o intervalo de numeração ZPC_NR é bufferizado); a determination
+      "    GerarSku do save mantém o SKU que já bate com a categoria.
+      DATA lt_cria TYPE TABLE FOR CREATE zr_pc_item\\Item.
+      CLEAR lt_cria.
+
+      LOOP AT lt_itens INTO ls_item.
+        TRY.
+            DATA(lv_sku) = zcl_pc_numeracao=>gerar_sku( ls_item-categoria ).
+          CATCH cx_number_ranges INTO DATA(lx_nr).
+            APPEND |Linha { ls_item-linha }: não foi possível gerar o SKU ({ lx_nr->get_text( ) }).| TO lt_erros.
+            CONTINUE.
+        ENDTRY.
+
+        APPEND VALUE #( %cid           = |ITM{ ls_item-linha }|
+                        Sku            = lv_sku
+                        Nome           = ls_item-nome
+                        Descricao      = ls_item-descricao
+                        Categoria      = ls_item-categoria
+                        QtdeEstoque    = ls_item-estoque
+                        PrecoUnitario  = ls_item-preco
+                        Currency       = ls_item-moeda ) TO lt_cria.
+      ENDLOOP.
+
+      IF lt_erros IS NOT INITIAL.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      MODIFY ENTITIES OF zr_pc_item IN LOCAL MODE
+        ENTITY Item
+          CREATE FIELDS ( Sku Nome Descricao Categoria QtdeEstoque PrecoUnitario Currency )
+          WITH lt_cria
+        MAPPED   DATA(ls_mapped)
+        FAILED   DATA(ls_failed)
+        REPORTED DATA(ls_reported).
+
+      IF ls_failed-item IS NOT INITIAL.
+        APPEND `Não foi possível criar os itens.` TO lt_erros.
+        LOOP AT ls_reported-item INTO DATA(ls_rep_item) WHERE %msg IS BOUND.
+          APPEND |{ linha_do_cid( ls_rep_item-%cid ) }{ ls_rep_item-%msg->if_message~get_text( ) }| TO lt_erros.
+        ENDLOOP.
+        falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
+                           CHANGING  cs_failed = failed cs_reported = reported ).
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                               iv_texto    = |Importação concluída: { lines( lt_itens ) } item(ns) criado(s). Atualize a lista.|
+                               iv_severity = if_abap_behv_message=>severity-success ) )
+             TO reported-item.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD falhar_importacao.
+    APPEND VALUE #( %msg = zcx_pc_msg=>texto(
+                             |Importação cancelada: nenhum item foi gravado ({ lines( it_erros ) } erro(s)).| ) )
+           TO cs_reported-item.
+
+    LOOP AT zcl_pc_importacao=>resumir_erros( it_erros ) INTO DATA(lv_erro).
+      APPEND VALUE #( %msg = zcx_pc_msg=>texto( lv_erro ) ) TO cs_reported-item.
+    ENDLOOP.
+
+    APPEND VALUE #( %cid = iv_cid ) TO cs_failed-item.
+  ENDMETHOD.
+
+
+  METHOD linha_do_cid.
+    DATA(lv_numero) = match( val = iv_cid pcre = `\d+` ).
+    rv_texto = COND #( WHEN lv_numero IS NOT INITIAL THEN |Linha { lv_numero }: | ).
   ENDMETHOD.
 
 

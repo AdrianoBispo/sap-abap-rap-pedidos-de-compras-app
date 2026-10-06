@@ -20,6 +20,7 @@ define root view entity ZC_PC_REEMBOLSO_APP
       _Cliente.Nome          as NomeCliente,
 
       @ObjectModel.text.element: [ 'StatusReembolsoTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSREEMB_VH', element: 'Codigo' } }]
       StatusReembolso,
       _StatusTxt.Descricao   as StatusReembolsoTexto,

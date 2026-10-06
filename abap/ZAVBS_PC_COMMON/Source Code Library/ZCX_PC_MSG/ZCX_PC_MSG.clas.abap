@@ -85,7 +85,7 @@ CLASS zcx_pc_msg DEFINITION
         attr3 TYPE scx_attrname VALUE '',
         attr4 TYPE scx_attrname VALUE '',
       END OF endereco_numero_obrigatorio,
-      "! 009 - Formato de imagem inválido. Utilize JPEG ou PNG.
+      "! 009 - Formato de imagem inválido. Utilize JPEG, PNG ou WEBP.
       BEGIN OF foto_formato_invalido,
         msgid TYPE symsgid VALUE 'ZPC_MSG',
         msgno TYPE symsgno VALUE '009',
@@ -444,10 +444,21 @@ CLASS zcx_pc_msg DEFINITION
         attr2 TYPE scx_attrname VALUE '',
         attr3 TYPE scx_attrname VALUE '',
         attr4 TYPE scx_attrname VALUE '',
-      END OF item_sem_estoque.
+      END OF item_sem_estoque,
+      "! 049 - &1&2&3&4 (texto livre de até 200 caracteres, em 4 blocos de 50)
+      BEGIN OF texto_livre,
+        msgid TYPE symsgid VALUE 'ZPC_MSG',
+        msgno TYPE symsgno VALUE '049',
+        attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+        attr2 TYPE scx_attrname VALUE 'MV_ATTR2',
+        attr3 TYPE scx_attrname VALUE 'MV_ATTR3',
+        attr4 TYPE scx_attrname VALUE 'MV_ATTR4',
+      END OF texto_livre.
 
     DATA mv_attr1 TYPE string READ-ONLY.
     DATA mv_attr2 TYPE string READ-ONLY.
+    DATA mv_attr3 TYPE string READ-ONLY.
+    DATA mv_attr4 TYPE string READ-ONLY.
 
     METHODS constructor
       IMPORTING
@@ -455,7 +466,19 @@ CLASS zcx_pc_msg DEFINITION
         previous LIKE previous OPTIONAL
         severity TYPE if_abap_behv_message=>t_severity DEFAULT if_abap_behv_message=>severity-error
         attr1    TYPE csequence OPTIONAL
-        attr2    TYPE csequence OPTIONAL.
+        attr2    TYPE csequence OPTIONAL
+        attr3    TYPE csequence OPTIONAL
+        attr4    TYPE csequence OPTIONAL.
+
+    "! Mensagem com texto livre (até 200 caracteres; o excedente é cortado).
+    "! Cada variável de mensagem T100 comporta só 50 caracteres, então o texto
+    "! é distribuído em 4 blocos na mensagem 049 (&1&2&3&4).
+    CLASS-METHODS texto
+      IMPORTING
+        iv_texto      TYPE csequence
+        iv_severity   TYPE if_abap_behv_message=>t_severity DEFAULT if_abap_behv_message=>severity-error
+      RETURNING
+        VALUE(result) TYPE REF TO zcx_pc_msg.
 
     "! Atalho para criar mensagens de sucesso/informação.
     CLASS-METHODS sucesso
@@ -479,6 +502,8 @@ CLASS zcx_pc_msg IMPLEMENTATION.
 
     mv_attr1 = attr1.
     mv_attr2 = attr2.
+    mv_attr3 = attr3.
+    mv_attr4 = attr4.
 
     if_abap_behv_message~m_severity = severity.
 
@@ -495,6 +520,27 @@ CLASS zcx_pc_msg IMPLEMENTATION.
                              severity = if_abap_behv_message=>severity-success
                              attr1    = attr1
                              attr2    = attr2 ).
+  ENDMETHOD.
+
+  METHOD texto.
+    DATA(lv_texto) = CONV string( iv_texto ).
+    DATA lt_blocos TYPE string_table.
+
+    DO 4 TIMES.
+      DATA(lv_ini) = ( sy-index - 1 ) * 50.
+      IF lv_ini >= strlen( lv_texto ).
+        APPEND `` TO lt_blocos.
+      ELSE.
+        APPEND substring( val = lv_texto off = lv_ini len = nmin( val1 = 50 val2 = strlen( lv_texto ) - lv_ini ) ) TO lt_blocos.
+      ENDIF.
+    ENDDO.
+
+    result = NEW zcx_pc_msg( textid   = texto_livre
+                             severity = iv_severity
+                             attr1    = lt_blocos[ 1 ]
+                             attr2    = lt_blocos[ 2 ]
+                             attr3    = lt_blocos[ 3 ]
+                             attr4    = lt_blocos[ 4 ] ).
   ENDMETHOD.
 
 ENDCLASS.

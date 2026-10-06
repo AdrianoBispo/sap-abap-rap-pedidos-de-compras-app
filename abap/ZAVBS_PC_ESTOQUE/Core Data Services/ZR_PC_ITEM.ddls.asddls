@@ -11,7 +11,7 @@ define root view entity ZR_PC_ITEM
   key item_uuid             as ItemUUID,
       @Semantics.largeObject: { mimeType: 'FotoMimeType',
                                 fileName: 'FotoFileName',
-                                acceptableMimeTypes: [ 'image/jpeg', 'image/png' ],
+                                acceptableMimeTypes: [ 'image/jpeg', 'image/png', 'image/webp' ],
                                 contentDispositionPreference: #INLINE }
                                 
       foto_item             as FotoItem,

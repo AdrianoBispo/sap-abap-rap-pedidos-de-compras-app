@@ -16,6 +16,8 @@ use etag
   use action Resume;
   use action Prepare;
 
+  use action ImportarPlanilha;
+
   use association _Endereco { create; with draft; }
 }
 

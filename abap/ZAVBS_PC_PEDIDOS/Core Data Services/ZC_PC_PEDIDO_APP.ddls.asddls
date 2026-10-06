@@ -36,6 +36,7 @@ define root view entity ZC_PC_PEDIDO_APP
       EnderecoPrincipalCompleto,
 
       @ObjectModel.text.element: [ 'StatusPedidoTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSPED_VH', element: 'Codigo' } }]
       StatusPedido,
       _StatusPedidoTxt.Descricao      as StatusPedidoTexto,
@@ -49,6 +50,7 @@ define root view entity ZC_PC_PEDIDO_APP
       PedidoAtivoSemHistorico,
 
       @ObjectModel.text.element: [ 'StatusPagamentoTexto' ]
+      @UI.textArrangement: #TEXT_ONLY
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_STATUSPAG_VH', element: 'Codigo' } }]
       StatusPagamento,
       _StatusPagamentoTxt.Descricao   as StatusPagamentoTexto,

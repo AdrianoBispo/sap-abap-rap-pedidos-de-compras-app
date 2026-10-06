@@ -13,7 +13,7 @@ define root view entity ZR_PC_CLIENTE
   key cliente_uuid          as ClienteUUID,
       @Semantics.largeObject: { mimeType: 'FotoMimeType',
                                 fileName: 'FotoFileName',
-                                acceptableMimeTypes: [ 'image/jpeg', 'image/png' ],
+                                acceptableMimeTypes: [ 'image/jpeg', 'image/png', 'image/webp' ],
                                 contentDispositionPreference: #INLINE }
       foto_cliente          as FotoCliente,
       @Semantics.mimeType: true

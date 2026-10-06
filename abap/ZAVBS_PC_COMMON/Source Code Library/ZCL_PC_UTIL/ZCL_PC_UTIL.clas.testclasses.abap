@@ -115,6 +115,7 @@ CLASS ltcl_email_imagem DEFINITION FINAL FOR TESTING
   PRIVATE SECTION.
     CONSTANTS c_png  TYPE string VALUE `89504E470D0A1A0A0000000D49484452`.
     CONSTANTS c_jpeg TYPE string VALUE `FFD8FFE000104A46494600010100`.
+    CONSTANTS c_webp TYPE string VALUE `524946462A00000057454250565038200000`.
 
     METHODS email_valido              FOR TESTING.
     METHODS email_sem_arroba          FOR TESTING.
@@ -122,6 +123,8 @@ CLASS ltcl_email_imagem DEFINITION FINAL FOR TESTING
     METHODS imagem_vazia_e_valida     FOR TESTING.
     METHODS imagem_png_valida         FOR TESTING.
     METHODS imagem_jpeg_valida        FOR TESTING.
+    METHODS imagem_webp_valida        FOR TESTING.
+    METHODS imagem_webp_falsificada   FOR TESTING.
     METHODS imagem_mime_nao_permitido FOR TESTING.
     METHODS imagem_extensao_divergente FOR TESTING.
     METHODS imagem_conteudo_falsificado FOR TESTING.
@@ -178,13 +181,32 @@ CLASS ltcl_email_imagem IMPLEMENTATION.
       msg = 'JPEG com assinatura correta deve ser aceito' ).
   ENDMETHOD.
 
+  METHOD imagem_webp_valida.
+    cl_abap_unit_assert=>assert_equals(
+      act = zcl_pc_util=>validar_imagem( iv_conteudo     = CONV xstring( c_webp )
+                                         iv_mime_type    = 'image/webp'
+                                         iv_nome_arquivo = 'item.WEBP' )
+      exp = abap_true
+      msg = 'WEBP com assinatura RIFF/WEBP correta deve ser aceito' ).
+  ENDMETHOD.
+
+  METHOD imagem_webp_falsificada.
+    " MIME diz WEBP, mas os bytes são de um PNG
+    cl_abap_unit_assert=>assert_equals(
+      act = zcl_pc_util=>validar_imagem( iv_conteudo     = CONV xstring( c_png )
+                                         iv_mime_type    = 'image/webp'
+                                         iv_nome_arquivo = 'cliente.webp' )
+      exp = abap_false
+      msg = 'Assinatura RIFF/WEBP deve bater com o MIME type informado' ).
+  ENDMETHOD.
+
   METHOD imagem_mime_nao_permitido.
     cl_abap_unit_assert=>assert_equals(
       act = zcl_pc_util=>validar_imagem( iv_conteudo     = CONV xstring( c_png )
                                          iv_mime_type    = 'image/gif'
                                          iv_nome_arquivo = 'cliente.gif' )
       exp = abap_false
-      msg = 'Somente JPEG e PNG são aceitos' ).
+      msg = 'Somente JPEG, PNG e WEBP são aceitos' ).
   ENDMETHOD.
 
   METHOD imagem_extensao_divergente.
@@ -287,4 +309,3 @@ CLASS ltcl_estoque_endereco IMPLEMENTATION.
   ENDMETHOD.
 
 ENDCLASS.
-

@@ -32,6 +32,10 @@ authorization master ( global )
   action ( authorization : none ) LiberarReserva  parameter ZPC_A_QTDE_INPUT result [1] $self;
   action ( authorization : none ) BaixarEstoque   parameter ZPC_A_QTDE_INPUT result [1] $self;
 
+  /* Importação em massa por planilha (.xlsx ou .csv): cria itens ativos com
+     SKU gerado na hora. Tudo ou nada (ver ImportarPlanilha). */
+  static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
+
   determination DefinirValoresIniciais on modify { create; }
   determination RecalcularStatusEstoque on modify { create; field QtdeEstoque; }
   /* O SKU usa as 3 primeiras letras da Categoria; por isso só pode ser gerado

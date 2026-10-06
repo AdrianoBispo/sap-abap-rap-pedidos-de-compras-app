@@ -35,7 +35,7 @@ CLASS zcl_pc_util DEFINITION
       IMPORTING iv_email         TYPE csequence
       RETURNING VALUE(rv_valido) TYPE abap_boolean.
 
-    "! Aceita somente JPEG/PNG: MIME type, extensão e assinatura binária.
+    "! Aceita somente JPEG/PNG/WEBP: MIME type, extensão e assinatura binária.
     "! Conteúdo vazio é considerado válido (foto opcional).
     CLASS-METHODS validar_imagem
       IMPORTING iv_conteudo      TYPE xstring
@@ -164,6 +164,9 @@ CLASS zcl_pc_util IMPLEMENTATION.
   METHOD validar_imagem.
     CONSTANTS lc_assinatura_png  TYPE x LENGTH 8 VALUE '89504E470D0A1A0A'.
     CONSTANTS lc_assinatura_jpeg TYPE x LENGTH 3 VALUE 'FFD8FF'.
+    " WEBP é um contêiner RIFF: "RIFF" + tamanho (4 bytes) + "WEBP"
+    CONSTANTS lc_assinatura_riff TYPE x LENGTH 4 VALUE '52494646'.
+    CONSTANTS lc_assinatura_webp TYPE x LENGTH 4 VALUE '57454250'.
 
     IF iv_conteudo IS INITIAL.
       rv_valida = abap_true.
@@ -176,26 +179,35 @@ CLASS zcl_pc_util IMPLEMENTATION.
     DATA(lv_nome) = condense( to_lower( iv_nome_arquivo ) ).
 
     " 1) MIME type permitido
-    IF lv_mime <> zif_pc_constants=>c_mime-jpeg AND lv_mime <> zif_pc_constants=>c_mime-png.
+    IF lv_mime <> zif_pc_constants=>c_mime-jpeg
+       AND lv_mime <> zif_pc_constants=>c_mime-png
+       AND lv_mime <> zif_pc_constants=>c_mime-webp.
       RETURN.
     ENDIF.
 
     " 2) Extensão permitida (quando o nome do arquivo for informado)
     IF lv_nome IS NOT INITIAL
-       AND NOT matches( val = lv_nome pcre = `.*\.(jpe?g|png)$` ).
+       AND NOT matches( val = lv_nome pcre = `.*\.(jpe?g|png|webp)$` ).
       RETURN.
     ENDIF.
 
     " 3) Assinatura binária (magic bytes) compatível com o MIME type
-    IF lv_mime = zif_pc_constants=>c_mime-png.
-      IF xstrlen( iv_conteudo ) >= 8 AND iv_conteudo(8) = lc_assinatura_png.
-        rv_valida = abap_true.
-      ENDIF.
-    ELSE.
-      IF xstrlen( iv_conteudo ) >= 3 AND iv_conteudo(3) = lc_assinatura_jpeg.
-        rv_valida = abap_true.
-      ENDIF.
-    ENDIF.
+    CASE lv_mime.
+      WHEN zif_pc_constants=>c_mime-png.
+        IF xstrlen( iv_conteudo ) >= 8 AND iv_conteudo(8) = lc_assinatura_png.
+          rv_valida = abap_true.
+        ENDIF.
+      WHEN zif_pc_constants=>c_mime-webp.
+        IF xstrlen( iv_conteudo ) >= 12
+           AND iv_conteudo(4) = lc_assinatura_riff
+           AND iv_conteudo+8(4) = lc_assinatura_webp.
+          rv_valida = abap_true.
+        ENDIF.
+      WHEN OTHERS.
+        IF xstrlen( iv_conteudo ) >= 3 AND iv_conteudo(3) = lc_assinatura_jpeg.
+          rv_valida = abap_true.
+        ENDIF.
+    ENDCASE.
   ENDMETHOD.
 
 
