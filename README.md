@@ -45,6 +45,7 @@
 - [Endereço do cliente: consulta de CEP](#endereço-do-cliente-consulta-de-cep)
 - [Cadastro automático de endereço e CEP único](#cadastro-automático-de-endereço-e-cep-único)
 - [Reembolso de pedidos](#reembolso-de-pedidos)
+- [Importação em massa por planilha](#importação-em-massa-por-planilha)
 - [Tabelas draft](#tabelas-draft)
 - [Limitações conhecidas do release](#limitações-conhecidas-do-release)
 - [Observações sobre o Trial](#observações-sobre-o-trial)
@@ -116,6 +117,10 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
   estoque dos itens é reservado automaticamente (não há ação de confirmação). O pedido registrado
   não é mais editado nem excluído — só **Simular pagamento**, **Aprovar / finalizar** e **Cancelar**
   (com motivo).
+- **Fotos** de clientes e itens: JPEG, PNG ou WEBP (valida MIME, extensão e assinatura binária). Cliente sem foto mostra um avatar.
+- **Score** do cliente em %, com barra vermelha (até 40), amarela (de 40 a 70) e verde (a partir de 70).
+- **Ações do pedido** agrupadas no menu "Ações" (anotação `#FOR_ACTION_GROUP`, aparece também no preview do ADT).
+- **Códigos de CodeList** (gênero, categoria, status, método de pagamento) aparecem só como texto.
 - **SKU** gerado no Save, com as 3 primeiras letras da categoria (`SKU-ELE-0000000001`).
 - **Pagamento simulado** por cartão (VISA / Mastercard) sem persistir dados sensíveis — apenas
   bandeira, últimos 4 dígitos e máscara.
@@ -214,9 +219,10 @@ stateDiagram-v2
 │       │                               numeração, CodeLists, setup
 │       ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
 │       ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-│       └── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens, pagamento, snapshots), BO Reembolso,
-│                                       pagamento simulado, serviços ZUI_PC_PEDIDOS_COMPRAS
-│                                       e ZUI_PC_REEMBOLSOS
+│       ├── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
+│       │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
+│       │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
+│       └── ZAVBS_PC_REEMBOLSOS         BO Reembolso, serviço ZUI_PC_REEMBOLSOS
 │
 ├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
 │   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
@@ -281,8 +287,10 @@ no ADT):
    (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
 3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
-   Buffering** habilitado (obrigatório: sem buffer, `GET NUMBER` dispara `UPDATE` síncrono em
-   `NRIV`, proibido dentro de uma transação RAP). Os intervalos 01 (pedido) e 02 (SKU) são criados
+   Buffering** habilitado **e com *Number of Numbers in Buffer* maior que zero**, p. ex. 10
+   (obrigatório: sem buffer — ou com 0 números no buffer, que o runtime trata como "sem buffer" —
+   `GET NUMBER` dispara `UPDATE` síncrono em `NRIV`, proibido dentro de uma transação RAP, e o
+   cadastro de pedido/item termina em dump `BEHAVIOR_ILLEGAL_STATEMENT`). Os intervalos 01 (pedido) e 02 (SKU) são criados
    pela classe `ZCL_PC_SETUP`.
 4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` e `ZPC_PEDIDO`.
 5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
@@ -487,6 +495,70 @@ Reembolsos** (`ZUI_PC_REEMBOLSOS`). Não é mais filho do Pedido.
 As duas ações só ficam disponíveis enquanto o Reembolso está `PENDENTE`, e usam a mesma regra de
 autorização das demais ações de ciclo de vida do pedido. As actions `CancelarPorReembolso` e
 `RetomarPedido` do Pedido são internas (`authorization : none`, não expostas na projeção).
+
+---
+
+## Importação em massa por planilha
+
+Os três apps principais (**Gestão de Clientes**, **Gestão de Estoque** e **Pedidos de Compras**)
+têm o botão **Importar planilha** na lista. Ele abre uma janela para escolher um arquivo `.xlsx`
+ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
+[`docs/modelos-importacao/`](docs/modelos-importacao).
+
+| App | Linha da planilha | Colunas (obrigatórias em **negrito**) |
+|---|---|---|
+| Clientes | um cliente com o endereço principal | **CPF**, **Nome**, **E-mail**, **Telefone**, Gênero, **Data de nascimento**, **CEP**, **Número**, Complemento |
+| Estoque | um item | **Nome**, Descrição, **Categoria**, **Quantidade em estoque**, **Preço unitário**, Moeda (padrão `BRL`) |
+| Pedidos | um item de um pedido | **Pedido** (referência que agrupa as linhas de um mesmo pedido), **CPF**, **SKU**, **Quantidade**, Observação |
+
+**Como o arquivo é lido**
+
+- A primeira linha não vazia é o cabeçalho. Os nomes não diferenciam maiúsculas, acentos, espaços
+  ou pontuação (`Data de nascimento` = `data_nascimento` = `DATA NASCIMENTO`), e a ordem das
+  colunas é livre. Colunas extras são ignoradas.
+- CSV: separador `;`, `,` ou tabulação (detectado), UTF-8 com ou sem BOM; se não for UTF-8 válido,
+  assume ISO-8859-1 (CSV "ANSI" do Excel em português). XLSX: primeira aba, até a coluna T.
+- Datas aceitas: `AAAA-MM-DD`, `DD/MM/AAAA` ou data do Excel. Números aceitam ponto ou vírgula
+  decimal. CPF e CEP sem os zeros à esquerda (o Excel os perde em colunas numéricas) são
+  completados.
+- Gênero e Categoria aceitam o código (`NAO_BINARIO`) ou o texto (`Não binário`) da CodeList.
+- Máximo de **500 linhas** por arquivo.
+
+**Regras**
+
+- **Tudo ou nada.** Todas as linhas são validadas antes de gravar. Se houver qualquer erro nada é
+  gravado e a janela lista o motivo por linha (`Linha 7: CPF inválido (123).`), com no máximo 15
+  erros exibidos e o total omitido.
+- A importação passa pela mesma lógica da tela: cria instâncias ativas por EML, então valem as
+  determinations e validations do BO (CPF único, e-mail, telefone, consulta de CEP no ViaCEP,
+  numeração do SKU e do pedido, reserva de estoque).
+- **Clientes**: CPF já cadastrado ou repetido na planilha é erro; o CEP é consultado como na tela e
+  um CEP inexistente (ou ViaCEP fora do ar) cancela a importação.
+- **Estoque**: o SKU é gerado na hora; um nome de item já cadastrado (ou repetido na planilha) é
+  erro, o que evita duplicar o estoque ao reenviar o mesmo arquivo.
+- **Pedidos**: nasce `CRIADO`, com o endereço principal do cliente e o estoque reservado. Todas as
+  linhas de um pedido precisam ter o mesmo CPF; o cliente deve estar ativo e ter endereço
+  principal; o estoque disponível tem de cobrir a soma pedida em **toda** a planilha.
+- Permissões: Clientes e Estoque exigem a atividade de criação de `ZPC_ADMIN`; Pedidos, a de
+  criação de `ZPC_PEDIDO` (no Trial, `ZIF_PC_CONSTANTS=>C_MODO_TRIAL` libera tudo).
+
+**Implementação**
+
+- Action estática `ImportarPlanilha` com parâmetro `deep` (`ZPC_A_UPLOAD_INPUT` →
+  `ZPC_A_FILE_STREAM`, `@Semantics.largeObject`) nos BDEFs `ZR_PC_CLIENTE`, `ZR_PC_ITEM` e
+  `ZR_PC_PEDIDO`, exposta nas projeções e como botão (`#FOR_ACTION`) nos metadata extensions.
+- `ZCL_PC_PLANILHA` lê XLSX (XCO) e CSV; `ZCL_PC_IMPORTACAO` reúne a normalização de CPF/CEP, a
+  conversão de CodeList e o resumo de erros. As mensagens longas usam `ZCX_PC_MSG=>TEXTO`
+  (mensagem 049, `&1&2&3&4`), porque cada variável de mensagem T100 comporta só 50 caracteres.
+- Testes: `ZCL_PC_PLANILHA` (leitor) e `ZCL_PC_IMPORTACAO` (as três actions via EML).
+
+**Limitações**
+
+- O leitor XLSX é o XCO da SAP. Ele lê arquivos do Excel e de geradores que seguem o mesmo pacote
+  (`sharedStrings`), mas **recusa** o XLSX salvo pelo LibreOffice e não enxerga textos "inline"
+  (gerados por algumas bibliotecas, como o openpyxl). Nesses casos o app avisa e pede para
+  enviar como `.csv`. Arquivos `.xls` (antigo) não são aceitos.
+- Não atualiza registros existentes: só cria.
 
 ---
 
