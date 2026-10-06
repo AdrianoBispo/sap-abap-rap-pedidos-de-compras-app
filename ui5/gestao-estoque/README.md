@@ -7,7 +7,7 @@
 |**Generation Platform**<br>CLI|
 |**Template Used**<br>List Report Page V4|
 |**Service Type**<br>OData URL|
-|**Service URL**<br>https://a4796127-12c7-4a21-ae82-e3ced4ab9c3d.abap.us10.hana.ondemand.com/sap/opu/odata4/sap/zui_pc_estoque_o4/srvd/sap/zui_pc_estoque/0001/|
+|**Service URL**<br>https://6449ad14-b137-4a27-8017-6421c2c4f0b0.abap.us10.hana.ondemand.com/sap/opu/odata4/sap/zui_pc_estoque_o4/srvd/sap/zui_pc_estoque/0001/|
 |**Module Name**<br>gestao-estoque|
 |**Application Title**<br>Gestão de Estoque|
 |**Namespace**<br>|
