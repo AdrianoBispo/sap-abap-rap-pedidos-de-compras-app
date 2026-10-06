@@ -794,8 +794,21 @@ CLASS lhc_endereco IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_enderecos).
 
+    " Endereços já gravados (instância ativa, ou rascunho de um endereço ativo):
+    " o CEP não pode mais mudar (faz parte da chave da tabela, ver BDEF).
+    IF lt_enderecos IS NOT INITIAL.
+      SELECT EnderecoUUID
+        FROM zr_pc_endereco
+        FOR ALL ENTRIES IN @lt_enderecos
+        WHERE EnderecoUUID = @lt_enderecos-EnderecoUUID
+        INTO TABLE @DATA(lt_gravados).
+    ENDIF.
+
     result = VALUE #( FOR e IN lt_enderecos
                       ( %tky              = e-%tky
+                        %field-Cep        = COND #( WHEN line_exists( lt_gravados[ EnderecoUUID = e-EnderecoUUID ] )
+                                                    THEN if_abap_behv=>fc-f-read_only
+                                                    ELSE if_abap_behv=>fc-f-mandatory )
                         %field-Logradouro = COND #( WHEN e-CepGeral = abap_true
                                                     THEN if_abap_behv=>fc-f-mandatory
                                                     ELSE if_abap_behv=>fc-f-read_only )

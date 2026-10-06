@@ -100,9 +100,13 @@ authorization master ( global )
   field ( numbering : managed, readonly ) EnderecoUUID;
   field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, Cidade, Uf, Estado,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
-  /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município */
-  field ( features : instance ) Logradouro, Bairro;
-  field ( mandatory ) Cep, Numero;
+  /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município.
+     Cep: obrigatório ao cadastrar; depois de gravado fica somente leitura, porque faz
+     parte da chave primária da tabela ZTA_PC_ENDERECO (um UPDATE que mudasse o CEP
+     procuraria a linha com o CEP novo e geraria RAISE_SHORTDUMP "UPDATE returned
+     unexpected sy-subrc 4"). Para trocar o CEP: excluir o endereço e cadastrar outro. */
+  field ( features : instance ) Logradouro, Bairro, Cep;
+  field ( mandatory ) Numero;
 
   action ( features : instance ) DefinirEnderecoPrincipal result [1] $self;
 
