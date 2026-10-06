@@ -1,0 +1,7 @@
+@EndUserText.label: 'Pedidos de Compras - Análises (ALP e OVP)'
+define service ZUI_PC_ANALITICO {
+  expose ZC_PC_PEDIDO_ANALISE  as PedidoAnalise;
+  expose ZC_PC_CLIENTE_ANALISE as ClienteAnalise;
+  expose ZC_PC_ITEM_ANALISE    as ItemAnalise;
+  expose ZC_PC_REEMB_ANALISE   as ReembolsoAnalise;
+}

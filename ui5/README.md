@@ -56,6 +56,59 @@ item com `ZPCItemEstoque`. A app de destino abre direto a Object Page quando rec
 semântica: `Cpf` no Cliente (o `annotation.xml` de pedidos mapeia `CpfCliente` → `Cpf`) e `Sku` no
 Item. A navegação funciona no launchpad do sistema, para quem tiver as duas apps nas suas roles.
 
+## Apps analíticos (Analytical List Page e Overview Page)
+
+Vinte e um apps adicionais, somente leitura, sobre o serviço **`ZUI_PC_ANALITICO`** (binding
+`ZUI_PC_ANALITICO_O4`, OData V4 – UI): 20 ALPs (um por cenário de análise) e o Painel de Compras (OVP).
+Eles não alteram os apps de gestão: leem views CDS analíticas próprias (`ZI_PC_*_CUBE` →
+`ZC_PC_*_ANALISE`), com `@Aggregation.default` nas medidas e `@OData.applySupportedForAggregation: #FULL`
+(para o servidor aceitar `$apply=groupby/aggregate`). Gráficos, filtros e KPIs vêm das metadata
+extensions `ZC_PC_*_ANALISE`: cada cenário é um `UI.Chart` + `UI.PresentationVariant` com `qualifier`.
+
+| Domínio | App (pasta) | Cenário (qualifier) | BSP |
+| --- | --- | --- | --- |
+| Pedidos | `analise-pedidos` | Valor por status (`ValorPorStatus`) | `ZPC_ANL_PED` |
+| Pedidos | `analise-pedidos-mes` | Pedidos por mês (`PedidosPorMes`) | `ZPC_ANL_PMES` |
+| Pedidos | `analise-pedidos-uf` | Valor por UF (`ValorPorUf`) | `ZPC_ANL_PUF` |
+| Pedidos | `analise-pedidos-pagamento` | Pedidos por forma de pagamento (`PedidosPorPagamento`) | `ZPC_ANL_PPAG` |
+| Pedidos | `analise-ticket-medio` | Ticket médio por status (`TicketMedioPorStatus`) | `ZPC_ANL_TKT` |
+| Clientes | `analise-clientes` | Clientes por gênero (`ClientesPorGenero`) | `ZPC_ANL_CLI` |
+| Clientes | `analise-clientes-uf` | Clientes por UF (`ClientesPorUf`) | `ZPC_ANL_CUF` |
+| Clientes | `analise-clientes-score` | Clientes por faixa de score (`ClientesPorFaixaScore`) | `ZPC_ANL_CSC` |
+| Clientes | `analise-cadastros-mes` | Cadastros por mês (`CadastrosPorMes`) | `ZPC_ANL_CMES` |
+| Clientes | `analise-score-uf` | Score médio por UF (`ScoreMedioPorUf`) | `ZPC_ANL_SUF` |
+| Estoque | `analise-estoque` | Disponível e reservado por categoria (`DisponivelPorCategoria`) | `ZPC_ANL_EST` |
+| Estoque | `analise-itens-situacao` | Itens por situação (`ItensPorSituacao`) | `ZPC_ANL_ISIT` |
+| Estoque | `analise-valor-estoque` | Valor em estoque por categoria (`ValorEstoquePorCategoria`) | `ZPC_ANL_VEST` |
+| Estoque | `analise-itens-reservados` | Itens mais reservados (`ItensMaisReservados`) | `ZPC_ANL_IRES` |
+| Estoque | `analise-itens-categoria` | Itens por categoria (`ItensPorCategoria`) | `ZPC_ANL_ICAT` |
+| Reembolsos | `analise-reembolsos` | Valor por status (`ValorPorStatus`) | `ZPC_ANL_REE` |
+| Reembolsos | `analise-reemb-qtde` | Quantidade por status (`ReembQtdePorStatus`) | `ZPC_ANL_RQTD` |
+| Reembolsos | `analise-reemb-mes` | Valor por mês (`ReembValorPorMes`) | `ZPC_ANL_RMES` |
+| Reembolsos | `analise-reemb-uf` | Valor por UF (`ReembValorPorUf`) | `ZPC_ANL_RUF` |
+| Reembolsos | `analise-reemb-motivo` | Reembolsos por motivo (`ReembPorMotivo`) | `ZPC_ANL_RMOT` |
+| Painel | `painel-compras` (OVP) | 20 cards de gráfico + 3 listas + atalhos | `ZPC_PAINEL` |
+
+Pacotes: Pedidos `ZAVBS_PC_PEDIDOS`, Clientes `ZAVBS_PC_CLIENTES`, Estoque `ZAVBS_PC_ESTOQUE`,
+Reembolsos `ZAVBS_PC_REEMBOLSOS`, Painel `ZAVBS_PC_COMMON`. O tile de cada ALP usa o intent
+`ZPCAn…-display`, definido no `manifest.json` do app.
+
+- **ALPs só com gráfico.** Cada um é um List Report V4 com `views.paths.primary` apontando para a
+  `UI.PresentationVariant` (que tem apenas o `UI.Chart`), sem `secondary` e com
+  `defaultPath: "primary"`: não há tabela nem Object Page. Os filtros vêm de `UI.SelectionFields`.
+  Cada app mostra um único gráfico; para outro cenário do mesmo domínio, abra o app correspondente.
+- **Painel de Compras** (OData V4, cards `sap.ovp.cards.v4.*`): 20 cards de gráfico (um por
+  cenário), 3 listas de ação (pedidos aguardando aprovação, reembolsos pendentes, estoque crítico,
+  filtradas por `UI.SelectionVariant` no `annotation.xml` local) e um card de atalhos que abre os
+  4 apps de gestão pelos intents `ZPC*-manage`. Cada card tem `UI.Identification` para navegar.
+  A OVP não tem gráfico de barras horizontais, então o estoque usa um `UI.Chart` de colunas só no
+  `annotation.xml` local.
+- Os gráficos dependem de agregação no servidor (`$apply`). Se o gráfico vier vazio ou com erro de
+  `groupby`, teste a URL
+  `…/zui_pc_analitico/0001/ClienteAnalise?$apply=groupby((Genero),aggregate(QtdeClientes))`.
+- Para a OVP e os ALPs mostrarem dados é preciso carregar os dados de demonstração
+  (`ZCL_PC_SETUP`).
+
 ## Executar localmente
 
 ```bash

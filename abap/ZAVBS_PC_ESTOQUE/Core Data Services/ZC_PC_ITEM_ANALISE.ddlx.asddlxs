@@ -1,0 +1,79 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Item',
+                typeNamePlural: 'Itens de estoque' },
+  chart: [{ qualifier:           'DisponivelPorCategoria',
+            title:               'Estoque por categoria',
+            chartType:           #BAR,
+            dimensions:          [ 'Categoria' ],
+            measures:            [ 'QtdeDisponivel', 'QtdeReservada' ],
+            dimensionAttributes: [{ dimension: 'Categoria', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdeDisponivel', role: #AXIS_1 },
+                                  { measure: 'QtdeReservada',  role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder:      [{ by: 'QtdeDisponivel', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'DisponivelPorCategoria' },
+                                           { type: #AS_LINEITEM }] }]
+}
+annotate entity ZC_PC_ITEM_ANALISE with
+{
+  @UI.hidden: true
+  ItemUUID;
+
+  @UI: { lineItem:       [{ position: 10, label: 'SKU', importance: #HIGH }],
+         selectionField: [{ position: 40 }] }
+  @EndUserText.label: 'SKU'
+  Sku;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Item', importance: #HIGH }],
+         selectionField: [{ position: 30 }] }
+  @EndUserText.label: 'Item'
+  Nome;
+
+  @UI: { lineItem:       [{ position: 30, label: 'Categoria' }],
+         selectionField: [{ position: 10 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Categoria'
+  Categoria;
+
+  @UI.hidden: true
+  CategoriaTexto;
+
+  @UI: { lineItem:       [{ position: 40, label: 'Situação', importance: #HIGH }],
+         selectionField: [{ position: 20 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Situação do estoque'
+  StatusEstoque;
+
+  @UI.hidden: true
+  StatusEstoqueTexto;
+
+  @UI.hidden: true
+  ItemAtivo;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem:  [{ position: 50, label: 'Em estoque' }],
+         dataPoint: { title: 'Quantidade em estoque' } }
+  @EndUserText.label: 'Quantidade em estoque'
+  QtdeEstoque;
+
+  @UI: { lineItem:  [{ position: 60, label: 'Reservada' }],
+         dataPoint: { title: 'Quantidade reservada' } }
+  @EndUserText.label: 'Quantidade reservada'
+  QtdeReservada;
+
+  @UI: { lineItem:  [{ position: 70, label: 'Disponível', importance: #HIGH }],
+         dataPoint: { title: 'Quantidade disponível' } }
+  @EndUserText.label: 'Quantidade disponível'
+  QtdeDisponivel;
+
+  @UI: { lineItem:  [{ position: 80, label: 'Valor em estoque' }],
+         dataPoint: { title: 'Valor em estoque (R$)' } }
+  @EndUserText.label: 'Valor em estoque'
+  ValorEstoque;
+
+  @UI: { dataPoint: { title: 'Quantidade de itens' } }
+  @EndUserText.label: 'Quantidade de itens'
+  QtdeItens;
+}

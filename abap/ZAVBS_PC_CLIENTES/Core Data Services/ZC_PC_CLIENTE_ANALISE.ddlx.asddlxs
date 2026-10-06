@@ -1,0 +1,63 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Cliente',
+                typeNamePlural: 'Clientes' },
+  chart: [{ qualifier:           'ClientesPorGenero',
+            title:               'Clientes por gênero',
+            chartType:           #DONUT,
+            dimensions:          [ 'Genero' ],
+            measures:            [ 'QtdeClientes' ],
+            dimensionAttributes: [{ dimension: 'Genero', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder:      [{ by: 'QtdeClientes', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ClientesPorGenero' },
+                                           { type: #AS_LINEITEM }] }]
+}
+annotate entity ZC_PC_CLIENTE_ANALISE with
+{
+  @UI.hidden: true
+  ClienteUUID;
+
+  @UI: { lineItem:       [{ position: 10, label: 'Cliente', importance: #HIGH }],
+         selectionField: [{ position: 50 }] }
+  @EndUserText.label: 'Cliente'
+  Nome;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Gênero' }],
+         selectionField: [{ position: 10 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Gênero'
+  Genero;
+
+  @UI.hidden: true
+  GeneroTexto;
+
+  @UI: { lineItem:       [{ position: 30, label: 'Ativo' }],
+         selectionField: [{ position: 20 }] }
+  @EndUserText.label: 'Cliente ativo'
+  ClienteAtivo;
+
+  @UI: { lineItem:       [{ position: 40, label: 'UF' }],
+         selectionField: [{ position: 30 }] }
+  @EndUserText.label: 'UF do endereço principal'
+  Uf;
+
+  @UI: { lineItem:       [{ position: 50, label: 'Faixa do score' }],
+         selectionField: [{ position: 40 }] }
+  @EndUserText.label: 'Faixa do score'
+  FaixaScore;
+
+  @UI: { lineItem:       [{ position: 60, label: 'Mês de cadastro' }] }
+  @EndUserText.label: 'Mês de cadastro'
+  MesCadastro;
+
+  @UI: { lineItem:  [{ position: 70, label: 'Clientes' }],
+         dataPoint: { title: 'Quantidade de clientes' } }
+  @EndUserText.label: 'Quantidade de clientes'
+  QtdeClientes;
+
+  @UI: { lineItem:  [{ position: 80, label: 'Score médio', importance: #HIGH }],
+         dataPoint: { title: 'Score médio dos clientes' } }
+  @EndUserText.label: 'Score médio'
+  ScoreMedio;
+}

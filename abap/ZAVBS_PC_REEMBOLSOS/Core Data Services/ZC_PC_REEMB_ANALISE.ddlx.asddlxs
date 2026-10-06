@@ -1,0 +1,56 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Reembolso',
+                typeNamePlural: 'Reembolsos' },
+  chart: [{ qualifier:           'ValorPorStatus',
+            title:               'Valor dos reembolsos por status',
+            chartType:           #COLUMN,
+            dimensions:          [ 'StatusReembolso' ],
+            measures:            [ 'ValorReembolso' ],
+            dimensionAttributes: [{ dimension: 'StatusReembolso', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorReembolso', role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder:      [{ by: 'ValorReembolso', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' },
+                                           { type: #AS_LINEITEM }] }]
+}
+annotate entity ZC_PC_REEMB_ANALISE with
+{
+  @UI.hidden: true
+  ReembolsoUUID;
+
+  @UI.lineItem: [{ position: 10, label: 'Pedido', importance: #HIGH }]
+  @EndUserText.label: 'Pedido'
+  NumeroPedido;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Status', importance: #HIGH }],
+         selectionField: [{ position: 10 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Status do reembolso'
+  StatusReembolso;
+
+  @UI.hidden: true
+  StatusReembolsoTexto;
+
+  @UI: { lineItem:       [{ position: 30, label: 'UF' }],
+         selectionField: [{ position: 20 }] }
+  @EndUserText.label: 'UF do cliente'
+  Uf;
+
+  @UI: { lineItem:       [{ position: 40, label: 'Mês' }],
+         selectionField: [{ position: 30 }] }
+  @EndUserText.label: 'Mês da solicitação'
+  MesSolicitacao;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem:  [{ position: 50, label: 'Valor', importance: #HIGH }],
+         dataPoint: { title: 'Valor dos reembolsos' } }
+  @EndUserText.label: 'Valor do reembolso'
+  ValorReembolso;
+
+  @UI: { lineItem:  [{ position: 60, label: 'Reembolsos' }],
+         dataPoint: { title: 'Quantidade de reembolsos' } }
+  @EndUserText.label: 'Quantidade de reembolsos'
+  QtdeReembolsos;
+}

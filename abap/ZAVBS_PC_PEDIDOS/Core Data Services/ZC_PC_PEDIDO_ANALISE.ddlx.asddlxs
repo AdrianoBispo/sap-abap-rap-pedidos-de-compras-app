@@ -1,0 +1,68 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName:       'Pedido',
+                typeNamePlural: 'Pedidos' },
+  chart: [{ qualifier:           'ValorPorStatus',
+            title:               'Valor por status do pedido',
+            chartType:           #COLUMN,
+            dimensions:          [ 'StatusPedido' ],
+            measures:            [ 'ValorTotal' ],
+            dimensionAttributes: [{ dimension: 'StatusPedido', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorTotal', role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder:      [{ by: 'ValorTotal', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' },
+                                           { type: #AS_LINEITEM }] }]
+}
+annotate entity ZC_PC_PEDIDO_ANALISE with
+{
+  @UI.hidden: true
+  PedidoUUID;
+
+  @UI.lineItem: [{ position: 10, label: 'Pedido', importance: #HIGH }]
+  @EndUserText.label: 'Pedido'
+  NumeroPedido;
+
+  @UI: { lineItem:       [{ position: 20, label: 'Status', importance: #HIGH }],
+         selectionField: [{ position: 10 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Status do pedido'
+  StatusPedido;
+
+  @UI.hidden: true
+  StatusPedidoTexto;
+
+  @UI: { lineItem:       [{ position: 30, label: 'Pagamento' }],
+         selectionField: [{ position: 20 }] }
+  @UI.textArrangement: #TEXT_ONLY
+  @EndUserText.label: 'Status do pagamento'
+  StatusPagamento;
+
+  @UI.hidden: true
+  StatusPagamentoTexto;
+
+  @UI.hidden: true
+  ClienteUUID;
+
+  @UI: { lineItem:       [{ position: 40, label: 'UF' }],
+         selectionField: [{ position: 30 }] }
+  @EndUserText.label: 'UF do cliente'
+  Uf;
+
+  @UI: { lineItem:       [{ position: 50, label: 'Mês' }],
+         selectionField: [{ position: 40 }] }
+  @EndUserText.label: 'Mês de criação'
+  MesCriacao;
+
+  @UI.hidden: true
+  Currency;
+
+  @UI: { lineItem:  [{ position: 60, label: 'Valor total', importance: #HIGH }],
+         dataPoint: { title: 'Valor total dos pedidos' } }
+  @EndUserText.label: 'Valor total'
+  ValorTotal;
+
+  @UI: { lineItem:  [{ position: 70, label: 'Pedidos' }],
+         dataPoint: { title: 'Quantidade de pedidos' } }
+  @EndUserText.label: 'Quantidade de pedidos'
+  QtdePedidos;
+}
