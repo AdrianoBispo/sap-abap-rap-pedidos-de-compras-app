@@ -5,7 +5,7 @@ Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)**
 serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
 Além delas, `analise-compras/` é um app freestyle com todas as análises (veja
-[App de análises](#app-de-análises-freestyle)).
+[App de análises](#app-de-análises-freestyle)) e `analise-compras-react/` é a mesma app em React.
 
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
 Extensions (`*.ddlx.cds`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
@@ -69,6 +69,7 @@ CDS analíticas (`ZI_PC_*_CUBE` → `ZC_PC_*_ANALISE`) têm `@Aggregation.defaul
 | App | Pasta | `sap.app.id` | Serviço | Tile (inbound) | BSP / pacote |
 | --- | --- | --- | --- | --- | --- |
 | Análises de Compras | `analise-compras/` | `analisecompras` | `ZUI_PC_ANALITICO_O4` | `ZPCAnalise-display` | `ZPC_ANALISE` / `ZAVBS_PC_COMMON` |
+| Análises de Compras (React) | `analise-compras-react/` | — | `ZUI_PC_ANALITICO_O4` | — | `ZPC_ANALISE_R` / `ZAVBS_PC_COMMON` |
 
 - **Painel** (`#/painel/<domínio>`): um domínio por vez (Pedidos, Clientes, Estoque, Reembolsos), com
   barra de filtros, indicadores (KPIs) e os 5 gráficos do domínio, num total de 20 cenários.
@@ -88,7 +89,12 @@ CDS analíticas (`ZI_PC_*_CUBE` → `ZC_PC_*_ANALISE`) têm `@Aggregation.defaul
 | Estoque | `ItemAnalise` | `EstDisponivelPorCategoria`, `EstItensPorSituacao`, `EstValorPorCategoria`, `EstMaisReservados` (top 10), `EstItensPorCategoria` |
 | Reembolsos | `ReembolsoAnalise` | `ReeValorPorStatus`, `ReeQtdePorStatus`, `ReeValorPorMes`, `ReeValorPorUf`, `ReePorMotivo` |
 
-### Estrutura
+A mesma app existe também em **React** (`analise-compras-react/`, UI5 Web Components for React, Vite e
+TypeScript), com as mesmas telas e o mesmo catálogo de cenários; veja o
+[README dela](analise-compras-react/README.md). Os dois apps são independentes e podem ser implantados juntos
+(BSPs `ZPC_ANALISE` e `ZPC_ANALISE_R`).
+
+### Estrutura (SAPUI5)
 
 ```
 analise-compras/webapp/
@@ -157,6 +163,7 @@ Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 | Pedidos de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` |
 | Gestão de Reembolsos | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` |
 | Análises de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_analise/index.html` |
+| Análises de Compras (React) | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_analise_r/index.html` |
 
 ### Acesso pelo SAP Build Work Zone, standard edition
 
