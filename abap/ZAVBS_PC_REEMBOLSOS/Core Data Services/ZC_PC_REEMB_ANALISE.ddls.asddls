@@ -13,6 +13,7 @@ define view entity ZC_PC_REEMB_ANALISE
       @ObjectModel.text.element: [ 'StatusReembolsoTexto' ]
       StatusReembolso,
       StatusReembolsoTexto,
+      MotivoSolicitacao,
       Uf,
       MesSolicitacao,
       Currency,

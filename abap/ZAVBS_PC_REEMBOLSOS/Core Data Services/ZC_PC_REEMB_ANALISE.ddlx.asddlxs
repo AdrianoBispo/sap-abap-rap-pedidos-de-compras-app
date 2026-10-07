@@ -8,10 +8,45 @@
             dimensions:          [ 'StatusReembolso' ],
             measures:            [ 'ValorReembolso' ],
             dimensionAttributes: [{ dimension: 'StatusReembolso', role: #CATEGORY }],
-            measureAttributes:   [{ measure: 'ValorReembolso', role: #AXIS_1 }] }],
-  presentationVariant: [{ sortOrder:      [{ by: 'ValorReembolso', direction: #DESC }],
-                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' },
-                                           { type: #AS_LINEITEM }] }]
+            measureAttributes:   [{ measure: 'ValorReembolso', role: #AXIS_1 }] },
+          { qualifier:           'ReembPorMotivo',
+            title:               'Reembolsos por motivo da solicitação',
+            chartType:           #COLUMN,
+            dimensions:          [ 'MotivoSolicitacao' ],
+            measures:            [ 'QtdeReembolsos' ],
+            dimensionAttributes: [{ dimension: 'MotivoSolicitacao', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdeReembolsos', role: #AXIS_1 }] },
+          { qualifier:           'ReembValorPorUf',
+            title:               'Valor dos reembolsos por UF',
+            chartType:           #COLUMN,
+            dimensions:          [ 'Uf' ],
+            measures:            [ 'ValorReembolso' ],
+            dimensionAttributes: [{ dimension: 'Uf', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorReembolso', role: #AXIS_1 }] },
+          { qualifier:           'ReembValorPorMes',
+            title:               'Valor dos reembolsos por mês',
+            chartType:           #COLUMN,
+            dimensions:          [ 'MesSolicitacao' ],
+            measures:            [ 'ValorReembolso' ],
+            dimensionAttributes: [{ dimension: 'MesSolicitacao', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorReembolso', role: #AXIS_1 }] },
+          { qualifier:           'ReembQtdePorStatus',
+            title:               'Reembolsos por status',
+            chartType:           #DONUT,
+            dimensions:          [ 'StatusReembolso' ],
+            measures:            [ 'QtdeReembolsos' ],
+            dimensionAttributes: [{ dimension: 'StatusReembolso', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdeReembolsos', role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder: [{ by: 'ValorReembolso', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' }] },
+                         { qualifier: 'ReembPorMotivo', sortOrder: [{ by: 'QtdeReembolsos', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ReembPorMotivo' }] },
+                         { qualifier: 'ReembValorPorUf', sortOrder: [{ by: 'ValorReembolso', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ReembValorPorUf' }] },
+                         { qualifier: 'ReembValorPorMes', sortOrder: [{ by: 'MesSolicitacao', direction: #ASC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ReembValorPorMes' }] },
+                         { qualifier: 'ReembQtdePorStatus', sortOrder: [{ by: 'QtdeReembolsos', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ReembQtdePorStatus' }] }]
 }
 annotate entity ZC_PC_REEMB_ANALISE with
 {
@@ -30,6 +65,9 @@ annotate entity ZC_PC_REEMB_ANALISE with
 
   @UI.hidden: true
   StatusReembolsoTexto;
+
+  @EndUserText.label: 'Motivo da solicitação'
+  MotivoSolicitacao;
 
   @UI: { lineItem:       [{ position: 30, label: 'UF' }],
          selectionField: [{ position: 20 }] }

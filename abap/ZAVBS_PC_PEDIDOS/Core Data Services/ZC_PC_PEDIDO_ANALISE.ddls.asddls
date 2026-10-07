@@ -23,6 +23,9 @@ define view entity ZC_PC_PEDIDO_ANALISE
       @Aggregation.default: #SUM
       @Semantics.amount.currencyCode: 'Currency'
       ValorTotal,
+      @Aggregation.default: #AVG
+      @Semantics.amount.currencyCode: 'Currency'
+      ValorMedio,
       @Aggregation.default: #SUM
       QtdePedidos
 }

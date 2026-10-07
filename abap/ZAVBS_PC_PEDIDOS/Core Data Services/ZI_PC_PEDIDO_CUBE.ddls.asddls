@@ -31,6 +31,11 @@ define view entity ZI_PC_PEDIDO_CUBE
       @Semantics.amount.currencyCode: 'Currency'
       ValorTotal,
 
+      /* Ticket médio: média do valor dos pedidos (a soma é o ValorTotal) */
+      @Aggregation.default: #AVG
+      @Semantics.amount.currencyCode: 'Currency'
+      ValorTotal                        as ValorMedio,
+
       @Aggregation.default: #SUM
       cast( 1 as abap.int4 )            as QtdePedidos
 }

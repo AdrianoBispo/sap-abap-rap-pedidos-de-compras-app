@@ -8,10 +8,45 @@
             dimensions:          [ 'StatusPedido' ],
             measures:            [ 'ValorTotal' ],
             dimensionAttributes: [{ dimension: 'StatusPedido', role: #CATEGORY }],
-            measureAttributes:   [{ measure: 'ValorTotal', role: #AXIS_1 }] }],
-  presentationVariant: [{ sortOrder:      [{ by: 'ValorTotal', direction: #DESC }],
-                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' },
-                                           { type: #AS_LINEITEM }] }]
+            measureAttributes:   [{ measure: 'ValorTotal', role: #AXIS_1 }] },
+          { qualifier:           'TicketMedioPorStatus',
+            title:               'Ticket médio por status do pedido',
+            chartType:           #COLUMN,
+            dimensions:          [ 'StatusPedido' ],
+            measures:            [ 'ValorMedio' ],
+            dimensionAttributes: [{ dimension: 'StatusPedido', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorMedio', role: #AXIS_1 }] },
+          { qualifier:           'PedidosPorPagamento',
+            title:               'Pedidos por status do pagamento',
+            chartType:           #DONUT,
+            dimensions:          [ 'StatusPagamento' ],
+            measures:            [ 'QtdePedidos' ],
+            dimensionAttributes: [{ dimension: 'StatusPagamento', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdePedidos', role: #AXIS_1 }] },
+          { qualifier:           'ValorPorUf',
+            title:               'Valor dos pedidos por UF',
+            chartType:           #COLUMN,
+            dimensions:          [ 'Uf' ],
+            measures:            [ 'ValorTotal' ],
+            dimensionAttributes: [{ dimension: 'Uf', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'ValorTotal', role: #AXIS_1 }] },
+          { qualifier:           'PedidosPorMes',
+            title:               'Pedidos por mês',
+            chartType:           #COLUMN,
+            dimensions:          [ 'MesCriacao' ],
+            measures:            [ 'QtdePedidos' ],
+            dimensionAttributes: [{ dimension: 'MesCriacao', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdePedidos', role: #AXIS_1 }] }],
+  presentationVariant: [{ sortOrder: [{ by: 'ValorTotal', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorStatus' }] },
+                         { qualifier: 'TicketMedioPorStatus', sortOrder: [{ by: 'ValorMedio', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'TicketMedioPorStatus' }] },
+                         { qualifier: 'PedidosPorPagamento', sortOrder: [{ by: 'QtdePedidos', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'PedidosPorPagamento' }] },
+                         { qualifier: 'ValorPorUf', sortOrder: [{ by: 'ValorTotal', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ValorPorUf' }] },
+                         { qualifier: 'PedidosPorMes', sortOrder: [{ by: 'MesCriacao', direction: #ASC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'PedidosPorMes' }] }]
 }
 annotate entity ZC_PC_PEDIDO_ANALISE with
 {
@@ -60,6 +95,10 @@ annotate entity ZC_PC_PEDIDO_ANALISE with
          dataPoint: { title: 'Valor total dos pedidos' } }
   @EndUserText.label: 'Valor total'
   ValorTotal;
+
+  @UI: { dataPoint: { title: 'Ticket médio' } }
+  @EndUserText.label: 'Ticket médio'
+  ValorMedio;
 
   @UI: { lineItem:  [{ position: 70, label: 'Pedidos' }],
          dataPoint: { title: 'Quantidade de pedidos' } }
