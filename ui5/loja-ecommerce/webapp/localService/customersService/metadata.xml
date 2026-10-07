@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm" Version="4.0">
     <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='LOCAL')/$value">
         <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="SAP__aggregation"/>
     </edmx:Reference>
@@ -136,6 +136,8 @@
                 <Property Name="DataNascimento" Type="Edm.Date"/>
                 <Property Name="ClienteAtivo" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="ScoreCliente" Type="Edm.Decimal" Nullable="false" Precision="5" Scale="2"/>
+                <Property Name="ScoreUnidade" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="ScoreCriticality" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="CidadePrincipal" Type="Edm.String" Nullable="false" MaxLength="100"/>
                 <Property Name="UfPrincipal" Type="Edm.String" Nullable="false" MaxLength="2"/>
                 <Property Name="CreatedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
@@ -183,6 +185,7 @@
             </EntityType>
             <ComplexType Name="EnderecoControl">
                 <Property Name="Bairro" Type="Edm.Byte" Nullable="false"/>
+                <Property Name="Cep" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="Logradouro" Type="Edm.Byte" Nullable="false"/>
             </ComplexType>
             <ComplexType Name="ClienteCbAControl">
@@ -193,6 +196,11 @@
             </ComplexType>
             <ComplexType Name="ClienteOperationControl">
                 <Property Name="Edit" Type="Edm.Boolean" Nullable="false"/>
+            </ComplexType>
+            <ComplexType Name="ZPC_A_FILE_STREAM">
+                <Property Name="StreamProperty" Type="Edm.Stream" Nullable="false"/>
+                <Property Name="MimeType" Type="Edm.String" Nullable="false" MaxLength="128"/>
+                <Property Name="FileName" Type="Edm.String" Nullable="false" MaxLength="128"/>
             </ComplexType>
             <ComplexType Name="EntityControl">
                 <Property Name="Deletable" Type="Edm.Boolean" Nullable="false"/>
@@ -213,6 +221,11 @@
             <Action Name="Activate" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_clientes.v0001.ClienteType" Nullable="false"/>
                 <ReturnType Type="com.sap.gateway.srvd.zui_pc_clientes.v0001.ClienteType" Nullable="false"/>
+            </Action>
+            <Action Name="ImportarPlanilha" IsBound="true">
+                <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zui_pc_clientes.v0001.ClienteType)" Nullable="false"/>
+                <Parameter Name="Dummy" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="_StreamProperties" Type="com.sap.gateway.srvd.zui_pc_clientes.v0001.ZPC_A_FILE_STREAM" Nullable="false"/>
             </Action>
             <Action Name="Discard" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_clientes.v0001.ClienteType" Nullable="false"/>
@@ -244,6 +257,15 @@
                 <EntitySet Name="GeneroVH" EntityType="com.sap.gateway.srvd.zui_pc_clientes.v0001.GeneroVHType"/>
                 <EntitySet Name="I_DraftAdministrativeData" EntityType="com.sap.gateway.srvd.zui_pc_clientes.v0001.I_DraftAdministrativeDataType"/>
             </EntityContainer>
+            <Annotations Target="SAP__self.ZPC_A_FILE_STREAM/StreamProperty">
+                <Annotation Term="SAP__core.MediaType" Path="MimeType"/>
+                <Annotation Term="SAP__core.ContentDisposition">
+                    <Record>
+                        <PropertyValue Property="Filename" Path="FileName"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.Label" String="Planilha (.xlsx ou .csv)"/>
+            </Annotations>
             <Annotations Target="SAP__self.CepVHType/Cep">
                 <Annotation Term="SAP__common.Label" String="CEP"/>
             </Annotations>
@@ -311,7 +333,7 @@
             </Annotations>
             <Annotations Target="SAP__self.EnderecoType/Cep">
                 <Annotation Term="SAP__common.Label" String="CEP"/>
-                <Annotation Term="SAP__common.FieldControl" EnumMember="SAP__common.FieldControlType/Mandatory"/>
+                <Annotation Term="SAP__common.FieldControl" Path="__FieldControl/Cep"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
                         <String>../../../../srvd_f4/sap/zc_pc_cep_vh/0001;ps='srvd-zui_pc_clientes-0001';va='com.sap.gateway.srvd.zui_pc_clientes.v0001.et-zc_pc_endereco_app.cep'/$metadata</String>
@@ -778,6 +800,7 @@
                     <Collection>
                         <String>image/jpeg</String>
                         <String>image/png</String>
+                        <String>image/webp</String>
                     </Collection>
                 </Annotation>
             </Annotations>
@@ -811,7 +834,9 @@
             </Annotations>
             <Annotations Target="SAP__self.ClienteType/Genero">
                 <Annotation Term="SAP__common.Label" String="Gênero"/>
-                <Annotation Term="SAP__common.Text" Path="GeneroTexto"/>
+                <Annotation Term="SAP__common.Text" Path="GeneroTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__common.ValueListForValidation" String=""/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -834,8 +859,20 @@
                 <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteType/ScoreCliente">
-                <Annotation Term="SAP__common.Label" String="Score"/>
+                <Annotation Term="SAP__common.Label" String="Score (%)"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__measures.Unit" Path="ScoreUnidade"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ClienteType/ScoreUnidade">
+                <Annotation Term="SAP__common.IsUnit"/>
+                <Annotation Term="SAP__common.Label" String="Unidade do score"/>
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ClienteType/ScoreCriticality">
+                <Annotation Term="SAP__common.Label" String="Criticidade do score"/>
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteType/CidadePrincipal">
                 <Annotation Term="SAP__common.Label" String="Cidade"/>
@@ -869,6 +906,12 @@
                         <PropertyValue Property="Title" String="Score do cliente"/>
                         <PropertyValue Property="TargetValue" Decimal="100"/>
                         <PropertyValue Property="Visualization" EnumMember="SAP__UI.VisualizationType/Progress"/>
+                        <PropertyValue Property="ValueFormat">
+                            <Record>
+                                <PropertyValue Property="NumberOfFractionalDigits" Int="0"/>
+                            </Record>
+                        </PropertyValue>
+                        <PropertyValue Property="Criticality" Path="ScoreCriticality"/>
                     </Record>
                 </Annotation>
                 <Annotation Term="SAP__UI.HeaderFacets">
@@ -926,6 +969,7 @@
                     <Record>
                         <PropertyValue Property="TypeName" String="Cliente"/>
                         <PropertyValue Property="TypeNamePlural" String="Clientes"/>
+                        <PropertyValue Property="TypeImageUrl" String="sap-icon://person-placeholder"/>
                         <PropertyValue Property="Title">
                             <Record Type="SAP__UI.DataField">
                                 <PropertyValue Property="Value" Path="Nome"/>
@@ -942,7 +986,7 @@
                 <Annotation Term="SAP__UI.Identification">
                     <Collection>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Foto (JPEG ou PNG)"/>
+                            <PropertyValue Property="Label" String="Foto (JPEG, PNG ou WEBP)"/>
                             <PropertyValue Property="Value" Path="FotoCliente"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
@@ -1016,6 +1060,11 @@
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Data de cadastro"/>
                             <PropertyValue Property="Value" Path="CreatedAt"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataFieldForAction">
+                            <PropertyValue Property="Label" String="Importar planilha"/>
+                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_clientes.v0001.ImportarPlanilha(Collection(com.sap.gateway.srvd.zui_pc_clientes.v0001.ClienteType))"/>
+                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -1174,6 +1223,8 @@
                             <Collection>
                                 <PropertyPath>CpfFormatado</PropertyPath>
                                 <PropertyPath>TelefoneFormatado</PropertyPath>
+                                <PropertyPath>ScoreUnidade</PropertyPath>
+                                <PropertyPath>ScoreCriticality</PropertyPath>
                                 <PropertyPath>__CreateByAssociationControl</PropertyPath>
                                 <PropertyPath>__EntityControl</PropertyPath>
                                 <PropertyPath>__OperationControl</PropertyPath>
@@ -1200,6 +1251,8 @@
                             <Collection>
                                 <PropertyPath>CpfFormatado</PropertyPath>
                                 <PropertyPath>TelefoneFormatado</PropertyPath>
+                                <PropertyPath>ScoreUnidade</PropertyPath>
+                                <PropertyPath>ScoreCriticality</PropertyPath>
                                 <PropertyPath>__CreateByAssociationControl</PropertyPath>
                                 <PropertyPath>__EntityControl</PropertyPath>
                                 <PropertyPath>__OperationControl</PropertyPath>
@@ -1244,6 +1297,12 @@
             <Annotations Target="SAP__self.ClienteType/_Endereco">
                 <Annotation Term="SAP__common.Composition"/>
             </Annotations>
+            <Annotations Target="SAP__self.ImportarPlanilha(Collection(SAP__self.ClienteType))/Dummy">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
+            </Annotations>
             <Annotations Target="SAP__self.Edit(SAP__self.ClienteType)/PreserveChanges">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="TRUE"/>
@@ -1251,6 +1310,78 @@
             </Annotations>
             <Annotations Target="SAP__self.Edit(SAP__self.ClienteType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/Edit"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container">
+                <Annotation Term="SAP__CodeList.UnitsOfMeasure">
+                    <Record>
+                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="CollectionPath" String="UnitsOfMeasure"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
+                <Annotation Term="SAP__capabilities.FilterFunctions">
+                    <Collection>
+                        <String>eq</String>
+                        <String>ne</String>
+                        <String>gt</String>
+                        <String>ge</String>
+                        <String>lt</String>
+                        <String>le</String>
+                        <String>and</String>
+                        <String>or</String>
+                        <String>contains</String>
+                        <String>startswith</String>
+                        <String>endswith</String>
+                        <String>any</String>
+                        <String>all</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__support.TechnicalInfoLinks">
+                    <Record>
+                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="FunctionImport" String="GetTechnicalInfoLinks"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.SupportedFormats">
+                    <Collection>
+                        <String>application/json</String>
+                        <String>application/pdf</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__PDF.Features">
+                    <Record>
+                        <PropertyValue Property="DocumentDescriptionReference" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="DocumentDescriptionCollection" String="MyDocumentDescriptions"/>
+                        <PropertyValue Property="ArchiveFormat" Bool="true"/>
+                        <PropertyValue Property="Border" Bool="true"/>
+                        <PropertyValue Property="CoverPage" Bool="true"/>
+                        <PropertyValue Property="FitToPage" Bool="true"/>
+                        <PropertyValue Property="FontName" Bool="true"/>
+                        <PropertyValue Property="FontSize" Bool="true"/>
+                        <PropertyValue Property="HeaderFooter" Bool="true"/>
+                        <PropertyValue Property="IANATimezoneFormat" Bool="true"/>
+                        <PropertyValue Property="Margin" Bool="true"/>
+                        <PropertyValue Property="Padding" Bool="true"/>
+                        <PropertyValue Property="ResultSizeDefault" Int="20000"/>
+                        <PropertyValue Property="ResultSizeMaximum" Int="20000"/>
+                        <PropertyValue Property="Signature" Bool="true"/>
+                        <PropertyValue Property="TextDirectionLayout" Bool="true"/>
+                        <PropertyValue Property="Treeview" Bool="true"/>
+                        <PropertyValue Property="UploadToFileShare" Bool="true"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.BatchSupport">
+                    <Record>
+                        <PropertyValue Property="SupportedFormats">
+                            <Collection>
+                                <String>application/json</String>
+                                <String>multipart/mixed</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.KeyAsSegmentSupported"/>
+                <Annotation Term="SAP__capabilities.AsynchronousRequestsSupported"/>
             </Annotations>
             <Annotations Target="SAP__self.I_DraftAdministrativeDataType/DraftEntityType">
                 <Annotation Term="SAP__common.IsUpperCase"/>
@@ -1342,72 +1473,6 @@
                     </Record>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.Container">
-                <Annotation Term="SAP__common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
-                <Annotation Term="SAP__capabilities.FilterFunctions">
-                    <Collection>
-                        <String>eq</String>
-                        <String>ne</String>
-                        <String>gt</String>
-                        <String>ge</String>
-                        <String>lt</String>
-                        <String>le</String>
-                        <String>and</String>
-                        <String>or</String>
-                        <String>contains</String>
-                        <String>startswith</String>
-                        <String>endswith</String>
-                        <String>any</String>
-                        <String>all</String>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__support.TechnicalInfoLinks">
-                    <Record>
-                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
-                        <PropertyValue Property="FunctionImport" String="GetTechnicalInfoLinks"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.SupportedFormats">
-                    <Collection>
-                        <String>application/json</String>
-                        <String>application/pdf</String>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__PDF.Features">
-                    <Record>
-                        <PropertyValue Property="DocumentDescriptionReference" String="../../../../default/iwbep/common/0001/$metadata"/>
-                        <PropertyValue Property="DocumentDescriptionCollection" String="MyDocumentDescriptions"/>
-                        <PropertyValue Property="ArchiveFormat" Bool="true"/>
-                        <PropertyValue Property="Border" Bool="true"/>
-                        <PropertyValue Property="CoverPage" Bool="true"/>
-                        <PropertyValue Property="FitToPage" Bool="true"/>
-                        <PropertyValue Property="FontName" Bool="true"/>
-                        <PropertyValue Property="FontSize" Bool="true"/>
-                        <PropertyValue Property="HeaderFooter" Bool="true"/>
-                        <PropertyValue Property="IANATimezoneFormat" Bool="true"/>
-                        <PropertyValue Property="Margin" Bool="true"/>
-                        <PropertyValue Property="Padding" Bool="true"/>
-                        <PropertyValue Property="ResultSizeDefault" Int="20000"/>
-                        <PropertyValue Property="ResultSizeMaximum" Int="20000"/>
-                        <PropertyValue Property="Signature" Bool="true"/>
-                        <PropertyValue Property="TextDirectionLayout" Bool="true"/>
-                        <PropertyValue Property="Treeview" Bool="true"/>
-                        <PropertyValue Property="UploadToFileShare" Bool="true"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.BatchSupport">
-                    <Record>
-                        <PropertyValue Property="SupportedFormats">
-                            <Collection>
-                                <String>application/json</String>
-                                <String>multipart/mixed</String>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.KeyAsSegmentSupported"/>
-                <Annotation Term="SAP__capabilities.AsynchronousRequestsSupported"/>
-            </Annotations>
             <Annotations Target="SAP__self.I_DraftAdministrativeDataType/DraftUUID">
                 <Annotation Term="SAP__UI.Hidden"/>
                 <Annotation Term="SAP__common.Label" String="Draft (Technical ID)"/>
@@ -1467,6 +1532,11 @@
                 <Annotation Term="SAP__common.Label" String="Draft Last Changed On"/>
             </Annotations>
             <Annotations Target="SAP__self.EnderecoControl/Bairro">
+                <Annotation Term="SAP__common.Label" String="Dyn. Field Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Field Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Field Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.EnderecoControl/Cep">
                 <Annotation Term="SAP__common.Label" String="Dyn. Field Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Field Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Field Property"/>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm" Version="4.0">
     <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='LOCAL')/$value">
         <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="SAP__aggregation"/>
     </edmx:Reference>
@@ -57,41 +57,6 @@
     <edmx:DataServices>
         <Schema Namespace="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001" Alias="SAP__self">
             <Annotation Term="SAP__core.SchemaVersion" String="1.0.0"/>
-            <EntityType Name="ReembolsoType">
-                <Key>
-                    <PropertyRef Name="ReembolsoUUID"/>
-                    <PropertyRef Name="IsActiveEntity"/>
-                </Key>
-                <Property Name="ReembolsoUUID" Type="Edm.Guid" Nullable="false"/>
-                <Property Name="PedidoUUID" Type="Edm.Guid" Nullable="false"/>
-                <Property Name="StatusReembolso" Type="Edm.String" Nullable="false" MaxLength="20"/>
-                <Property Name="StatusReembolsoTexto" Type="Edm.String" Nullable="false" MaxLength="60"/>
-                <Property Name="StatusReembolsoCriticality" Type="Edm.Byte" Nullable="false"/>
-                <Property Name="StatusPedidoAnterior" Type="Edm.String" Nullable="false" MaxLength="40"/>
-                <Property Name="Currency" Type="Edm.String" Nullable="false" MaxLength="5"/>
-                <Property Name="ValorReembolso" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="variable"/>
-                <Property Name="MotivoSolicitacao" Type="Edm.String" Nullable="false" MaxLength="500"/>
-                <Property Name="DataSolicitacao" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="SolicitadoPor" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="MotivoDecisao" Type="Edm.String" Nullable="false" MaxLength="500"/>
-                <Property Name="DataDecisao" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="DecididoPor" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="CreatedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="CreatedAt" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="LastChangedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="LastChangedAt" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="LocalLastChangedAt" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="DraftEntityCreationDateTime" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="DraftEntityLastChangeDateTime" Type="Edm.DateTimeOffset" Precision="7"/>
-                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false"/>
-                <NavigationProperty Name="DraftAdministrativeData" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.I_DraftAdministrativeDataType"/>
-                <NavigationProperty Name="SiblingEntity" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ReembolsoType"/>
-                <NavigationProperty Name="_Pedido" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false" Partner="_Reembolsos">
-                    <ReferentialConstraint Property="PedidoUUID" ReferencedProperty="PedidoUUID"/>
-                </NavigationProperty>
-            </EntityType>
             <EntityType Name="MetodoPagamentoVHType">
                 <Key>
                     <PropertyRef Name="Codigo"/>
@@ -122,6 +87,10 @@
                 <Property Name="ClienteUUID" Type="Edm.Guid"/>
                 <Property Name="NomeCliente" Type="Edm.String" Nullable="false" MaxLength="255"/>
                 <Property Name="CpfCliente" Type="Edm.String" Nullable="false" MaxLength="11"/>
+                <Property Name="EmailCliente" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="TelefoneCliente" Type="Edm.String" Nullable="false" MaxLength="11"/>
+                <Property Name="GeneroCliente" Type="Edm.String" Nullable="false" MaxLength="60"/>
+                <Property Name="DataNascimentoCliente" Type="Edm.Date"/>
                 <Property Name="EnderecoUUID" Type="Edm.Guid"/>
                 <Property Name="EnderecoPrincipalCompleto" Type="Edm.String" Nullable="false" MaxLength="500"/>
                 <Property Name="StatusPedido" Type="Edm.String" Nullable="false" MaxLength="40"/>
@@ -129,6 +98,8 @@
                 <Property Name="StatusPedidoCriticality" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="PedidoEncerrado" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="PedidoAtivoSemHistorico" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="PedidoNaoFinalizado" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="PedidoNaoCancelado" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="StatusPagamento" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="StatusPagamentoTexto" Type="Edm.String" Nullable="false" MaxLength="60"/>
                 <Property Name="StatusPagamentoCriticality" Type="Edm.Byte" Nullable="false"/>
@@ -165,9 +136,6 @@
                     <OnDelete Action="Cascade"/>
                 </NavigationProperty>
                 <NavigationProperty Name="_Pagamento" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PagamentoType" Partner="_Pedido">
-                    <OnDelete Action="Cascade"/>
-                </NavigationProperty>
-                <NavigationProperty Name="_Reembolsos" Type="Collection(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ReembolsoType)" Partner="_Pedido">
                     <OnDelete Action="Cascade"/>
                 </NavigationProperty>
             </EntityType>
@@ -330,15 +298,6 @@
                 <Property Name="LastChangedByUserDescription" Type="Edm.String" Nullable="false" MaxLength="80"/>
                 <Property Name="InProcessByUserDescription" Type="Edm.String" Nullable="false" MaxLength="80"/>
             </EntityType>
-            <EntityType Name="StatusReembolsoVHType">
-                <Key>
-                    <PropertyRef Name="Codigo"/>
-                </Key>
-                <Property Name="Codigo" Type="Edm.String" Nullable="false" MaxLength="40"/>
-                <Property Name="Descricao" Type="Edm.String" Nullable="false" MaxLength="60"/>
-                <Property Name="Criticality" Type="Edm.Byte" Nullable="false"/>
-                <Property Name="Ordem" Type="Edm.Int16" Nullable="false"/>
-            </EntityType>
             <EntityType Name="PagamentoType">
                 <Key>
                     <PropertyRef Name="PagamentoUUID"/>
@@ -396,12 +355,14 @@
             </ComplexType>
             <ComplexType Name="PedidoOperationControl">
                 <Property Name="AprovarPedido" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="AprovarReembolso" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="CancelarPedido" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="ConfirmarPedido" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="Edit" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="RejeitarReembolso" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="SimularPagamento" Type="Edm.Boolean" Nullable="false"/>
+            </ComplexType>
+            <ComplexType Name="ZPC_A_FILE_STREAM">
+                <Property Name="StreamProperty" Type="Edm.Stream" Nullable="false"/>
+                <Property Name="MimeType" Type="Edm.String" Nullable="false" MaxLength="128"/>
+                <Property Name="FileName" Type="Edm.String" Nullable="false" MaxLength="128"/>
             </ComplexType>
             <ComplexType Name="EntityControl">
                 <Property Name="Deletable" Type="Edm.Boolean" Nullable="false"/>
@@ -442,10 +403,6 @@
                 <Parameter Name="Cvv" Type="Edm.String" Nullable="false" MaxLength="4"/>
                 <ReturnType Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
             </Action>
-            <Action Name="ConfirmarPedido" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
-                <ReturnType Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
-            </Action>
             <Action Name="Edit" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
                 <Parameter Name="PreserveChanges" Type="Edm.Boolean" Nullable="false"/>
@@ -455,15 +412,10 @@
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
                 <ReturnType Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
             </Action>
-            <Action Name="AprovarReembolso" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
-                <Parameter Name="MotivoDecisao" Type="Edm.String" Nullable="false" MaxLength="500"/>
-                <ReturnType Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
-            </Action>
-            <Action Name="RejeitarReembolso" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
-                <Parameter Name="MotivoDecisao" Type="Edm.String" Nullable="false" MaxLength="500"/>
-                <ReturnType Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType" Nullable="false"/>
+            <Action Name="ImportarPlanilha" IsBound="true">
+                <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)" Nullable="false"/>
+                <Parameter Name="Dummy" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="_StreamProperties" Type="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ZPC_A_FILE_STREAM" Nullable="false"/>
             </Action>
             <EntityContainer Name="Container">
                 <EntitySet Name="ClienteSnapshot" EntityType="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ClienteSnapshotType">
@@ -498,419 +450,18 @@
                     <NavigationPropertyBinding Path="_Itens" Target="ItemPedido"/>
                     <NavigationPropertyBinding Path="_ItensSnapshot" Target="ItemSnapshot"/>
                     <NavigationPropertyBinding Path="_Pagamento" Target="Pagamento"/>
-                    <NavigationPropertyBinding Path="_Reembolsos" Target="Reembolso"/>
-                </EntitySet>
-                <EntitySet Name="Reembolso" EntityType="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ReembolsoType">
-                    <NavigationPropertyBinding Path="DraftAdministrativeData" Target="I_DraftAdministrativeData"/>
-                    <NavigationPropertyBinding Path="SiblingEntity" Target="Reembolso"/>
-                    <NavigationPropertyBinding Path="_Pedido" Target="Pedido"/>
                 </EntitySet>
                 <EntitySet Name="StatusPagamentoVH" EntityType="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.StatusPagamentoVHType"/>
                 <EntitySet Name="StatusPedidoVH" EntityType="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.StatusPedidoVHType"/>
-                <EntitySet Name="StatusReembolsoVH" EntityType="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.StatusReembolsoVHType"/>
             </EntityContainer>
-            <Annotations Target="SAP__self.ReembolsoType/ReembolsoUUID">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="UUID"/>
-                <Annotation Term="SAP__common.QuickInfo" String="16 Byte UUID in 16 Bytes (Raw Format)"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/PedidoUUID">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="UUID"/>
-                <Annotation Term="SAP__common.QuickInfo" String="16 Byte UUID in 16 Bytes (Raw Format)"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/StatusReembolso">
-                <Annotation Term="SAP__common.Label" String="Status do reembolso"/>
-                <Annotation Term="SAP__common.Text" Path="StatusReembolsoTexto"/>
-                <Annotation Term="SAP__core.Computed"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/StatusReembolsoTexto">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/StatusReembolsoCriticality">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/StatusPedidoAnterior">
-                <Annotation Term="SAP__common.Label" String="Status anterior do pedido"/>
-                <Annotation Term="SAP__core.Computed"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/Currency">
-                <Annotation Term="SAP__common.IsCurrency"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/ValorReembolso">
-                <Annotation Term="SAP__common.Label" String="Valor do reembolso"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/MotivoSolicitacao">
-                <Annotation Term="SAP__common.Label" String="Motivo da solicitação"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.MultiLineText"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/DataSolicitacao">
-                <Annotation Term="SAP__common.Label" String="Solicitado em"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.Heading" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Long Form (YYYYMMDDhhmmssmmmuuun)"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=TIMESTAMPL"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/SolicitadoPor">
-                <Annotation Term="SAP__common.Label" String="Solicitado por"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Heading" String="Created By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Created By User"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_CREATION_USER"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/MotivoDecisao">
-                <Annotation Term="SAP__common.Label" String="Motivo da decisão"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.MultiLineText"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/DataDecisao">
-                <Annotation Term="SAP__common.Label" String="Decidido em"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.Heading" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Long Form (YYYYMMDDhhmmssmmmuuun)"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=TIMESTAMPL"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/DecididoPor">
-                <Annotation Term="SAP__common.Label" String="Decidido por"/>
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Heading" String="Changed By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Last Changed By User"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_LASTCHANGE_USER"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/CreatedBy">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Created By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Created By User"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_CREATION_USER"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType">
-                <Annotation Term="SAP__common.CreatedBy" Path="CreatedBy"/>
-                <Annotation Term="SAP__common.CreatedAt" Path="CreatedAt"/>
-                <Annotation Term="SAP__common.ChangedBy" Path="LastChangedBy"/>
-                <Annotation Term="SAP__common.ChangedAt" Path="LastChangedAt"/>
-                <Annotation Term="SAP__common.Label" String="Reembolso - Projection (somente leitura)"/>
-                <Annotation Term="SAP__UI.Facets">
-                    <Collection>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Reembolso"/>
-                            <PropertyValue Property="ID" String="DadosReembolso"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.Identification"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__UI.HeaderInfo">
+            <Annotations Target="SAP__self.ZPC_A_FILE_STREAM/StreamProperty">
+                <Annotation Term="SAP__core.MediaType" Path="MimeType"/>
+                <Annotation Term="SAP__core.ContentDisposition">
                     <Record>
-                        <PropertyValue Property="TypeName" String="Reembolso"/>
-                        <PropertyValue Property="TypeNamePlural" String="Reembolsos"/>
-                        <PropertyValue Property="Title">
-                            <Record Type="SAP__UI.DataField">
-                                <PropertyValue Property="Value" Path="StatusReembolso"/>
-                            </Record>
-                        </PropertyValue>
-                        <PropertyValue Property="Description">
-                            <Record Type="SAP__UI.DataField">
-                                <PropertyValue Property="Value" Path="MotivoSolicitacao"/>
-                            </Record>
-                        </PropertyValue>
+                        <PropertyValue Property="Filename" Path="FileName"/>
                     </Record>
                 </Annotation>
-                <Annotation Term="SAP__UI.Identification">
-                    <Collection>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Status"/>
-                            <PropertyValue Property="Criticality" Path="StatusReembolsoCriticality"/>
-                            <PropertyValue Property="Value" Path="StatusReembolso"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Status anterior do pedido"/>
-                            <PropertyValue Property="Value" Path="StatusPedidoAnterior"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Valor do reembolso"/>
-                            <PropertyValue Property="Value" Path="ValorReembolso"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Motivo da solicitação"/>
-                            <PropertyValue Property="Value" Path="MotivoSolicitacao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Solicitado em"/>
-                            <PropertyValue Property="Value" Path="DataSolicitacao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Solicitado por"/>
-                            <PropertyValue Property="Value" Path="SolicitadoPor"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Motivo da decisão"/>
-                            <PropertyValue Property="Value" Path="MotivoDecisao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Decidido em"/>
-                            <PropertyValue Property="Value" Path="DataDecisao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Decidido por"/>
-                            <PropertyValue Property="Value" Path="DecididoPor"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__UI.LineItem">
-                    <Collection>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Status"/>
-                            <PropertyValue Property="Criticality" Path="StatusReembolsoCriticality"/>
-                            <PropertyValue Property="Value" Path="StatusReembolso"/>
-                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Valor"/>
-                            <PropertyValue Property="Value" Path="ValorReembolso"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Motivo da solicitação"/>
-                            <PropertyValue Property="Value" Path="MotivoSolicitacao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Solicitado em"/>
-                            <PropertyValue Property="Value" Path="DataSolicitacao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Motivo da decisão"/>
-                            <PropertyValue Property="Value" Path="MotivoDecisao"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/CreatedAt">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Created On"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Creation Date Time"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_CREATION_TSTMPL"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/LastChangedBy">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Changed By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Last Changed By User"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_LASTCHANGE_USER"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/LastChangedAt">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Changed On"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Last Change Date Time"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_LASTCHANGE_TSTMPL"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/LocalLastChangedAt">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Changed On"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Local Instance Last Change Date Time"/>
-                <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_LOCINST_LASTCHANGE_TSTMPL"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/HasDraftEntity">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.HiddenFilter"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Has Draft"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Draft - Indicator - Has draft document"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/DraftEntityCreationDateTime">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.HiddenFilter"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Draft Created On"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/DraftEntityLastChangeDateTime">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.HiddenFilter"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Draft Last Changed On"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/HasActiveEntity">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.HiddenFilter"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Has active"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Draft - Indicator - Has active document"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ReembolsoType/IsActiveEntity">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__UI.HiddenFilter"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Is active"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Draft - Indicator - Is active document"/>
-            </Annotations>
-            <Annotations Target="SAP__self.Container/Reembolso">
-                <Annotation Term="SAP__capabilities.NavigationRestrictions">
-                    <Record>
-                        <PropertyValue Property="RestrictedProperties">
-                            <Collection>
-                                <Record>
-                                    <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Pedido"/>
-                                    <PropertyValue Property="InsertRestrictions">
-                                        <Record>
-                                            <PropertyValue Property="Insertable" Bool="false"/>
-                                        </Record>
-                                    </PropertyValue>
-                                    <PropertyValue Property="DeepUpdateSupport">
-                                        <Record>
-                                            <PropertyValue Property="Supported" Bool="false"/>
-                                        </Record>
-                                    </PropertyValue>
-                                </Record>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__common.DraftNode"/>
-                <Annotation Term="SAP__common.DraftActivationVia">
-                    <Collection>
-                        <String>SAP__self.Container/Pedido</String>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.SearchRestrictions">
-                    <Record>
-                        <PropertyValue Property="Searchable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.FilterRestrictions">
-                    <Record>
-                        <PropertyValue Property="Filterable" Bool="true"/>
-                        <PropertyValue Property="FilterExpressionRestrictions">
-                            <Collection>
-                                <Record>
-                                    <PropertyValue Property="Property" PropertyPath="DraftEntityCreationDateTime"/>
-                                    <PropertyValue Property="AllowedExpressions" String="SingleRange"/>
-                                </Record>
-                                <Record>
-                                    <PropertyValue Property="Property" PropertyPath="DraftEntityLastChangeDateTime"/>
-                                    <PropertyValue Property="AllowedExpressions" String="SingleRange"/>
-                                </Record>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.InsertRestrictions">
-                    <Record>
-                        <PropertyValue Property="Insertable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.DeleteRestrictions">
-                    <Record>
-                        <PropertyValue Property="Deletable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.UpdateRestrictions">
-                    <Record>
-                        <PropertyValue Property="Updatable" Bool="false"/>
-                        <PropertyValue Property="NonUpdatableNavigationProperties">
-                            <Collection>
-                                <PropertyPath>DraftAdministrativeData</PropertyPath>
-                                <PropertyPath>SiblingEntity</PropertyPath>
-                                <PropertyPath>_Pedido</PropertyPath>
-                            </Collection>
-                        </PropertyValue>
-                        <PropertyValue Property="QueryOptions">
-                            <Record>
-                                <PropertyValue Property="SelectSupported" Bool="true"/>
-                            </Record>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__core.OptimisticConcurrency">
-                    <Collection>
-                        <PropertyPath>LocalLastChangedAt</PropertyPath>
-                    </Collection>
-                </Annotation>
-            </Annotations>
-            <Annotations Target="SAP__self.Container">
-                <Annotation Term="SAP__CodeList.CurrencyCodes">
-                    <Record>
-                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
-                        <PropertyValue Property="CollectionPath" String="Currencies"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
-                <Annotation Term="SAP__capabilities.FilterFunctions">
-                    <Collection>
-                        <String>eq</String>
-                        <String>ne</String>
-                        <String>gt</String>
-                        <String>ge</String>
-                        <String>lt</String>
-                        <String>le</String>
-                        <String>and</String>
-                        <String>or</String>
-                        <String>contains</String>
-                        <String>startswith</String>
-                        <String>endswith</String>
-                        <String>any</String>
-                        <String>all</String>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__support.TechnicalInfoLinks">
-                    <Record>
-                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
-                        <PropertyValue Property="FunctionImport" String="GetTechnicalInfoLinks"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.SupportedFormats">
-                    <Collection>
-                        <String>application/json</String>
-                        <String>application/pdf</String>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__PDF.Features">
-                    <Record>
-                        <PropertyValue Property="DocumentDescriptionReference" String="../../../../default/iwbep/common/0001/$metadata"/>
-                        <PropertyValue Property="DocumentDescriptionCollection" String="MyDocumentDescriptions"/>
-                        <PropertyValue Property="ArchiveFormat" Bool="true"/>
-                        <PropertyValue Property="Border" Bool="true"/>
-                        <PropertyValue Property="CoverPage" Bool="true"/>
-                        <PropertyValue Property="FitToPage" Bool="true"/>
-                        <PropertyValue Property="FontName" Bool="true"/>
-                        <PropertyValue Property="FontSize" Bool="true"/>
-                        <PropertyValue Property="HeaderFooter" Bool="true"/>
-                        <PropertyValue Property="IANATimezoneFormat" Bool="true"/>
-                        <PropertyValue Property="Margin" Bool="true"/>
-                        <PropertyValue Property="Padding" Bool="true"/>
-                        <PropertyValue Property="ResultSizeDefault" Int="20000"/>
-                        <PropertyValue Property="ResultSizeMaximum" Int="20000"/>
-                        <PropertyValue Property="Signature" Bool="true"/>
-                        <PropertyValue Property="TextDirectionLayout" Bool="true"/>
-                        <PropertyValue Property="Treeview" Bool="true"/>
-                        <PropertyValue Property="UploadToFileShare" Bool="true"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.BatchSupport">
-                    <Record>
-                        <PropertyValue Property="SupportedFormats">
-                            <Collection>
-                                <String>application/json</String>
-                                <String>multipart/mixed</String>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.KeyAsSegmentSupported"/>
-                <Annotation Term="SAP__capabilities.AsynchronousRequestsSupported"/>
+                <Annotation Term="SAP__common.Label" String="Planilha (.xlsx ou .csv)"/>
             </Annotations>
             <Annotations Target="SAP__self.MetodoPagamentoVHType/Codigo">
                 <Annotation Term="SAP__common.Label" String="Método de pagamento"/>
@@ -1019,7 +570,7 @@
                 <Annotation Term="SAP__common.Text" Path="NomeCliente">
                     <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
                 </Annotation>
-                <Annotation Term="SAP__common.FieldControl" EnumMember="SAP__common.FieldControlType/Mandatory"/>
+                <Annotation Term="SAP__core.Immutable"/>
                 <Annotation Term="SAP__common.ValueListForValidation" String=""/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -1037,6 +588,22 @@
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/CpfCliente">
                 <Annotation Term="SAP__common.Label" String="CPF"/>
+                <Annotation Term="SAP__core.Computed"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/EmailCliente">
+                <Annotation Term="SAP__common.Label" String="E-mail"/>
+                <Annotation Term="SAP__core.Computed"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/TelefoneCliente">
+                <Annotation Term="SAP__common.Label" String="Telefone"/>
+                <Annotation Term="SAP__core.Computed"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/GeneroCliente">
+                <Annotation Term="SAP__common.Label" String="Gênero"/>
+                <Annotation Term="SAP__core.Computed"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/DataNascimentoCliente">
+                <Annotation Term="SAP__common.Label" String="Data de nascimento"/>
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/EnderecoUUID">
@@ -1059,7 +626,9 @@
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/StatusPedido">
                 <Annotation Term="SAP__common.Label" String="Status do pedido"/>
-                <Annotation Term="SAP__common.Text" Path="StatusPedidoTexto"/>
+                <Annotation Term="SAP__common.Text" Path="StatusPedidoTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -1077,16 +646,30 @@
                 <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/PedidoEncerrado">
-                <Annotation Term="SAP__common.Label" String="Pedido encerrado?"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Checkbox"/>
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/PedidoAtivoSemHistorico">
-                <Annotation Term="SAP__common.Label" String="Sem histórico ainda?"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Checkbox"/>
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/PedidoNaoFinalizado">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.PedidoType/PedidoNaoCancelado">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
             </Annotations>
             <Annotations Target="SAP__self.PedidoType/StatusPagamento">
                 <Annotation Term="SAP__common.Label" String="Status do pagamento"/>
-                <Annotation Term="SAP__common.Text" Path="StatusPagamentoTexto"/>
+                <Annotation Term="SAP__common.Text" Path="StatusPagamentoTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -1215,14 +798,33 @@
                 <Annotation Term="SAP__UI.Facets">
                     <Collection>
                         <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Dados do pedido"/>
+                            <PropertyValue Property="Label" String="Dados do Cliente"/>
+                            <PropertyValue Property="ID" String="DadosClienteSnap"/>
+                            <PropertyValue Property="Target" AnnotationPath="_ClienteSnapshot/@SAP__UI.Identification"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoAtivoSemHistorico"/>
+                        </Record>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Label" String="Dados do Cliente"/>
+                            <PropertyValue Property="ID" String="DadosCliente"/>
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Cliente"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoEncerrado"/>
+                        </Record>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Label" String="Dados do Pedido"/>
                             <PropertyValue Property="ID" String="DadosPedido"/>
                             <PropertyValue Property="Target" AnnotationPath="@SAP__UI.Identification"/>
                         </Record>
                         <Record Type="SAP__UI.ReferenceFacet">
                             <PropertyValue Property="Label" String="Itens"/>
+                            <PropertyValue Property="ID" String="ItensSnap"/>
+                            <PropertyValue Property="Target" AnnotationPath="_ItensSnapshot/@SAP__UI.LineItem"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoAtivoSemHistorico"/>
+                        </Record>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Label" String="Itens"/>
                             <PropertyValue Property="ID" String="Itens"/>
                             <PropertyValue Property="Target" AnnotationPath="_Itens/@SAP__UI.LineItem"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoEncerrado"/>
                         </Record>
                         <Record Type="SAP__UI.ReferenceFacet">
                             <PropertyValue Property="Label" String="Pagamento (última tentativa)"/>
@@ -1230,64 +832,23 @@
                             <PropertyValue Property="Target" AnnotationPath="_Pagamento/@SAP__UI.Identification"/>
                         </Record>
                         <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Finalização / cancelamento"/>
-                            <PropertyValue Property="ID" String="Encerramento"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Encerramento"/>
+                            <PropertyValue Property="Label" String="Finalização"/>
+                            <PropertyValue Property="ID" String="Finalizacao"/>
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Finalizacao"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoNaoFinalizado"/>
                         </Record>
                         <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Histórico - cliente"/>
-                            <PropertyValue Property="ID" String="SnapCliente"/>
-                            <PropertyValue Property="Target" AnnotationPath="_ClienteSnapshot/@SAP__UI.Identification"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Histórico - itens"/>
-                            <PropertyValue Property="ID" String="SnapItens"/>
-                            <PropertyValue Property="Target" AnnotationPath="_ItensSnapshot/@SAP__UI.LineItem"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Reembolso"/>
-                            <PropertyValue Property="ID" String="Reembolsos"/>
-                            <PropertyValue Property="Target" AnnotationPath="_Reembolsos/@SAP__UI.LineItem"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Dados administrativos"/>
-                            <PropertyValue Property="ID" String="Administrativo"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Admin"/>
+                            <PropertyValue Property="Label" String="Cancelamento"/>
+                            <PropertyValue Property="ID" String="Cancelamento"/>
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Cancelamento"/>
+                            <Annotation Term="SAP__UI.Hidden" Path="PedidoNaoCancelado"/>
                         </Record>
                     </Collection>
                 </Annotation>
-                <Annotation Term="SAP__UI.FieldGroup" Qualifier="Admin">
+                <Annotation Term="SAP__UI.FieldGroup" Qualifier="Cancelamento">
                     <Record>
                         <PropertyValue Property="Data">
                             <Collection>
-                                <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Criado em"/>
-                                    <PropertyValue Property="Value" Path="CreatedAt"/>
-                                </Record>
-                                <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Criado por"/>
-                                    <PropertyValue Property="Value" Path="CreatedBy"/>
-                                </Record>
-                                <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Alterado em"/>
-                                    <PropertyValue Property="Value" Path="LastChangedAt"/>
-                                </Record>
-                                <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Alterado por"/>
-                                    <PropertyValue Property="Value" Path="LastChangedBy"/>
-                                </Record>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__UI.FieldGroup" Qualifier="Encerramento">
-                    <Record>
-                        <PropertyValue Property="Data">
-                            <Collection>
-                                <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Data de finalização"/>
-                                    <PropertyValue Property="Value" Path="DataFinalizacao"/>
-                                </Record>
                                 <Record Type="SAP__UI.DataField">
                                     <PropertyValue Property="Label" String="Motivo do cancelamento"/>
                                     <PropertyValue Property="Value" Path="MotivoCancelamento"/>
@@ -1300,13 +861,53 @@
                                     <PropertyValue Property="Label" String="Cancelado por"/>
                                     <PropertyValue Property="Value" Path="CanceladoPor"/>
                                 </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__UI.FieldGroup" Qualifier="Cliente">
+                    <Record>
+                        <PropertyValue Property="Data">
+                            <Collection>
                                 <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Pedido encerrado?"/>
-                                    <PropertyValue Property="Value" Path="PedidoEncerrado"/>
+                                    <PropertyValue Property="Label" String="Cliente"/>
+                                    <PropertyValue Property="Value" Path="ClienteUUID"/>
                                 </Record>
                                 <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Sem histórico ainda?"/>
-                                    <PropertyValue Property="Value" Path="PedidoAtivoSemHistorico"/>
+                                    <PropertyValue Property="Label" String="CPF"/>
+                                    <PropertyValue Property="Value" Path="CpfCliente"/>
+                                </Record>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="E-mail"/>
+                                    <PropertyValue Property="Value" Path="EmailCliente"/>
+                                </Record>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="Telefone"/>
+                                    <PropertyValue Property="Value" Path="TelefoneCliente"/>
+                                </Record>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="Gênero"/>
+                                    <PropertyValue Property="Value" Path="GeneroCliente"/>
+                                </Record>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="Data de nascimento"/>
+                                    <PropertyValue Property="Value" Path="DataNascimentoCliente"/>
+                                </Record>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="Endereço de entrega (principal)"/>
+                                    <PropertyValue Property="Value" Path="EnderecoUUID"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__UI.FieldGroup" Qualifier="Finalizacao">
+                    <Record>
+                        <PropertyValue Property="Data">
+                            <Collection>
+                                <Record Type="SAP__UI.DataField">
+                                    <PropertyValue Property="Label" String="Data de finalização"/>
+                                    <PropertyValue Property="Value" Path="DataFinalizacao"/>
                                 </Record>
                             </Collection>
                         </PropertyValue>
@@ -1335,14 +936,6 @@
                             <PropertyValue Property="Value" Path="NumeroPedido"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Cliente"/>
-                            <PropertyValue Property="Value" Path="ClienteUUID"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Endereço de entrega (principal)"/>
-                            <PropertyValue Property="Value" Path="EnderecoUUID"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Status do pedido"/>
                             <PropertyValue Property="Criticality" Path="StatusPedidoCriticality"/>
                             <PropertyValue Property="Value" Path="StatusPedido"/>
@@ -1360,35 +953,44 @@
                             <PropertyValue Property="Label" String="Valor total"/>
                             <PropertyValue Property="Value" Path="ValorTotal"/>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Rejeitar reembolso"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.RejeitarReembolso(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Label" String="Criado em"/>
+                            <PropertyValue Property="Value" Path="CreatedAt"/>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Aprovar reembolso"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarReembolso(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Label" String="Criado por"/>
+                            <PropertyValue Property="Value" Path="CreatedBy"/>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Cancelar pedido"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Label" String="Alterado em"/>
+                            <PropertyValue Property="Value" Path="LastChangedAt"/>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Aprovar / finalizar"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataFieldForActionGroup">
+                            <PropertyValue Property="Label" String="Ações"/>
+                            <PropertyValue Property="ID" String="AcoesPedido"/>
+                            <PropertyValue Property="Actions">
+                                <Collection>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Efetuar Pagamento"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Aprovar pedido"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Cancelar pedido"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                </Collection>
+                            </PropertyValue>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Simular pagamento"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Confirmar pedido"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ConfirmarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Label" String="Alterado por"/>
+                            <PropertyValue Property="Value" Path="LastChangedBy"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -1432,34 +1034,32 @@
                             <PropertyValue Property="Label" String="Data de finalização"/>
                             <PropertyValue Property="Value" Path="DataFinalizacao"/>
                         </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Confirmar pedido"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ConfirmarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                        <Record Type="SAP__UI.DataFieldForActionGroup">
+                            <PropertyValue Property="Label" String="Ações"/>
+                            <PropertyValue Property="ID" String="AcoesPedido"/>
+                            <PropertyValue Property="Actions">
+                                <Collection>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Efetuar Pagamento"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Aprovar pedido"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                    <Record Type="SAP__UI.DataFieldForAction">
+                                        <PropertyValue Property="Label" String="Cancelar pedido"/>
+                                        <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                                        <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
+                                    </Record>
+                                </Collection>
+                            </PropertyValue>
                         </Record>
                         <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Simular pagamento"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Aprovar / finalizar"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Cancelar pedido"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Aprovar reembolso"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarReembolso(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
-                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataFieldForAction">
-                            <PropertyValue Property="Label" String="Rejeitar reembolso"/>
-                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.RejeitarReembolso(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType)"/>
+                            <PropertyValue Property="Label" String="Importar planilha"/>
+                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.ImportarPlanilha(Collection(com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType))"/>
                             <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
                         </Record>
                     </Collection>
@@ -1618,14 +1218,6 @@
                                         </Record>
                                     </PropertyValue>
                                 </Record>
-                                <Record>
-                                    <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Reembolsos"/>
-                                    <PropertyValue Property="InsertRestrictions">
-                                        <Record>
-                                            <PropertyValue Property="Insertable" Bool="false"/>
-                                        </Record>
-                                    </PropertyValue>
-                                </Record>
                             </Collection>
                         </PropertyValue>
                     </Record>
@@ -1681,9 +1273,23 @@
                         </PropertyValue>
                     </Record>
                 </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="RequiredProperties">
+                            <Collection>
+                                <PropertyPath>ClienteUUID</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
                 <Annotation Term="SAP__capabilities.UpdateRestrictions">
                     <Record>
                         <PropertyValue Property="DeltaUpdateSupported" Bool="true"/>
+                        <PropertyValue Property="NonUpdatableProperties">
+                            <Collection>
+                                <PropertyPath>ClienteUUID</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
                         <PropertyValue Property="Updatable" Path="__EntityControl/Updatable"/>
                         <PropertyValue Property="NonUpdatableNavigationProperties">
                             <Collection>
@@ -1693,7 +1299,6 @@
                                 <PropertyPath>_Itens</PropertyPath>
                                 <PropertyPath>_ItensSnapshot</PropertyPath>
                                 <PropertyPath>_Pagamento</PropertyPath>
-                                <PropertyPath>_Reembolsos</PropertyPath>
                             </Collection>
                         </PropertyValue>
                         <PropertyValue Property="QueryOptions">
@@ -1731,9 +1336,6 @@
             <Annotations Target="SAP__self.PedidoType/_Pagamento">
                 <Annotation Term="SAP__common.Composition"/>
             </Annotations>
-            <Annotations Target="SAP__self.PedidoType/_Reembolsos">
-                <Annotation Term="SAP__common.Composition"/>
-            </Annotations>
             <Annotations Target="SAP__self.AprovarPedido(SAP__self.PedidoType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/AprovarPedido"/>
                 <Annotation Term="SAP__common.SideEffects" Qualifier="SAP__Action_AprovarPedido">
@@ -1758,7 +1360,6 @@
                             <Collection>
                                 <NavigationPropertyPath>_it/_ClienteSnapshot</NavigationPropertyPath>
                                 <NavigationPropertyPath>_it/_ItensSnapshot</NavigationPropertyPath>
-                                <NavigationPropertyPath>_it/_Reembolsos</NavigationPropertyPath>
                             </Collection>
                         </PropertyValue>
                     </Record>
@@ -1794,18 +1395,6 @@
                     </Record>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.ConfirmarPedido(SAP__self.PedidoType)">
-                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/ConfirmarPedido"/>
-                <Annotation Term="SAP__common.SideEffects" Qualifier="SAP__Action_ConfirmarPedido">
-                    <Record Type="SAP__common.SideEffectsType">
-                        <PropertyValue Property="TargetEntities">
-                            <Collection>
-                                <NavigationPropertyPath>_it/_Itens</NavigationPropertyPath>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-            </Annotations>
             <Annotations Target="SAP__self.Edit(SAP__self.PedidoType)/PreserveChanges">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="TRUE"/>
@@ -1814,37 +1403,83 @@
             <Annotations Target="SAP__self.Edit(SAP__self.PedidoType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/Edit"/>
             </Annotations>
-            <Annotations Target="SAP__self.AprovarReembolso(SAP__self.PedidoType)/MotivoDecisao">
-                <Annotation Term="SAP__common.Label" String="Motivo da decisão"/>
+            <Annotations Target="SAP__self.ImportarPlanilha(Collection(SAP__self.PedidoType))/Dummy">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
-            <Annotations Target="SAP__self.AprovarReembolso(SAP__self.PedidoType)">
-                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/AprovarReembolso"/>
-                <Annotation Term="SAP__common.SideEffects" Qualifier="SAP__Action_AprovarReembolso">
-                    <Record Type="SAP__common.SideEffectsType">
-                        <PropertyValue Property="TargetEntities">
+            <Annotations Target="SAP__self.Container">
+                <Annotation Term="SAP__CodeList.CurrencyCodes">
+                    <Record>
+                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
+                <Annotation Term="SAP__capabilities.FilterFunctions">
+                    <Collection>
+                        <String>eq</String>
+                        <String>ne</String>
+                        <String>gt</String>
+                        <String>ge</String>
+                        <String>lt</String>
+                        <String>le</String>
+                        <String>and</String>
+                        <String>or</String>
+                        <String>contains</String>
+                        <String>startswith</String>
+                        <String>endswith</String>
+                        <String>any</String>
+                        <String>all</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__support.TechnicalInfoLinks">
+                    <Record>
+                        <PropertyValue Property="Url" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="FunctionImport" String="GetTechnicalInfoLinks"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.SupportedFormats">
+                    <Collection>
+                        <String>application/json</String>
+                        <String>application/pdf</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__PDF.Features">
+                    <Record>
+                        <PropertyValue Property="DocumentDescriptionReference" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="DocumentDescriptionCollection" String="MyDocumentDescriptions"/>
+                        <PropertyValue Property="ArchiveFormat" Bool="true"/>
+                        <PropertyValue Property="Border" Bool="true"/>
+                        <PropertyValue Property="CoverPage" Bool="true"/>
+                        <PropertyValue Property="FitToPage" Bool="true"/>
+                        <PropertyValue Property="FontName" Bool="true"/>
+                        <PropertyValue Property="FontSize" Bool="true"/>
+                        <PropertyValue Property="HeaderFooter" Bool="true"/>
+                        <PropertyValue Property="IANATimezoneFormat" Bool="true"/>
+                        <PropertyValue Property="Margin" Bool="true"/>
+                        <PropertyValue Property="Padding" Bool="true"/>
+                        <PropertyValue Property="ResultSizeDefault" Int="20000"/>
+                        <PropertyValue Property="ResultSizeMaximum" Int="20000"/>
+                        <PropertyValue Property="Signature" Bool="true"/>
+                        <PropertyValue Property="TextDirectionLayout" Bool="true"/>
+                        <PropertyValue Property="Treeview" Bool="true"/>
+                        <PropertyValue Property="UploadToFileShare" Bool="true"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.BatchSupport">
+                    <Record>
+                        <PropertyValue Property="SupportedFormats">
                             <Collection>
-                                <NavigationPropertyPath>_it/_ClienteSnapshot</NavigationPropertyPath>
-                                <NavigationPropertyPath>_it/_ItensSnapshot</NavigationPropertyPath>
-                                <NavigationPropertyPath>_it/_Reembolsos</NavigationPropertyPath>
+                                <String>application/json</String>
+                                <String>multipart/mixed</String>
                             </Collection>
                         </PropertyValue>
                     </Record>
                 </Annotation>
-            </Annotations>
-            <Annotations Target="SAP__self.RejeitarReembolso(SAP__self.PedidoType)/MotivoDecisao">
-                <Annotation Term="SAP__common.Label" String="Motivo da decisão"/>
-            </Annotations>
-            <Annotations Target="SAP__self.RejeitarReembolso(SAP__self.PedidoType)">
-                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/RejeitarReembolso"/>
-                <Annotation Term="SAP__common.SideEffects" Qualifier="SAP__Action_RejeitarReembolso">
-                    <Record Type="SAP__common.SideEffectsType">
-                        <PropertyValue Property="TargetEntities">
-                            <Collection>
-                                <NavigationPropertyPath>_it/_Reembolsos</NavigationPropertyPath>
-                            </Collection>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
+                <Annotation Term="SAP__capabilities.KeyAsSegmentSupported"/>
+                <Annotation Term="SAP__capabilities.AsynchronousRequestsSupported"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemVHType/ItemUUID">
                 <Annotation Term="SAP__common.Text" Path="Nome"/>
@@ -2020,14 +1655,14 @@
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/ClienteAtivo">
-                <Annotation Term="SAP__common.Label" String="Ativo no encerramento"/>
                 <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.Heading" String="Truth Value"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/ScoreCliente">
-                <Annotation Term="SAP__common.Label" String="Score"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/EnderecoUUID">
                 <Annotation Term="SAP__core.Computed"/>
@@ -2036,36 +1671,36 @@
                 <Annotation Term="SAP__common.QuickInfo" String="16 Byte UUID in 16 Bytes (Raw Format)"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Cep">
-                <Annotation Term="SAP__common.Label" String="CEP"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Logradouro">
-                <Annotation Term="SAP__common.Label" String="Logradouro"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Numero">
-                <Annotation Term="SAP__common.Label" String="Número"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Complemento">
-                <Annotation Term="SAP__common.Label" String="Complemento"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Bairro">
-                <Annotation Term="SAP__common.Label" String="Bairro"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Cidade">
-                <Annotation Term="SAP__common.Label" String="Cidade"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Uf">
-                <Annotation Term="SAP__common.Label" String="UF"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/Estado">
-                <Annotation Term="SAP__common.Label" String="Estado"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ClienteSnapshotType/EnderecoCompleto">
                 <Annotation Term="SAP__common.Label" String="Endereço completo"/>
@@ -2117,12 +1752,12 @@
                 <Annotation Term="SAP__UI.Identification">
                     <Collection>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="CPF"/>
-                            <PropertyValue Property="Value" Path="Cpf"/>
+                            <PropertyValue Property="Label" String="Cliente"/>
+                            <PropertyValue Property="Value" Path="Nome"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Nome"/>
-                            <PropertyValue Property="Value" Path="Nome"/>
+                            <PropertyValue Property="Label" String="CPF"/>
+                            <PropertyValue Property="Value" Path="Cpf"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="E-mail"/>
@@ -2141,56 +1776,8 @@
                             <PropertyValue Property="Value" Path="DataNascimento"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Ativo no encerramento"/>
-                            <PropertyValue Property="Value" Path="ClienteAtivo"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Score"/>
-                            <PropertyValue Property="Value" Path="ScoreCliente"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="CEP"/>
-                            <PropertyValue Property="Value" Path="Cep"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Logradouro"/>
-                            <PropertyValue Property="Value" Path="Logradouro"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Número"/>
-                            <PropertyValue Property="Value" Path="Numero"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Complemento"/>
-                            <PropertyValue Property="Value" Path="Complemento"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Bairro"/>
-                            <PropertyValue Property="Value" Path="Bairro"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Cidade"/>
-                            <PropertyValue Property="Value" Path="Cidade"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="UF"/>
-                            <PropertyValue Property="Value" Path="Uf"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Estado"/>
-                            <PropertyValue Property="Value" Path="Estado"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Endereço completo"/>
+                            <PropertyValue Property="Label" String="Endereço de entrega (principal)"/>
                             <PropertyValue Property="Value" Path="EnderecoCompleto"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Motivo"/>
-                            <PropertyValue Property="Value" Path="MotivoSnapshot"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Gerado em"/>
-                            <PropertyValue Property="Value" Path="CreatedAt"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -2401,16 +1988,16 @@
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/Nome">
-                <Annotation Term="SAP__common.Label" String="Nome"/>
+                <Annotation Term="SAP__common.Label" String="Item"/>
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/Descricao">
-                <Annotation Term="SAP__common.Label" String="Descrição"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/Categoria">
-                <Annotation Term="SAP__common.Label" String="Categoria"/>
                 <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/Quantidade">
                 <Annotation Term="SAP__common.Label" String="Quantidade"/>
@@ -2427,7 +2014,7 @@
                 <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/ValorTotal">
-                <Annotation Term="SAP__common.Label" String="Total"/>
+                <Annotation Term="SAP__common.Label" String="Total do item"/>
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
             </Annotations>
@@ -2448,7 +2035,7 @@
                 <Annotation Term="SAP__UI.Facets">
                     <Collection>
                         <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Dados congelados no encerramento (somente leitura)"/>
+                            <PropertyValue Property="Label" String="Item"/>
                             <PropertyValue Property="ID" String="Historico"/>
                             <PropertyValue Property="Target" AnnotationPath="@SAP__UI.Identification"/>
                         </Record>
@@ -2473,20 +2060,12 @@
                 <Annotation Term="SAP__UI.Identification">
                     <Collection>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="SKU"/>
-                            <PropertyValue Property="Value" Path="Sku"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Nome"/>
+                            <PropertyValue Property="Label" String="Item"/>
                             <PropertyValue Property="Value" Path="Nome"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Descrição"/>
-                            <PropertyValue Property="Value" Path="Descricao"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Categoria"/>
-                            <PropertyValue Property="Value" Path="Categoria"/>
+                            <PropertyValue Property="Label" String="SKU"/>
+                            <PropertyValue Property="Value" Path="Sku"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Quantidade"/>
@@ -2497,32 +2076,26 @@
                             <PropertyValue Property="Value" Path="PrecoUnitario"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Total"/>
+                            <PropertyValue Property="Label" String="Total do item"/>
                             <PropertyValue Property="Value" Path="ValorTotal"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Gerado em"/>
-                            <PropertyValue Property="Value" Path="CreatedAt"/>
                         </Record>
                     </Collection>
                 </Annotation>
                 <Annotation Term="SAP__UI.LineItem">
                     <Collection>
                         <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Label" String="Item"/>
+                            <PropertyValue Property="Value" Path="Nome"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="SKU"/>
                             <PropertyValue Property="Value" Path="Sku"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Nome"/>
-                            <PropertyValue Property="Value" Path="Nome"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Categoria"/>
-                            <PropertyValue Property="Value" Path="Categoria"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Quantidade"/>
                             <PropertyValue Property="Value" Path="Quantidade"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Preço unitário"/>
@@ -2531,14 +2104,15 @@
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Total"/>
                             <PropertyValue Property="Value" Path="ValorTotal"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
                         </Record>
                     </Collection>
                 </Annotation>
             </Annotations>
             <Annotations Target="SAP__self.ItemSnapshotType/CreatedAt">
-                <Annotation Term="SAP__common.Label" String="Gerado em"/>
                 <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.Heading" String="Created On"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Created On"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Creation Date Time"/>
                 <Annotation Term="SAP__common.DocumentationRef" String="urn:sap-com:documentation:key?=type=DE&amp;id=ABP_CREATION_TSTMPL"/>
             </Annotations>
@@ -2841,7 +2415,7 @@
                             <PropertyValue Property="Value" Path="QtdeItemPedido"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Preço unitário (fixado na confirmação)"/>
+                            <PropertyValue Property="Label" String="Preço unitário"/>
                             <PropertyValue Property="Value" Path="PrecoUnitarioSnapshot"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
@@ -3155,45 +2729,6 @@
                     </Record>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.StatusReembolsoVHType/Codigo">
-                <Annotation Term="SAP__common.Label" String="Status do reembolso"/>
-                <Annotation Term="SAP__common.Text" Path="Descricao">
-                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
-                </Annotation>
-            </Annotations>
-            <Annotations Target="SAP__self.StatusReembolsoVHType/Descricao">
-                <Annotation Term="SAP__common.Label" String="Descrição"/>
-            </Annotations>
-            <Annotations Target="SAP__self.StatusReembolsoVHType">
-                <Annotation Term="SAP__common.Label" String="Status do reembolso - Value Help"/>
-            </Annotations>
-            <Annotations Target="SAP__self.Container/StatusReembolsoVH">
-                <Annotation Term="SAP__capabilities.SearchRestrictions">
-                    <Record>
-                        <PropertyValue Property="Searchable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.InsertRestrictions">
-                    <Record>
-                        <PropertyValue Property="Insertable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.DeleteRestrictions">
-                    <Record>
-                        <PropertyValue Property="Deletable" Bool="false"/>
-                    </Record>
-                </Annotation>
-                <Annotation Term="SAP__capabilities.UpdateRestrictions">
-                    <Record>
-                        <PropertyValue Property="Updatable" Bool="false"/>
-                        <PropertyValue Property="QueryOptions">
-                            <Record>
-                                <PropertyValue Property="SelectSupported" Bool="true"/>
-                            </Record>
-                        </PropertyValue>
-                    </Record>
-                </Annotation>
-            </Annotations>
             <Annotations Target="SAP__self.PagamentoType/PagamentoUUID">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.Hidden"/>
@@ -3208,7 +2743,9 @@
             </Annotations>
             <Annotations Target="SAP__self.PagamentoType/MetodoPagamento">
                 <Annotation Term="SAP__common.Label" String="Método"/>
-                <Annotation Term="SAP__common.Text" Path="MetodoPagamentoTexto"/>
+                <Annotation Term="SAP__common.Text" Path="MetodoPagamentoTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.PagamentoType/MetodoPagamentoTexto">
@@ -3217,7 +2754,9 @@
             </Annotations>
             <Annotations Target="SAP__self.PagamentoType/StatusPagamento">
                 <Annotation Term="SAP__common.Label" String="Status"/>
-                <Annotation Term="SAP__common.Text" Path="StatusPagamentoTexto"/>
+                <Annotation Term="SAP__common.Text" Path="StatusPagamentoTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__core.Computed"/>
             </Annotations>
             <Annotations Target="SAP__self.PagamentoType/StatusPagamentoTexto">
@@ -3647,12 +3186,6 @@
             <Annotations Target="SAP__self.StatusPedidoVHType/Ordem">
                 <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
-            <Annotations Target="SAP__self.StatusReembolsoVHType/Criticality">
-                <Annotation Term="SAP__UI.Hidden"/>
-            </Annotations>
-            <Annotations Target="SAP__self.StatusReembolsoVHType/Ordem">
-                <Annotation Term="SAP__UI.Hidden"/>
-            </Annotations>
             <Annotations Target="SAP__self.I_DraftAdministrativeDataType/CreationDateTime">
                 <Annotation Term="SAP__common.Label" String="Draft Created On"/>
             </Annotations>
@@ -3669,27 +3202,12 @@
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.PedidoOperationControl/AprovarReembolso">
-                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
-            </Annotations>
             <Annotations Target="SAP__self.PedidoOperationControl/CancelarPedido">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.PedidoOperationControl/ConfirmarPedido">
-                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
-            </Annotations>
             <Annotations Target="SAP__self.PedidoOperationControl/Edit">
-                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
-            </Annotations>
-            <Annotations Target="SAP__self.PedidoOperationControl/RejeitarReembolso">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>

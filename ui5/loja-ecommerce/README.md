@@ -114,10 +114,11 @@ npm run deploy-test        # simula o deploy; npm run deploy grava a BSP ZPC_LOJ
 
 O mock usa o `$metadata` do serviço de estoque e 100 itens iguais aos que `ZCL_SETUP_ESTOQUE` cria
 (25 produtos-base × 4 linhas; 5 sem estoque, 5 acabando; o último inativo, para mostrar que não aparece na loja).
-Os serviços de pedidos e de clientes usam o `$metadata` copiado das apps `pedidos-compras` e `gestao-clientes` e o
+Os três serviços usam o `$metadata` baixado do sistema (07/10/2026); os de pedidos e de clientes usam o
 rascunho/`Activate` do mock server; `localService/ordersService/data/Pedido.js` imita a numeração, o status e as
 actions `SimularPagamento` e `CancelarPedido` (CVV `000` recusa), e `customersService/data/*.js` imitam o
 preenchimento do endereço pelo CEP. CPFs de teste: `529.982.247-25` (cadastrado) e `390.533.447-05` (novo).
-Atualize esses `metadata.xml` se os serviços mudarem.
+Para atualizar os `metadata.xml` depois de mudar um serviço: `npm start` (login do SAP ID no navegador) e salve o `$metadata` de cada serviço, por exemplo
+`curl http://localhost:8080/sap/opu/odata4/sap/zui_pc_pedidos_compras_o4/srvd/sap/zui_pc_pedidos_compras/0001/\$metadata`.
 Depois do deploy a loja abre em
 `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_loja/index.html`.

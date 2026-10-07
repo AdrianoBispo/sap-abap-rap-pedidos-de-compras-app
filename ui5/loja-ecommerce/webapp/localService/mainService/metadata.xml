@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm" Version="4.0">
     <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='LOCAL')/$value">
         <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="SAP__aggregation"/>
     </edmx:Reference>
@@ -147,6 +147,11 @@
             <ComplexType Name="ItemOperationControl">
                 <Property Name="Edit" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
+            <ComplexType Name="ZPC_A_FILE_STREAM">
+                <Property Name="StreamProperty" Type="Edm.Stream" Nullable="false"/>
+                <Property Name="MimeType" Type="Edm.String" Nullable="false" MaxLength="128"/>
+                <Property Name="FileName" Type="Edm.String" Nullable="false" MaxLength="128"/>
+            </ComplexType>
             <ComplexType Name="EntityControl">
                 <Property Name="Deletable" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="Updatable" Type="Edm.Boolean" Nullable="false"/>
@@ -162,6 +167,11 @@
             </ComplexType>
             <Action Name="Prepare" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_estoque.v0001.ItemType" Nullable="false"/>
+            </Action>
+            <Action Name="ImportarPlanilha" IsBound="true">
+                <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zui_pc_estoque.v0001.ItemType)" Nullable="false"/>
+                <Parameter Name="Dummy" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="_StreamProperties" Type="com.sap.gateway.srvd.zui_pc_estoque.v0001.ZPC_A_FILE_STREAM" Nullable="false"/>
             </Action>
             <Action Name="Activate" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zui_pc_estoque.v0001.ItemType" Nullable="false"/>
@@ -188,6 +198,15 @@
                 <EntitySet Name="I_DraftAdministrativeData" EntityType="com.sap.gateway.srvd.zui_pc_estoque.v0001.I_DraftAdministrativeDataType"/>
                 <EntitySet Name="StatusEstoqueVH" EntityType="com.sap.gateway.srvd.zui_pc_estoque.v0001.StatusEstoqueVHType"/>
             </EntityContainer>
+            <Annotations Target="SAP__self.ZPC_A_FILE_STREAM/StreamProperty">
+                <Annotation Term="SAP__core.MediaType" Path="MimeType"/>
+                <Annotation Term="SAP__core.ContentDisposition">
+                    <Record>
+                        <PropertyValue Property="Filename" Path="FileName"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.Label" String="Planilha (.xlsx ou .csv)"/>
+            </Annotations>
             <Annotations Target="SAP__self.CategoriaVHType/Codigo">
                 <Annotation Term="SAP__common.Label" String="Categoria do item"/>
                 <Annotation Term="SAP__common.Text" Path="Descricao">
@@ -244,6 +263,7 @@
                     <Collection>
                         <String>image/jpeg</String>
                         <String>image/png</String>
+                        <String>image/webp</String>
                     </Collection>
                 </Annotation>
             </Annotations>
@@ -265,7 +285,9 @@
             </Annotations>
             <Annotations Target="SAP__self.ItemType/Categoria">
                 <Annotation Term="SAP__common.Label" String="Categoria"/>
-                <Annotation Term="SAP__common.Text" Path="CategoriaTexto"/>
+                <Annotation Term="SAP__common.Text" Path="CategoriaTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__common.FieldControl" EnumMember="SAP__common.FieldControlType/Mandatory"/>
                 <Annotation Term="SAP__common.ValueListForValidation" String=""/>
                 <Annotation Term="SAP__common.ValueListReferences">
@@ -293,7 +315,9 @@
             </Annotations>
             <Annotations Target="SAP__self.ItemType/StatusEstoque">
                 <Annotation Term="SAP__common.Label" String="Status"/>
-                <Annotation Term="SAP__common.Text" Path="StatusEstoqueTexto"/>
+                <Annotation Term="SAP__common.Text" Path="StatusEstoqueTexto">
+                    <Annotation Term="SAP__UI.TextArrangement" EnumMember="SAP__UI.TextArrangementType/TextOnly"/>
+                </Annotation>
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -367,7 +391,7 @@
                 <Annotation Term="SAP__UI.DataPoint" Qualifier="Status">
                     <Record>
                         <PropertyValue Property="Value" Path="StatusEstoque"/>
-                        <PropertyValue Property="Title" String="Status do estoque"/>
+                        <PropertyValue Property="Title" String="Status"/>
                         <PropertyValue Property="Criticality" Path="StatusEstoqueCriticality"/>
                     </Record>
                 </Annotation>
@@ -390,11 +414,6 @@
                             <PropertyValue Property="Label" String="Estoque"/>
                             <PropertyValue Property="ID" String="Estoque"/>
                             <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Estoque"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Peso e dimensões"/>
-                            <PropertyValue Property="ID" String="Dimensoes"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#Dimensoes"/>
                         </Record>
                         <Record Type="SAP__UI.ReferenceFacet">
                             <PropertyValue Property="Label" String="Dados administrativos"/>
@@ -444,7 +463,7 @@
                                     <PropertyValue Property="Value" Path="QtdeDisponivel"/>
                                 </Record>
                                 <Record Type="SAP__UI.DataField">
-                                    <PropertyValue Property="Label" String="Status do estoque"/>
+                                    <PropertyValue Property="Label" String="Status"/>
                                     <PropertyValue Property="Criticality" Path="StatusEstoqueCriticality"/>
                                     <PropertyValue Property="Value" Path="StatusEstoque"/>
                                 </Record>
@@ -472,7 +491,7 @@
                 <Annotation Term="SAP__UI.Identification">
                     <Collection>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Foto (JPEG ou PNG)"/>
+                            <PropertyValue Property="Label" String="Foto (JPEG, PNG ou WEBP)"/>
                             <PropertyValue Property="Value" Path="FotoItem"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
@@ -551,6 +570,11 @@
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Ativo"/>
                             <PropertyValue Property="Value" Path="ItemAtivo"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataFieldForAction">
+                            <PropertyValue Property="Label" String="Importar planilha"/>
+                            <PropertyValue Property="Action" String="com.sap.gateway.srvd.zui_pc_estoque.v0001.ImportarPlanilha(Collection(com.sap.gateway.srvd.zui_pc_estoque.v0001.ItemType))"/>
+                            <PropertyValue Property="InvocationGrouping" EnumMember="SAP__UI.OperationGroupingType/Isolated"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -755,6 +779,12 @@
                         <PropertyPath>LocalLastChangedAt</PropertyPath>
                     </Collection>
                 </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.ImportarPlanilha(Collection(SAP__self.ItemType))/Dummy">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
             <Annotations Target="SAP__self.Edit(SAP__self.ItemType)/PreserveChanges">
                 <Annotation Term="SAP__common.IsUpperCase"/>
