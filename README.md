@@ -239,7 +239,6 @@ stateDiagram-v2
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
 │   ├── analise-compras/                app freestyle (SAPUI5) com as 20 análises, filtros e KPIs
-│   ├── analise-compras-react/          mesma app em React (UI5 Web Components for React, Vite)
 │   └── README.md                       guia do front-end
 │
 ├── docs/
