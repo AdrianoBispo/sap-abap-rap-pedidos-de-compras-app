@@ -239,6 +239,7 @@ stateDiagram-v2
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
 │   ├── analise-compras/                app freestyle (SAPUI5) com as 20 análises, filtros e KPIs
+│   ├── loja-ecommerce/                 app freestyle (SAPUI5): loja virtual com os produtos do estoque
 │   └── README.md                       guia do front-end
 │
 ├── docs/
