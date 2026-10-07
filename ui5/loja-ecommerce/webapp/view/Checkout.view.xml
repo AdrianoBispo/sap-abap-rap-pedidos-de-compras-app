@@ -1,0 +1,664 @@
+<mvc:View
+	height="100%"
+	controllerName="lojaecommerce.controller.Checkout"
+	xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	core:require="{StringType: 'sap/ui/model/type/String'}">
+	<NavContainer id="wizardNavContainer">
+		<pages>
+			<Page
+				id="wizardContentPage"
+				title="{i18n>checkoutTitle}">
+				<landmarkInfo>
+					<PageAccessibleLandmarkInfo
+						rootRole="Region"
+						rootLabel="{i18n>Checkout_rootLabel}"
+						contentRole="Main"
+						contentLabel="{i18n>Checkout_contentLabel}"
+						footerRole="Region"
+						footerLabel="{i18n>Checkout_footerLabel}"/>
+				</landmarkInfo>
+				<headerContent>
+					<Button
+						id="returnToShopButton"
+						type="Emphasized"
+						text="{i18n>returnToShopButtonText}"
+						press=".onReturnToShopButtonPress"/>
+				</headerContent>
+				<content>
+					<Wizard
+						id="shoppingCartWizard"
+						complete=".checkCompleted"
+						finishButtonText="{i18n>checkoutWizardReviewbtn}">
+						<steps>
+							<WizardStep
+								id="contentsStep"
+								title="{i18n>checkoutContentsTitle}"
+								icon="sap-icon://cart">
+								<List
+									id="entryList"
+									noDataText="{i18n>cartNoData}"
+									items="{
+										path : 'cartProducts>/cartEntries',
+										sorter : {
+											path : 'Name',
+											descending : false
+										}
+									}">
+									<items>
+										<ObjectListItem
+											intro="{cartProducts>Quantity} x"
+											icon="{
+												path : 'cartProducts>PictureUrl',
+												formatter : '.formatter.pictureUrl'
+											}"
+											title="{cartProducts>Name}"
+											number="{
+												path : 'cartProducts>Price',
+												formatter : '.formatter.price'
+											}"
+											numberUnit="{cartProducts>CurrencyCode}"
+											iconDensityAware="false">
+											<firstStatus>
+												<ObjectStatus
+													text="{
+														path : 'cartProducts>Status',
+														formatter : '.formatter.statusText'
+													}"
+													state="{
+														path : 'cartProducts>Status',
+														formatter : '.formatter.statusState'
+													}"/>
+											</firstStatus>
+										</ObjectListItem>
+									</items>
+								</List>
+								<Bar>
+									<contentRight>
+										<Text
+											text="{
+												path : 'cartProducts>/cartEntries',
+												formatter : '.formatter.totalPrice'
+											}"/>
+									</contentRight>
+								</Bar>
+							</WizardStep>
+							<WizardStep
+								id="customerStep"
+								title="{i18n>checkoutCustomerTitle}"
+								activate=".onCheckStepActivation"
+								icon="sap-icon://customer"
+								validated="false">
+								<form:SimpleForm
+									editable="true"
+									layout="ResponsiveGridLayout">
+								<Label
+									text="{i18n>checkoutCustomerCpf}"
+									labelFor="customerCpf"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerCpf"
+									placeholder="{i18n>cpfText}"
+									value="{
+										path: '/Customer/Cpf',
+										type: '.types.cpf'
+									}"
+									change=".onCpfChange">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								</form:SimpleForm>
+								<MessageStrip
+									class="sapUiSmallMarginBottom"
+									type="Success"
+									showIcon="true"
+									visible="{/Customer/Found}"
+									text="{i18n>checkoutCustomerFound} {/Customer/Display}"/>
+								<MessageStrip
+									class="sapUiSmallMarginBottom"
+									type="Information"
+									showIcon="true"
+									visible="{= ${/Customer/Searched} &amp;&amp; !${/Customer/Found} }"
+									text="{i18n>checkoutCustomerNotFound}"/>
+								<form:SimpleForm
+									editable="true"
+									layout="ResponsiveGridLayout"
+									visible="{= ${/Customer/Searched} &amp;&amp; !${/Customer/Found} }">
+								<Label
+									text="{i18n>checkoutCustomerName}"
+									labelFor="customerName"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerName"
+									placeholder="{i18n>customerNameText}"
+									value="{
+										path: '/Customer/Nome',
+										type: 'StringType',
+										constraints: {
+											minLength: 5,
+											search: '^[^0-9]+\\s[^0-9]+$'
+										}
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutCustomerEmail}"
+									labelFor="customerEmail"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerEmail"
+									placeholder="{i18n>emailAddressText}"
+									value="{
+										path: '/Customer/Email',
+										type: '.types.email'
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutCustomerPhone}"
+									labelFor="customerPhone"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerPhone"
+									placeholder="{i18n>phoneNumberText}"
+									value="{
+										path: '/Customer/Telefone',
+										type: 'StringType',
+										constraints: {
+											search: '^[(0-9+][0-9() +-]{9,}$'
+										}
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutCustomerBirth}"
+									labelFor="customerBirth"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<DatePicker
+									id="customerBirth"
+									valueFormat="yyyy-MM-dd"
+									displayFormat="medium"
+									maxDate="{/Today}"
+									value="{
+										path: '/Customer/DataNascimento',
+										type: 'StringType',
+										constraints: {
+											minLength: 10
+										}
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</DatePicker>
+								<Label
+									text="{i18n>checkoutInvoiceAddressZip}"
+									labelFor="customerCep"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerCep"
+									placeholder="{i18n>cepText}"
+									liveChange=".onCepLiveChange"
+									value="{
+										path: '/Customer/Cep',
+										type: 'StringType',
+										constraints: {
+											search: '^[0-9]{5}-?[0-9]{3}$'
+										}
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutAddressNumber}"
+									labelFor="customerNumero"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerNumero"
+									placeholder="{i18n>numberText}"
+									value="{
+										path: '/Customer/Numero',
+										type: 'StringType',
+										constraints: {
+											minLength: 1
+										}
+									}"
+									change=".checkCustomerStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutAddressComplement}"
+									labelFor="customerComplemento"
+									required="false">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="customerComplemento"
+									placeholder="{i18n>complementText}"
+									value="{/Customer/Complemento}">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								</form:SimpleForm>
+							</WizardStep>
+							<WizardStep
+								id="paymentTypeStep"
+								title="{i18n>checkoutPaymentTitle}"
+								icon="sap-icon://money-bills">
+								<Text
+									class="sapUiSmallMarginBottom"
+									text="{i18n>checkoutPaymentText}"/>
+								<HBox
+									renderType="Bare"
+									alignItems="Center"
+									justifyContent="Center"
+									width="100%">
+									<SegmentedButton
+										id="paymentMethodSelection"
+										selectedKey="{/SelectedPayment}">
+										<items>
+											<SegmentedButtonItem
+												id="payViaCC"
+												key="CARTAO_CREDITO"
+												text="{i18n>checkoutPaymentCreditCard}"/>
+											<SegmentedButtonItem
+												id="payViaDebit"
+												key="CARTAO_DEBITO"
+												text="{i18n>checkoutPaymentDebitCard}"/>
+										</items>
+									</SegmentedButton>
+								</HBox>
+							</WizardStep>
+							<WizardStep
+								id="cardStep"
+								title="{i18n>checkoutCreditCardCreditCardInfo}"
+								activate=".onCheckStepActivation"
+								icon="sap-icon://credit-card"
+								validated="false">
+							<form:SimpleForm
+								editable="true"
+								layout="ResponsiveGridLayout">
+								<Label
+									text="{i18n>checkoutCreditCardName}"
+									labelFor="cardHolderName"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<Input
+									id="cardHolderName"
+									placeholder="{i18n>creditCardHolderText}"
+									value="{
+										path: '/Card/Name',
+										type: 'StringType',
+										constraints: {
+											minLength: 3,
+											search: '^[a-zA-ZÀ-ÿ]+[\\sa-zA-ZÀ-ÿ]*$'
+										}
+									}"
+									change=".checkCardStep">
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</Input>
+								<Label
+									text="{i18n>checkoutCreditCardCardNo}"
+									labelFor="cardNumber"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<MaskInput
+									id="cardNumber"
+									placeholder="{i18n>creditCardNumberText}"
+									mask="CCCC-CCCC-CCCC-CCCC"
+									placeholderSymbol="_"
+									value="{
+										path: '/Card/Number',
+										type: 'StringType',
+										constraints: {
+											search: '^[0-9-]+$',
+											minLength: 19
+										}
+									}"
+									change=".checkCardStep">
+									<rules>
+										<MaskInputRule
+											maskFormatSymbol="C"
+											regex="[0-9]"/>
+									</rules>
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</MaskInput>
+								<Label
+									text="{i18n>checkoutCreditCardCode}"
+									labelFor="cardSecurityCode"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<MaskInput
+									id="cardSecurityCode"
+									placeholder="{i18n>creditCardSecurityNumberText}"
+									mask="CCC"
+									placeholderSymbol="_"
+									value="{
+										path: '/Card/SecurityCode',
+										type: 'StringType',
+										constraints: {
+											minLength: 3,
+											search: '^[0-9]+$'
+										}
+									}"
+									change=".checkCardStep">
+									<rules>
+										<MaskInputRule
+											maskFormatSymbol="C"
+											regex="[0-9]"/>
+									</rules>
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</MaskInput>
+								<Label
+									text="{i18n>checkoutCreditCardExpiration}"
+									labelFor="cardExpiration"
+									required="true">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M4 S12"/>
+									</layoutData>
+								</Label>
+								<MaskInput
+									id="cardExpiration"
+									placeholder="{i18n>creditCardExpirationText}"
+									mask="CC/CCCC"
+									placeholderSymbol="_"
+									value="{
+										path: '/Card/Expire',
+										type: 'StringType',
+										constraints: {
+											search: '^(0[1-9]|1[0-2])/[0-9]{4}$'
+										}
+									}"
+									change=".checkCardStep">
+									<rules>
+										<MaskInputRule
+											maskFormatSymbol="C"
+											regex="[0-9]"/>
+									</rules>
+									<layoutData>
+										<layout:GridData span="XL8 L8 M8 S12"/>
+									</layoutData>
+								</MaskInput>
+							</form:SimpleForm>
+							</WizardStep>
+							<WizardStep
+								id="deliveryTypeStep"
+								title="{i18n>checkoutDeliveryTypeTitle}"
+								icon="sap-icon://insurance-car">
+								<Text
+									class="sapUiSmallMarginBottom"
+									text="{i18n>checkoutDeliveryTypeText}"/>
+								<HBox
+									renderType="Bare"
+									alignItems="Center"
+									justifyContent="Center"
+									width="100%">
+									<SegmentedButton
+										id="deliveryType"
+										selectedKey="{/SelectedDeliveryMethod}">
+										<items>
+											<SegmentedButtonItem
+												key="PADRAO"
+												text="{i18n>checkoutDeliveryTypeStandard}"/>
+											<SegmentedButtonItem
+												id="expressDelivery"
+												key="EXPRESSA"
+												text="{i18n>checkoutDeliveryTypeExpress}"/>
+										</items>
+									</SegmentedButton>
+								</HBox>
+								<form:SimpleForm
+									editable="true"
+									layout="ResponsiveGridLayout">
+									<Label text="{i18n>checkoutNote}"/>
+									<TextArea
+										rows="4"
+										maxLength="300"
+										placeholder="{i18n>noteText}"
+										value="{/Note}"/>
+								</form:SimpleForm>
+							</WizardStep>
+						</steps>
+					</Wizard>
+				</content>
+				<footer>
+					<Bar id="wizardFooterBar" visible="{= ${message>/}.length === 0 ? false : true}">
+						<contentLeft>
+							<Button
+								id="showPopoverButton"
+								icon="sap-icon://message-popup"
+								text="{= ${message>/}.length }"
+								type="Emphasized"
+								press=".onShowMessagePopoverPress"/>
+						</contentLeft>
+					</Bar>
+				</footer>
+			</Page>
+			<Page
+				id="summaryPage"
+				backgroundDesign="Solid"
+				showHeader="false">
+				<landmarkInfo>
+					<PageAccessibleLandmarkInfo
+						rootRole="Region" rootLabel="{i18n>Checkout_rootLabel}"
+						contentRole="Main" contentLabel="{i18n>Checkout_summaryContentLabel}"
+						footerRole="Banner" footerLabel="{i18n>Checkout_footerLabel}"/>
+				</landmarkInfo>
+				<content>
+					<Panel>
+						<headerToolbar>
+							<Toolbar>
+								<Title
+									text="{i18n>checkoutSummaryTitle1}"
+									level="H2"
+									titleStyle="H4"/>
+								<ToolbarSpacer/>
+								<Button
+									icon="sap-icon://edit"
+									tooltip="{i18n>backToWizard}"
+									type="Emphasized"
+									press="._navBackToStep">
+									<customData>
+										<core:CustomData key="navBackTo" value="contentsStep"/>
+									</customData>
+								</Button>
+							</Toolbar>
+						</headerToolbar>
+						<List
+							noDataText="{i18n>cartNoData}"
+							items="{
+								path : 'cartProducts>/cartEntries',
+								sorter : {
+									path : 'Name',
+									descending : false
+								}
+							}">
+							<items>
+								<ObjectListItem
+									intro="{cartProducts>Quantity} x"
+									icon="{
+										path : 'cartProducts>PictureUrl',
+										formatter : '.formatter.pictureUrl'
+									}"
+									title="{cartProducts>Name}"
+									number="{
+										path : 'cartProducts>Price',
+										formatter : '.formatter.price'
+									}"
+									numberUnit="{cartProducts>CurrencyCode}"
+									iconDensityAware="false"/>
+							</items>
+						</List>
+						<Bar>
+							<contentRight>
+								<Text
+									text="{
+										path : 'cartProducts>/cartEntries',
+										formatter : '.formatter.totalPrice'
+									}"/>
+							</contentRight>
+						</Bar>
+					</Panel>
+					<Panel>
+						<headerToolbar>
+							<Toolbar>
+								<Title
+									text="{i18n>checkoutSummaryCustomerTitle}"
+									level="H2"
+									titleStyle="H4"/>
+								<ToolbarSpacer/>
+								<Button
+									icon="sap-icon://edit"
+									tooltip="{i18n>backToWizard}"
+									type="Emphasized"
+									press="._navBackToStep">
+									<customData>
+										<core:CustomData key="navBackTo" value="customerStep"/>
+									</customData>
+								</Button>
+							</Toolbar>
+						</headerToolbar>
+						<form:SimpleForm editable="false" layout="ResponsiveGridLayout">
+							<Label text="{i18n>checkoutCustomerCpf}"/>
+							<Text text="{/Customer/Cpf}"/>
+							<Label text="{i18n>checkoutSummaryCustomer}"/>
+							<Text text="{= ${/Customer/Found} ? ${/Customer/Display} : ${/Customer/Nome} + ' (' + ${i18n>checkoutSummaryNewCustomer} + ')' }"/>
+							<Label text="{i18n>checkoutSummaryDeliveryAddress}"/>
+							<Text text="{= ${/Customer/Found} ? ${i18n>checkoutSummaryMainAddress} : ${/Customer/Cep} + ', ' + ${/Customer/Numero} }"/>
+						</form:SimpleForm>
+					</Panel>
+					<Panel>
+						<headerToolbar>
+							<Toolbar>
+								<Title
+									text="{i18n>checkoutSummaryPaymentTitle}"
+									level="H2"
+									titleStyle="H4"/>
+								<ToolbarSpacer/>
+								<Button
+									icon="sap-icon://edit"
+									tooltip="{i18n>backToWizard}"
+									type="Emphasized"
+									press="._navBackToStep">
+									<customData>
+										<core:CustomData key="navBackTo" value="paymentTypeStep"/>
+									</customData>
+								</Button>
+							</Toolbar>
+						</headerToolbar>
+						<form:SimpleForm editable="false" layout="ResponsiveGridLayout">
+							<Label text="{i18n>checkoutSummaryPaymentMethod}"/>
+							<Text text="{= ${/SelectedPayment} === 'CARTAO_DEBITO' ? ${i18n>checkoutPaymentDebitCard} : ${i18n>checkoutPaymentCreditCard} }"/>
+							<Label text="{i18n>checkoutCreditCardCardNo}"/>
+							<Text text="{path: '/Card/Number', formatter: '.formatter.maskedCard'}"/>
+						</form:SimpleForm>
+					</Panel>
+					<Panel>
+						<headerToolbar>
+							<Toolbar>
+								<Title
+									text="{i18n>checkoutSummaryDeliveryTypeTitle}"
+									level="H2"
+									titleStyle="H4"/>
+								<ToolbarSpacer/>
+								<Button
+									icon="sap-icon://edit"
+									tooltip="{i18n>backToWizard}"
+									type="Emphasized"
+									press="._navBackToStep">
+									<customData>
+										<core:CustomData key="navBackTo" value="deliveryTypeStep"/>
+									</customData>
+								</Button>
+							</Toolbar>
+						</headerToolbar>
+						<form:SimpleForm editable="false" layout="ResponsiveGridLayout">
+							<Label text="{i18n>checkoutSummaryDeliveryMethod}"/>
+							<Text text="{= ${/SelectedDeliveryMethod} === 'EXPRESSA' ? ${i18n>checkoutDeliveryTypeExpress} : ${i18n>checkoutDeliveryTypeStandard} }"/>
+							<Label text="{i18n>checkoutNote}" visible="{= !!${/Note} }"/>
+							<Text text="{/Note}" visible="{= !!${/Note} }"/>
+						</form:SimpleForm>
+					</Panel>
+				</content>
+				<footer>
+					<Bar>
+						<contentRight>
+							<Button
+								id="submit"
+								type="Emphasized"
+								text="{i18n>checkoutSummarySubmit}"
+								press=".handleWizardSubmit"/>
+							<Button
+								id="cancel"
+								text="{i18n>checkoutSummaryCancel}"
+								press=".handleWizardCancel"/>
+						</contentRight>
+					</Bar>
+				</footer>
+			</Page>
+		</pages>
+	</NavContainer>
+</mvc:View>

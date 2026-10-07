@@ -1,0 +1,12 @@
+<mvc:View
+	controllerName="lojaecommerce.controller.NotFound"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc">
+	<MessagePage
+		title="{i18n>notFoundTitle}"
+		text="{i18n>notFoundText}"
+		description="{i18n>notFoundDescription}"
+		icon="sap-icon://product"
+		showNavButton="true"
+		navButtonPress=".onBack"/>
+</mvc:View>

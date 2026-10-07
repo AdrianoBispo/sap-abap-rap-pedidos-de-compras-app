@@ -1,0 +1,317 @@
+{
+  "_version": "2.0.0",
+  "sap.app": {
+    "id": "lojaecommerce",
+    "type": "application",
+    "i18n": {
+      "bundleUrl": "i18n/i18n.properties",
+      "supportedLocales": [
+        ""
+      ],
+      "fallbackLocale": ""
+    },
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata4/sap/zui_pc_estoque_o4/srvd/sap/zui_pc_estoque/0001/",
+        "type": "OData",
+        "settings": {
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "4.0"
+        }
+      },
+      "ordersService": {
+        "uri": "/sap/opu/odata4/sap/zui_pc_pedidos_compras_o4/srvd/sap/zui_pc_pedidos_compras/0001/",
+        "type": "OData",
+        "settings": {
+          "localUri": "localService/ordersService/metadata.xml",
+          "odataVersion": "4.0"
+        }
+      },
+      "customersService": {
+        "uri": "/sap/opu/odata4/sap/zui_pc_clientes_o4/srvd/sap/zui_pc_clientes/0001/",
+        "type": "OData",
+        "settings": {
+          "localUri": "localService/customersService/metadata.xml",
+          "odataVersion": "4.0"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "ZPCLoja-display": {
+          "semanticObject": "ZPCLoja",
+          "action": "display",
+          "title": "{{flpTitle}}",
+          "subTitle": "{{flpSubtitle}}",
+          "icon": "sap-icon://cart",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "sap-icon://cart"
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "rootView": {
+      "viewName": "lojaecommerce.view.App",
+      "type": "XML",
+      "id": "app",
+      "async": true
+    },
+    "dependencies": {
+      "minUI5Version": "1.136.7",
+      "libs": {
+        "sap.f": {},
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "async": true,
+          "bundleName": "lojaecommerce.i18n.i18n",
+          "supportedLocales": [
+            ""
+          ],
+          "fallbackLocale": ""
+        }
+      },
+      "service": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true,
+          "groupId": "$auto"
+        }
+      },
+      "orders": {
+        "dataSource": "ordersService",
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto",
+          "updateGroupId": "$direct"
+        }
+      },
+      "customers": {
+        "dataSource": "customersService",
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto",
+          "updateGroupId": "$direct"
+        }
+      }
+    },
+    "handleValidation": true,
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.f.routing.Router",
+        "type": "View",
+        "viewType": "XML",
+        "path": "lojaecommerce.view",
+        "controlId": "layout",
+        "controlAggregation": "midColumnPages",
+        "async": true,
+        "bypassed": {
+          "target": [
+            "home",
+            "notFound"
+          ]
+        }
+      },
+      "routes": [
+        {
+          "pattern": "",
+          "name": "home",
+          "target": [
+            "home",
+            "welcome"
+          ]
+        },
+        {
+          "pattern": "categories",
+          "name": "categories",
+          "target": [
+            "home",
+            "welcome"
+          ]
+        },
+        {
+          "pattern": "category/{id}",
+          "name": "category",
+          "target": [
+            "welcome",
+            "category"
+          ],
+          "titleTarget": "category"
+        },
+        {
+          "pattern": "category/{id}/product/{productId}",
+          "name": "product",
+          "target": [
+            "category",
+            "product"
+          ],
+          "titleTarget": "product"
+        },
+        {
+          "pattern": "category/{id}/compare/:item1Id:/:item2Id:",
+          "name": "comparison",
+          "target": [
+            "category",
+            "comparison"
+          ],
+          "titleTarget": "comparison"
+        },
+        {
+          "pattern": "category/{id}/compare/:item1Id:/:item2Id:/cart",
+          "name": "comparisonCart",
+          "target": [
+            "category",
+            "comparison",
+            "cart"
+          ],
+          "titleTarget": "comparison"
+        },
+        {
+          "pattern": "category/{id}/product/{productId}/cart",
+          "name": "productCart",
+          "target": [
+            "category",
+            "product",
+            "cart"
+          ],
+          "titleTarget": "product"
+        },
+        {
+          "pattern": "cart",
+          "name": "cart",
+          "target": [
+            "home",
+            "welcome",
+            "cart"
+          ]
+        },
+        {
+          "pattern": "checkout",
+          "name": "checkout",
+          "target": "checkout"
+        },
+        {
+          "pattern": "ordercompleted/{orderId}",
+          "name": "ordercompleted",
+          "target": "ordercompleted"
+        }
+      ],
+      "targets": {
+        "product": {
+          "name": "Product",
+          "level": 3,
+          "id": "product",
+          "controlAggregation": "midColumnPages",
+          "title": "{Name}"
+        },
+        "comparison": {
+          "name": "Comparison",
+          "level": 3,
+          "id": "comparison",
+          "controlAggregation": "midColumnPages",
+          "title": "{i18n>comparisonTitle}"
+        },
+        "category": {
+          "name": "Category",
+          "level": 2,
+          "controlAggregation": "beginColumnPages",
+          "id": "category",
+          "title": {
+            "parts": [
+              "i18n>tabTitle",
+              "CategoryName"
+            ]
+          }
+        },
+        "notFound": {
+          "name": "NotFound",
+          "level": 3,
+          "controlAggregation": "midColumnPages",
+          "id": "notFoundView",
+          "title": "{i18n>categoryNoData}"
+        },
+        "welcome": {
+          "name": "Welcome",
+          "level": 0,
+          "id": "welcomeView",
+          "controlAggregation": "midColumnPages"
+        },
+        "home": {
+          "name": "Home",
+          "level": 1,
+          "controlAggregation": "beginColumnPages",
+          "id": "homeView",
+          "title": "{i18n>appTitle}"
+        },
+        "cart": {
+          "name": "Cart",
+          "controlAggregation": "endColumnPages",
+          "id": "cartView",
+          "title": {
+            "parts": [
+              "i18n>tabTitle",
+              "i18n>tableTitleCart"
+            ]
+          }
+        },
+        "checkout": {
+          "name": "Checkout",
+          "controlAggregation": "beginColumnPages",
+          "level": 1,
+          "title": "{i18n>checkoutTitle}",
+          "id": "checkoutView"
+        },
+        "ordercompleted": {
+          "name": "OrderCompleted",
+          "controlAggregation": "beginColumnPages",
+          "level": 2,
+          "id": "orderCompletedView",
+          "title": "{i18n>orderCompletedTitle}"
+        }
+      }
+    },
+    "flexBundle": false
+  }
+}
