@@ -238,8 +238,7 @@ stateDiagram-v2
 │   ├── gestao-estoque/                 app Gestão de Estoque (projeto isolado)
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
-│   ├── analise-*/                      20 apps ALP somente leitura (um gráfico por cenário)
-│   ├── painel-compras/                 Overview Page (OVP) com 20 cards, listas de ação e atalhos
+│   ├── analise-compras/                app freestyle (SAPUI5) com as 20 análises, filtros e KPIs
 │   └── README.md                       guia do front-end
 │
 ├── docs/
@@ -636,7 +635,7 @@ limitações de plataforma comprovadas empiricamente, não erros de sintaxe:
 
 ---
 
-## Análises (ALP e Overview Page)
+## Análises
 
 Camada analítica **somente leitura**, independente dos apps de gestão: cubos `ZI_PC_*_CUBE` e
 consultas `ZC_PC_*_ANALISE` (com `@Aggregation.default` nas medidas e metadata extensions com
@@ -650,11 +649,11 @@ consultas `ZC_PC_*_ANALISE` (com `@Aggregation.default` nas medidas e metadata e
 | Estoque    | `ZI_PC_ITEM_CUBE` → `ZC_PC_ITEM_ANALISE`         | `ZAVBS_PC_ESTOQUE`  |
 | Reembolsos | `ZI_PC_REEMB_CUBE` → `ZC_PC_REEMB_ANALISE`       | `ZAVBS_PC_REEMBOLSOS` |
 
-No front-end são 20 apps ALP (`ui5/analise-*`, um gráfico por cenário) e o **Painel de Compras**
-(`ui5/painel-compras`, Overview Page com 20 cards de gráfico, 3 listas de ação e atalhos para os apps
-de gestão). A tabela completa de cenários, BSPs e intents está em [`ui5/README.md`](ui5/README.md).
-Para ter dados nos gráficos, carregue os dados de demonstração (`ZCL_PC_SETUP`). Os apps analíticos
-ainda precisam ser implantados e verificados em execução no launchpad do sistema.
+No front-end há um único app **freestyle** (SAPUI5, `ui5/analise-compras`) com as 20 análises dos
+quatro domínios: painel por domínio com filtros, indicadores e gráficos, e uma página de detalhe por
+análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrutura e o deploy estão em
+[`ui5/README.md`](ui5/README.md). Para ter dados nos gráficos, carregue os dados de demonstração
+(`ZCL_PC_SETUP`). O app ainda precisa ser implantado e verificado em execução no sistema.
 
 ---
 
@@ -684,7 +683,7 @@ ainda precisam ser implantados e verificados em execução no launchpad do siste
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas, 20 ALPs e Overview Page); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |
+| v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas e app freestyle com as 20 análises); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |
 | v2.1   | Reembolso como BO e app próprios (Gestão de Reembolsos, `ZUI_PC_REEMBOLSOS`); remoção da ação Confirmar pedido (o Save registra o pedido e reserva o estoque; `Activate` não otimizado + `ReservarEstoqueRegistro`/`ValidarRegistro`); SKU gerado no Save com o prefixo da categoria; especificação v2.1 |
 | v1.5   | Score com Process Indicator, precheck de estoque zerado, remoção de peso/dimensões do item, cadastro automático de endereço, CEP único por cliente, textos em vez de UUID; sincronização do repositório com os pacotes `ZAVBS_*` (sem dicionário próprio) e o fluxo de reembolso |
 | v1.4   | Dicionário de dados próprio (domínios, elementos de dados, estruturas) e novos nomes das tabelas draft                   |
