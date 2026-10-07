@@ -909,6 +909,13 @@ CLASS ltcl_persistencia_endereco DEFINITION FINAL FOR TESTING
     METHODS endereco_novo_ativo FOR TESTING.
     METHODS endereco_novo_rascunho FOR TESTING.
     METHODS cep_gravado_somente_leitura FOR TESTING.
+    METHODS semear_dois_enderecos
+      EXPORTING ev_cliente TYPE sysuuid_x16
+                ev_end1    TYPE sysuuid_x16
+                ev_end2    TYPE sysuuid_x16.
+    METHODS principal_endereco_ativo FOR TESTING.
+    METHODS principal_endereco_rascunho FOR TESTING.
+    METHODS numero_endereco_rascunho FOR TESTING.
 ENDCLASS.
 
 
@@ -1049,6 +1056,115 @@ CLASS ltcl_persistencia_endereco IMPLEMENTATION.
     SELECT SINGLE cep, numero FROM zta_pc_endereco WHERE endereco_uuid = @lv_end INTO @DATA(ls_banco).
     cl_abap_unit_assert=>assert_equals( act = ls_banco-numero exp = '99' msg = 'Número deveria ter sido gravado' ).
     cl_abap_unit_assert=>assert_equals( act = ls_banco-cep exp = '01310100' msg = 'CEP não pode mudar' ).
+  ENDMETHOD.
+
+  METHOD semear_dois_enderecos.
+    " Cliente com dois endereços já gravados: end1 (principal, 01310100) e end2 (20040020)
+    semear( IMPORTING ev_cliente = ev_cliente ev_endereco = ev_end1 ).
+    ev_end2 = cl_system_uuid=>create_uuid_x16_static( ).
+    DATA lt_end TYPE STANDARD TABLE OF zta_pc_endereco WITH EMPTY KEY.
+    lt_end = VALUE #( ( client = sy-mandt endereco_uuid = ev_end2 cep = '20040020' cliente_uuid = ev_cliente
+                        logradouro = 'Rua da Assembleia' numero = '2' bairro = 'Centro'
+                        cidade = 'Rio de Janeiro' uf = 'RJ' estado = 'Rio de Janeiro'
+                        cep_status = 'V' endereco_principal = abap_false ) ).
+    go_cds->insert_test_data( lt_end ).
+  ENDMETHOD.
+
+  METHOD principal_endereco_ativo.
+    " Definir endereço principal numa instância ativa: UPDATE de EnderecoPrincipal
+    " nos dois endereços já gravados (o novo vira principal, o antigo deixa de ser).
+    semear_dois_enderecos( IMPORTING ev_end1 = DATA(lv_end1) ev_end2 = DATA(lv_end2) ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Endereco
+        EXECUTE DefinirEnderecoPrincipal
+        FROM VALUE #( ( %tky = VALUE #( EnderecoUUID = lv_end2 %is_draft = if_abap_behv=>mk-off ) ) )
+      FAILED DATA(ls_failed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed msg = 'DefinirEnderecoPrincipal falhou' ).
+
+    COMMIT ENTITIES RESPONSE OF zr_pc_cliente FAILED DATA(ls_failed_c) REPORTED DATA(ls_reported_c).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_c msg = 'COMMIT falhou' ).
+
+    SELECT SINGLE endereco_principal FROM zta_pc_endereco WHERE endereco_uuid = @lv_end1 INTO @DATA(lv_p1).
+    SELECT SINGLE endereco_principal FROM zta_pc_endereco WHERE endereco_uuid = @lv_end2 INTO @DATA(lv_p2).
+    cl_abap_unit_assert=>assert_equals( act = lv_p2 exp = abap_true  msg = 'Endereço 2 deveria ser o principal' ).
+    cl_abap_unit_assert=>assert_equals( act = lv_p1 exp = abap_false msg = 'Endereço 1 deveria deixar de ser principal' ).
+  ENDMETHOD.
+
+  METHOD principal_endereco_rascunho.
+    " Editar o cliente, definir o outro endereço como principal no rascunho e salvar.
+    semear_dois_enderecos( IMPORTING ev_cliente = DATA(lv_cli) ev_end1 = DATA(lv_end1)
+                                     ev_end2 = DATA(lv_end2) ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Edit FROM VALUE #( ( %cid = 'ED' %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_ed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_ed msg = 'Edit falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Endereco
+        EXECUTE DefinirEnderecoPrincipal
+        FROM VALUE #( ( %tky = VALUE #( EnderecoUUID = lv_end2 %is_draft = if_abap_behv=>mk-on ) ) )
+      FAILED DATA(ls_failed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed msg = 'DefinirEnderecoPrincipal no rascunho falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Prepare FROM VALUE #( ( %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_prep).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_prep msg = 'Prepare falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Activate FROM VALUE #( ( %cid = 'ACT' %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_act).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_act msg = 'Activate falhou' ).
+
+    COMMIT ENTITIES RESPONSE OF zr_pc_cliente FAILED DATA(ls_failed_c) REPORTED DATA(ls_reported_c).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_c msg = 'COMMIT falhou' ).
+
+    SELECT SINGLE endereco_principal FROM zta_pc_endereco WHERE endereco_uuid = @lv_end1 INTO @DATA(lv_p1).
+    SELECT SINGLE endereco_principal FROM zta_pc_endereco WHERE endereco_uuid = @lv_end2 INTO @DATA(lv_p2).
+    cl_abap_unit_assert=>assert_equals( act = lv_p2 exp = abap_true  msg = 'Endereço 2 deveria ser o principal' ).
+    cl_abap_unit_assert=>assert_equals( act = lv_p1 exp = abap_false msg = 'Endereço 1 deveria deixar de ser principal' ).
+  ENDMETHOD.
+
+  METHOD numero_endereco_rascunho.
+    " Editar o cliente, alterar o número de um endereço já gravado no rascunho e salvar.
+    semear_dois_enderecos( IMPORTING ev_cliente = DATA(lv_cli) ev_end2 = DATA(lv_end2) ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Edit FROM VALUE #( ( %cid = 'ED' %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_ed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_ed msg = 'Edit falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Endereco
+        UPDATE FIELDS ( Numero )
+        WITH VALUE #( ( %tky = VALUE #( EnderecoUUID = lv_end2 %is_draft = if_abap_behv=>mk-on )
+                        Numero = '77' ) )
+      FAILED DATA(ls_failed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed msg = 'Falha ao alterar o número no rascunho' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Prepare FROM VALUE #( ( %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_prep).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_prep msg = 'Prepare falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_cliente
+      ENTITY Cliente
+        EXECUTE Activate FROM VALUE #( ( %cid = 'ACT' %key-ClienteUUID = lv_cli ) )
+      FAILED DATA(ls_failed_act).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_act msg = 'Activate falhou' ).
+
+    COMMIT ENTITIES RESPONSE OF zr_pc_cliente FAILED DATA(ls_failed_c) REPORTED DATA(ls_reported_c).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_c msg = 'COMMIT falhou' ).
+
+    SELECT SINGLE numero FROM zta_pc_endereco WHERE endereco_uuid = @lv_end2 INTO @DATA(lv_numero).
+    cl_abap_unit_assert=>assert_equals( act = lv_numero exp = '77' msg = 'Número deveria ter sido gravado' ).
   ENDMETHOD.
 
 ENDCLASS.

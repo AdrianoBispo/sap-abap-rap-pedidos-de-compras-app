@@ -40,7 +40,12 @@ authorization master ( global )
   validation ValidarGenero on save { create; field Genero; }
   validation ValidarFoto on save { create; field FotoCliente, FotoMimeType, FotoFileName; }
 
-  draft action Activate optimized;
+  /* Activate NÃO otimizada: a ativação otimizada grava no ativo só os campos
+     alterados no rascunho, sem o CEP, que é chave de ZTA_PC_ENDERECO mas não da
+     entidade Endereco. O UPDATE procurava a linha com CEP em branco e gerava
+     RAISE_SHORTDUMP "UPDATE returned unexpected sy-subrc 4" ao salvar qualquer
+     edição de endereço já gravado (ex.: trocar o endereço principal). */
+  draft action Activate;
   draft action Discard;
   draft action Edit;
   draft action Resume;

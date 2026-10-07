@@ -827,7 +827,7 @@ CLASS lhc_endereco IMPLEMENTATION.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Endereco
-        FIELDS ( ClienteUUID EnderecoPrincipal )
+        ALL FIELDS
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_alvos).
 
@@ -840,7 +840,7 @@ CLASS lhc_endereco IMPLEMENTATION.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente BY \_Endereco
-        FIELDS ( ClienteUUID EnderecoPrincipal )
+        ALL FIELDS
         WITH lt_pais
       RESULT DATA(lt_irmaos).
 
@@ -855,9 +855,14 @@ CLASS lhc_endereco IMPLEMENTATION.
            WHERE ClienteUUID = ls_pai-ClienteUUID AND %is_draft = ls_pai-%is_draft.
         DATA(lv_principal) = xsdbool( ls_irmao-EnderecoUUID = lv_escolhido ).
         IF lv_principal <> ls_irmao-EnderecoPrincipal.
+          " O Cep (mesmo valor) vai junto porque faz parte da chave de ZTA_PC_ENDERECO,
+          " mas não da chave da entidade: sem ele o UPDATE procura a linha com CEP em
+          " branco e gera RAISE_SHORTDUMP "UPDATE returned unexpected sy-subrc 4".
           APPEND VALUE #( %tky              = ls_irmao-%tky
                           EnderecoPrincipal = lv_principal
-                          %control-EnderecoPrincipal = if_abap_behv=>mk-on ) TO lt_update.
+                          Cep               = ls_irmao-Cep
+                          %control-EnderecoPrincipal = if_abap_behv=>mk-on
+                          %control-Cep               = if_abap_behv=>mk-on ) TO lt_update.
         ENDIF.
       ENDLOOP.
     ENDLOOP.
@@ -892,7 +897,22 @@ CLASS lhc_endereco IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_enderecos).
 
+    " Endereço já gravado: o CEP é somente leitura (ver BDEF), então não há o que
+    " consultar. A action DefinirEnderecoPrincipal regrava o Cep (mesmo valor) só
+    " para completar a chave da tabela e reacionaria esta determination; pular
+    " evita chamada ao ViaCEP e a perda de Logradouro/Bairro de CEP geral.
+    IF lt_enderecos IS NOT INITIAL.
+      SELECT EnderecoUUID
+        FROM zr_pc_endereco
+        FOR ALL ENTRIES IN @lt_enderecos
+        WHERE EnderecoUUID = @lt_enderecos-EnderecoUUID
+        INTO TABLE @DATA(lt_gravados).
+    ENDIF.
+
     LOOP AT lt_enderecos INTO DATA(ls_end).
+      IF line_exists( lt_gravados[ EnderecoUUID = ls_end-EnderecoUUID ] ).
+        CONTINUE.
+      ENDIF.
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
       DATA(ls_dados) = VALUE zcl_pc_viacep=>ty_endereco( ).
       DATA(lv_status) = CONV zr_pc_endereco-CepStatus( space ).
