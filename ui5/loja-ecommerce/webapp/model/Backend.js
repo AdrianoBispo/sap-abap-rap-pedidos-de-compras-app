@@ -5,6 +5,18 @@ sap.ui.define([], () => {
 		// every request is sent at once: the steps depend on each other (draft, children, activation, action)
 		group: "$direct",
 
+		/**
+		 * Invokes a bound action ignoring the ETag (If-Match: *). The ETag of a draft changes every time a child is
+		 * created or the draft is prepared, but the model keeps the one of the creation, so a draft action with it
+		 * answers "412 stale If-Match": the order stayed as a draft and the draft could not even be discarded.
+		 * The shop is the only one working on the draft it has just created, so there is nothing to protect.
+		 * @param {sap.ui.model.odata.v4.ODataContextBinding} oOperation the operation binding
+		 * @returns {Promise} resolves when the action was executed
+		 */
+		invoke(oOperation) {
+			return oOperation.invoke(this.group, {"@odata.etag": "*"});
+		},
+
 		onlyDigits(sValue) {
 			return String(sValue || "").replace(/\D/g, "");
 		},
@@ -47,7 +59,7 @@ sap.ui.define([], () => {
 				if (oDraft.isTransient()) {
 					await oDraft.delete(this.group);
 				} else {
-					await this.bindAction(oModel, sNamespace, "Discard", oDraft).invoke(this.group);
+					await this.invoke(this.bindAction(oModel, sNamespace, "Discard", oDraft));
 				}
 			} catch {
 				// nothing else to do: the back-end cleans up the draft when it expires

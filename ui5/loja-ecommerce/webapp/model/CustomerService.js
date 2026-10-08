@@ -13,7 +13,7 @@ sap.ui.define([
 		 * first address as the principal one and makes the customer active. A failed step discards the draft.
 		 * @param {sap.ui.model.odata.v4.ODataModel} oModel model of the customer service
 		 * @param {object} oCustomer Cpf, Nome, Email, Telefone, DataNascimento (yyyy-MM-dd), Cep, Numero, Complemento
-		 * @returns {Promise<{id: string, name: string}>} the registered customer
+		 * @returns {Promise<{id: string, name: string, city: string, state: string}>} the registered customer
 		 */
 		async register(oModel, oCustomer) {
 			const oClientes = oModel.bindList("/Cliente", null, [], [], {$$updateGroupId: Backend.group});
@@ -35,13 +35,13 @@ sap.ui.define([
 					Complemento: oCustomer.Complemento || ""
 				}, true).created();
 
-				await Backend.bindAction(oModel, sNamespace, "Prepare", oDraft).invoke(Backend.group);
+				await Backend.invoke(Backend.bindAction(oModel, sNamespace, "Prepare", oDraft));
 				const oActivation = Backend.bindAction(oModel, sNamespace, "Activate", oDraft);
-				await oActivation.invoke(Backend.group);
+				await Backend.invoke(oActivation);
 
 				const oData = oActivation.getBoundContext().getObject();
 
-				return {id: oData.ClienteUUID, name: oData.Nome};
+				return {id: oData.ClienteUUID, name: oData.Nome, city: oData.CidadePrincipal, state: oData.UfPrincipal};
 			} catch (oError) {
 				await Backend.discardDraft(oModel, sNamespace, oDraft);
 				throw oError;

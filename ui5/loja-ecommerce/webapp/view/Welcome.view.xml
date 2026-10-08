@@ -33,6 +33,7 @@
 				<contentRight>
 					<Button
 						icon="sap-icon://customer"
+						text="{path: 'session>/customer', formatter: '.formatter.greeting'}"
 						press=".onAvatarPress"
 						tooltip="{i18n>avatarButtonTooltip}"/>
 					<ToggleButton

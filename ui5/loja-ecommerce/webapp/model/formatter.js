@@ -139,6 +139,19 @@ sap.ui.define([
 			return sDigits.length >= 4 ? "**** **** **** " + sDigits.slice(-4) : "";
 		},
 
+		/**
+		 * Text of the account button: "Olá, Maria" for a logged in customer, nothing otherwise.
+		 * @param {object} oCustomer customer of the session
+		 * @returns {string} greeting
+		 */
+		async greeting(oCustomer) {
+			if (!oCustomer || !oCustomer.Nome) {
+				return "";
+			}
+
+			return (await this.requestResourceBundle()).getText("accountGreeting", [oCustomer.Nome.split(" ")[0]]);
+		},
+
 		date(vValue) {
 			if (!vValue) {
 				return "";

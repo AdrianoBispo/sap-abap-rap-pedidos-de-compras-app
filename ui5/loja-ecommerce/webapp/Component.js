@@ -4,14 +4,16 @@ sap.ui.define([
 	"./model/LocalStorageModel",
 	"./model/models",
 	"./model/Catalog",
+	"./controller/Account",
 	"sap/ui/Device"
-], (UIComponent, JSONModel, LocalStorageModel, models, Catalog, Device) => {
+], (UIComponent, JSONModel, LocalStorageModel, models, Catalog, Account, Device) => {
 	"use strict";
 
 	return UIComponent.extend("lojaecommerce.Component", {
 		metadata: {
 			interfaces: ["sap.ui.core.IAsyncContentCreation"],
-			manifest: "json"
+			manifest: "json",
+			config: {fullWidth: true}
 		},
 
 		/**
@@ -30,6 +32,10 @@ sap.ui.define([
 				savedForLaterEntries: {}
 			}), "cartProducts");
 
+			// customer of the session (login by CPF + e-mail or phone)
+			this.setModel(new LocalStorageModel("LOJA_SESSION", {customer: null}), "session");
+			this._oAccount = new Account(this);
+
 			// product comparison
 			this.setModel(new LocalStorageModel("LOJA_PRODUCT_COMPARISON", {
 				category: "",
@@ -46,6 +52,34 @@ sap.ui.define([
 			this.getRouter().attachTitleChanged((oEvent) => {
 				document.title = oEvent.getParameter("title");
 			});
+		},
+
+		exit() {
+			this._oAccount.destroy();
+		},
+
+		/**
+		 * @returns {object|null} the customer of the session (ClienteUUID, Cpf, Nome, Cidade, Uf), or null
+		 */
+		getCustomer() {
+			return this.getModel("session").getProperty("/customer");
+		},
+
+		setCustomer(oCustomer) {
+			this.getModel("session").setProperty("/customer", oCustomer);
+		},
+
+		logout() {
+			this.setCustomer(null);
+		},
+
+		/**
+		 * Opens the login dialog (or the account popover, when the customer is logged in).
+		 * @param {sap.ui.core.Control} oOpener control the popover opens at
+		 * @returns {Promise} resolves when it is open
+		 */
+		openAccount(oOpener) {
+			return this._oAccount.open(oOpener);
 		},
 
 		/**

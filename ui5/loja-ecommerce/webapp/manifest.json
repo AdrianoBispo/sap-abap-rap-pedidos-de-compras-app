@@ -67,7 +67,8 @@
       "desktop": true,
       "tablet": true,
       "phone": true
-    }
+    },
+    "fullWidth": true
   },
   "sap.ui5": {
     "rootView": {
@@ -312,6 +313,9 @@
         }
       }
     },
-    "flexBundle": false
+    "flexBundle": false,
+    "config": {
+      "fullWidth": true
+    }
   }
 }

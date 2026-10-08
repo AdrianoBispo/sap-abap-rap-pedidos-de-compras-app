@@ -1,10 +1,9 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
-	"sap/m/MessageToast",
 	"sap/ui/core/UIComponent",
 	"sap/ui/core/routing/History",
 	"../model/cart"
-], (Controller, MessageToast, UIComponent, History, cart) => {
+], (Controller, UIComponent, History, cart) => {
 	"use strict";
 
 	return Controller.extend("lojaecommerce.controller.BaseController", {
@@ -33,10 +32,11 @@ sap.ui.define([
 		},
 
 		/**
-		 * The shop has no user management yet: the avatar button only explains that.
+		 * Account button: opens the login dialog, or the account popover when the customer is logged in.
+		 * @param {sap.ui.base.Event} oEvent the press event
 		 */
-		async onAvatarPress() {
-			MessageToast.show((await this.requestResourceBundle()).getText("avatarButtonMessageToastText"));
+		onAvatarPress(oEvent) {
+			this.getOwnerComponent().openAccount(oEvent.getSource());
 		},
 
 		/**

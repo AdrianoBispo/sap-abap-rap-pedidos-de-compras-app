@@ -5,6 +5,8 @@ module.exports = {
 	async onBeforeAddEntry(keyValues, data) {
 		Object.assign(data, {
 			ClienteAtivo: true,
+			CidadePrincipal: "Recife",
+			UfPrincipal: "PE",
 			ScoreCliente: "50",
 			Cpf: String(data.Cpf || "").replace(/\D/g, ""),
 			Telefone: String(data.Telefone || "").replace(/\D/g, ""),

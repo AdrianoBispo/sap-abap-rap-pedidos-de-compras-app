@@ -28,7 +28,7 @@ sap.ui.define([
 		Note: "",
 		Today: new Date(),
 		Customer: {
-			Cpf: "", Searched: false, Found: false, ClienteUUID: "", Display: "",
+			Cpf: "", LoggedIn: false, Searched: false, Found: false, ClienteUUID: "", Display: "",
 			Nome: "", Email: "", Telefone: "", DataNascimento: "", Cep: "", Numero: "", Complemento: ""
 		},
 		Card: {Name: "", Number: "", SecurityCode: "", Expire: ""}
@@ -47,6 +47,11 @@ sap.ui.define([
 			this.setModel(Messaging.getMessageModel(), "message");
 
 			this._iLookup = 0;
+
+			// the customer of the session (login) fills the customer step; it follows login and logout
+			this._oSessionBinding = this.getOwnerComponent().getModel("session").bindProperty("/customer");
+			this._oSessionBinding.attachChange(this._syncCustomer, this);
+			this._syncCustomer();
 			// order registered in the back-end but not paid yet (payment refused): a new try pays the same order
 			this._oPlaced = null;
 
@@ -62,6 +67,11 @@ sap.ui.define([
 					oReturnToShopButton.focus();
 				}
 			});
+		},
+
+		onExit() {
+			this._oSessionBinding.detachChange(this._syncCustomer, this);
+			this._oSessionBinding.destroy();
 		},
 
 		_onCheckoutMatched() {
@@ -119,11 +129,8 @@ sap.ui.define([
 				if (iLookup !== this._iLookup) {
 					return;
 				}
+				// a registered CPF is not used without login: the customer has to log in (CPF + e-mail or phone)
 				oModel.setProperty("/Customer/Found", !!oCustomer);
-				if (oCustomer) {
-					oModel.setProperty("/Customer/ClienteUUID", oCustomer.ClienteUUID);
-					oModel.setProperty("/Customer/Display", `${oCustomer.Nome} (${oCustomer.Cidade}/${oCustomer.Uf})`);
-				}
 				oModel.setProperty("/Customer/Searched", true);
 			} catch (oError) {
 				MessageBox.error((await this.requestResourceBundle()).getText("checkoutCustomerLookupError"),
@@ -135,20 +142,50 @@ sap.ui.define([
 		},
 
 		/**
-		 * The customer step is complete when the customer was found or the registration form is valid.
+		 * The customer step is complete when the customer is logged in, or when the CPF is new and the
+		 * registration form is valid. A registered CPF without login is not enough.
 		 */
 		checkCustomerStep() {
 			const oModel = this.getModel();
 			const oWizard = this.byId("shoppingCartWizard");
 			const oStep = this.byId("customerStep");
 
-			if (!oModel.getProperty("/Customer/Searched")) {
-				oWizard.invalidateStep(oStep);
-			} else if (oModel.getProperty("/Customer/Found")) {
+			if (oModel.getProperty("/Customer/LoggedIn")) {
 				oWizard.validateStep(oStep);
+			} else if (!oModel.getProperty("/Customer/Searched") || oModel.getProperty("/Customer/Found")) {
+				oWizard.invalidateStep(oStep);
 			} else {
 				this._checkStep("customerStep", ["customerCpf", ...aRegistrationInputs]);
 			}
+		},
+
+		/**
+		 * Puts the customer of the session in the customer step (or clears the step after a logout).
+		 */
+		_syncCustomer() {
+			const oModel = this.getModel();
+			const oCustomer = this.getOwnerComponent().getCustomer();
+
+			if (oCustomer) {
+				oModel.setProperty("/Customer/LoggedIn", true);
+				oModel.setProperty("/Customer/ClienteUUID", oCustomer.ClienteUUID);
+				oModel.setProperty("/Customer/Display", oCustomer.Cidade
+					? `${oCustomer.Nome} (${oCustomer.Cidade}/${oCustomer.Uf})` : oCustomer.Nome);
+				oModel.setProperty("/Customer/Cpf", OrderService.formatCpf(oCustomer.Cpf));
+				oModel.setProperty("/Customer/Searched", true);
+				oModel.setProperty("/Customer/Found", true);
+			} else if (oModel.getProperty("/Customer/LoggedIn")) {
+				oModel.setProperty("/Customer", oInitialData().Customer);
+			}
+			this.checkCustomerStep();
+		},
+
+		onLoginPress(oEvent) {
+			this.getOwnerComponent().openAccount(oEvent.getSource());
+		},
+
+		onLogoutPress() {
+			this.getOwnerComponent().logout();
 		},
 
 		onCepLiveChange(oEvent) {
@@ -267,9 +304,14 @@ sap.ui.define([
 			const oCustomer = await CustomerService.register(oComponent.getModel("customers"),
 				oModel.getProperty("/Customer"));
 
-			oModel.setProperty("/Customer/ClienteUUID", oCustomer.id);
-			oModel.setProperty("/Customer/Display", oCustomer.name);
-			oModel.setProperty("/Customer/Found", true);
+			// the new customer is logged in: the next purchase starts with the data already known
+			oComponent.setCustomer({
+				ClienteUUID: oCustomer.id,
+				Cpf: OrderService.onlyDigits(oModel.getProperty("/Customer/Cpf")),
+				Nome: oCustomer.name,
+				Cidade: oCustomer.city,
+				Uf: oCustomer.state
+			});
 		},
 
 		/**
@@ -410,6 +452,7 @@ sap.ui.define([
 			this._navToWizardStep(this.byId("contentsStep"));
 			oWizard.discardProgress(oWizard.getSteps()[0]);
 			this.getModel().setData(oInitialData());
+			this._syncCustomer();
 			this._clearMessages();
 			this.getOwnerComponent().getModel(sCartModel).setProperty("/cartEntries", {});
 		},

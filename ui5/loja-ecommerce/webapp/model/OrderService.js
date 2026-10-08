@@ -85,9 +85,9 @@ sap.ui.define([
 					await oItens.create({ItemUUID: oItem.ItemUUID, QtdeItemPedido: oItem.Quantity}, true).created();
 				}
 
-				await bindAction(oModel, "Prepare", oDraft).invoke(sGroup);
+				await Backend.invoke(bindAction(oModel, "Prepare", oDraft));
 				const oActivation = bindAction(oModel, "Activate", oDraft);
-				await oActivation.invoke(sGroup);
+				await Backend.invoke(oActivation);
 
 				const oData = oActivation.getBoundContext().getObject();
 
@@ -137,7 +137,7 @@ sap.ui.define([
 			// the action takes the validity as MM/AA
 			oAction.setParameter("Validade", `${sMonth}/${String(sYear).slice(-2)}`);
 			oAction.setParameter("Cvv", oPayment.cvv);
-			await oAction.invoke(sGroup);
+			await Backend.invoke(oAction);
 
 			const oData = oAction.getBoundContext().getObject();
 
@@ -158,7 +158,7 @@ sap.ui.define([
 			const oAction = bindAction(oModel, "CancelarPedido", oActive);
 
 			oAction.setParameter("MotivoCancelamento", sReason);
-			await oAction.invoke(sGroup);
+			await Backend.invoke(oAction);
 		}
 	};
 });

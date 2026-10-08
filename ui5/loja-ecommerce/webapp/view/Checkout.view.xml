@@ -92,9 +92,39 @@
 								activate=".onCheckStepActivation"
 								icon="sap-icon://customer"
 								validated="false">
+								<!-- logged in: the customer comes from the session -->
+								<MessageStrip
+									class="sapUiSmallMarginBottom"
+									type="Success"
+									showIcon="true"
+									visible="{/Customer/LoggedIn}"
+									text="{i18n>checkoutLoggedAs} {/Customer/Display}">
+									<link>
+										<Link
+											text="{i18n>checkoutNotYou}"
+											press=".onLogoutPress"/>
+									</link>
+								</MessageStrip>
+								<!-- not logged in: login, or the CPF of a first purchase -->
+								<HBox
+									class="sapUiSmallMarginBottom"
+									alignItems="Center"
+									visible="{= !${/Customer/LoggedIn} }">
+									<MessageStrip
+										class="sapUiSmallMarginEnd"
+										type="Information"
+										showIcon="true"
+										text="{i18n>checkoutLoginHint}"/>
+									<Button
+										text="{i18n>loginButton}"
+										type="Emphasized"
+										icon="sap-icon://customer"
+										press=".onLoginPress"/>
+								</HBox>
 								<form:SimpleForm
 									editable="true"
-									layout="ResponsiveGridLayout">
+									layout="ResponsiveGridLayout"
+									visible="{= !${/Customer/LoggedIn} }">
 								<Label
 									text="{i18n>checkoutCustomerCpf}"
 									labelFor="customerCpf"
@@ -116,12 +146,20 @@
 									</layoutData>
 								</Input>
 								</form:SimpleForm>
-								<MessageStrip
+								<HBox
 									class="sapUiSmallMarginBottom"
-									type="Success"
-									showIcon="true"
-									visible="{/Customer/Found}"
-									text="{i18n>checkoutCustomerFound} {/Customer/Display}"/>
+									alignItems="Center"
+									visible="{= !${/Customer/LoggedIn} &amp;&amp; ${/Customer/Found} }">
+									<MessageStrip
+										class="sapUiSmallMarginEnd"
+										type="Warning"
+										showIcon="true"
+										text="{i18n>checkoutCustomerRegistered}"/>
+									<Button
+										text="{i18n>loginButton}"
+										type="Emphasized"
+										press=".onLoginPress"/>
+								</HBox>
 								<MessageStrip
 									class="sapUiSmallMarginBottom"
 									type="Information"

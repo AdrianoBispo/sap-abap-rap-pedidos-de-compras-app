@@ -16,6 +16,8 @@ de produtos e checkout em *wizard*.
 | BSP / pacote | `ZPC_LOJA` / `ZAVBS_PC_ESTOQUE` |
 | UI5 | 1.136.7 (`sap.f`, `sap.m`, `sap.ui.layout`) |
 
+Largura: a app usa a tela inteira no launchpad (`fullWidth` no `manifest.json` e no componente).
+
 Tema escuro, como no link da demo: abra a app com `?sap-ui-theme=sap_horizon_dark`.
 
 ## De onde vêm os dados
@@ -50,19 +52,39 @@ disponibilidade e faixa de preço (ordenação por nome ou preço).
   para revisar (`cart.syncWithCatalog`). Depois disso o back-end valida de novo e reserva o estoque.
 - Carrinho, itens salvos para depois e comparação ficam no `localStorage` do navegador.
 
+## Login do cliente
+
+O botão da conta (ícone de pessoa, no cabeçalho) abre o login: **CPF + e-mail** ou **CPF + telefone** do cadastro
+(`model/AccountService.js`, `controller/Account.js`). A loja lê o cliente ativo pelo CPF no serviço de clientes
+(`Cliente`, só `IsActiveEntity` e `ClienteAtivo`) e confere o segundo dado: e-mail sem diferenciar maiúsculas e
+espaços; telefone só pelos dígitos (aceita o `+55`). CPF desconhecido e e-mail/telefone errado dão a mesma resposta.
+Na sessão (`localStorage`, chave `LOJA_SESSION`) ficam só `ClienteUUID`, CPF, nome, cidade e UF, sem e-mail nem
+telefone. O botão passa a mostrar "Olá, <nome>" e abre o menu com **Sair**.
+
+No checkout o cliente logado já vem identificado e **não digita o CPF de novo**. Sem login há três caminhos:
+**Entrar** (o botão da etapa), CPF **já cadastrado** (a loja bloqueia e pede o login, o CPF sozinho não vale) ou
+CPF **novo** (formulário de cadastro; o cliente é criado ao enviar o pedido e já fica logado).
+
+> [!NOTE]
+> Não há senha: quem souber o CPF e o e-mail ou telefone de um cliente entra como ele, e a conferência roda no
+> navegador, com a sessão do usuário SAP que abriu a app. É um login simples, não substitui autenticação de
+> clientes (por exemplo, IAS) numa loja aberta ao público.
+
 ## Pedido gravado no back-end
 
 O checkout usa o mesmo fluxo de rascunho (*draft*) das apps de gestão, pelas actions OData dos serviços
 (`model/OrderService.js`, `model/CustomerService.js`):
 
-1. **Identificação por CPF**: procura o cliente ativo em `ClienteVH` (serviço de pedidos). Achando, o pedido é
-   entregue no **endereço principal** do cadastro. Não achando, a loja mostra o formulário de cadastro e o
+1. **Cliente**: o logado (CPF + e-mail/telefone) ou, na primeira compra, um CPF novo. O pedido é entregue no
+   **endereço principal** do cadastro. Para o CPF novo a loja mostra o formulário de cadastro e o
    cliente é criado ao enviar o pedido, no serviço `ZUI_PC_CLIENTES_O4`: rascunho do `Cliente` + `_Endereco`
    (CEP e número; o back-end completa o endereço pelo CEP e o torna o principal), `Prepare` e `Activate`.
 2. **Pedido**: `POST Pedido` (rascunho com `ClienteUUID` e a observação), `POST Pedido/_Itens` para cada item,
    `Prepare` (valida cliente, endereço principal, itens e estoque) e `Activate`. A ativação reserva o estoque,
    dá o **número do pedido** e deixa o pedido `ABERTO`. Se algum passo falha, o rascunho é descartado
-   (`Discard`) e a mensagem do back-end aparece para o cliente.
+   (`Discard`) e a mensagem do back-end aparece para o cliente. As actions de rascunho vão com `If-Match: *`
+   (`Backend.invoke`): o ETag do rascunho muda a cada item criado, e com o ETag da criação o `Prepare` dava
+   `412 stale If-Match`, o pedido ficava como rascunho e o `Discard` falhava do mesmo jeito.
 3. **Pagamento**: action `SimularPagamento` (método `CARTAO_CREDITO`/`CARTAO_DEBITO`, número, validade MM/AA,
    CVV). O back-end não guarda os dados do cartão. Aprovado, o pedido vai para `AGUARDANDO_APROVACAO` e a loja
    mostra o número. **Recusado** (no simulador, CVV `000`) não é erro: o pedido continua aberto e uma nova
@@ -74,7 +96,7 @@ A aprovação do pedido e o reembolso continuam nas apps de gestão. O usuário 
 
 ## Checkout
 
-Etapas: itens → identificação (CPF, e cadastro quando o CPF é novo: nome, e-mail, telefone, data de nascimento,
+Etapas: itens → identificação (cliente logado, ou CPF + cadastro quando o CPF é novo: nome, e-mail, telefone, data de nascimento,
 CEP, número, complemento) → forma de pagamento (**cartão de crédito** ou **débito**) → dados do cartão → tipo de
 entrega (padrão ou expressa) e observações → resumo. Os campos são validados no cliente (`model/types/`) e de novo
 pelo back-end; o resumo mostra só os 4 últimos dígitos do cartão.
@@ -93,6 +115,8 @@ loja-ecommerce/
     ├── model/CustomerService.js cadastro do cliente novo (rascunho, endereço, Prepare, Activate)
     ├── model/Backend.js         texto de erro do OData, bind de actions e descarte de rascunho
     ├── model/formatter.js       preço pt-BR, status, totais
+    ├── model/AccountService.js  login por CPF + e-mail/telefone
+    ├── controller/Account.js    diálogo de login e menu da conta
     ├── model/types/             validação de CPF e e-mail
     ├── controller/ view/        App, Home, Welcome, Category, Product, Comparison, Cart, Checkout, OrderCompleted
     ├── i18n/                    textos pt-BR
@@ -117,7 +141,7 @@ O mock usa o `$metadata` do serviço de estoque e 100 itens iguais aos que `ZCL_
 Os três serviços usam o `$metadata` baixado do sistema (07/10/2026); os de pedidos e de clientes usam o
 rascunho/`Activate` do mock server; `localService/ordersService/data/Pedido.js` imita a numeração, o status e as
 actions `SimularPagamento` e `CancelarPedido` (CVV `000` recusa), e `customersService/data/*.js` imitam o
-preenchimento do endereço pelo CEP. CPFs de teste: `529.982.247-25` (cadastrado) e `390.533.447-05` (novo).
+preenchimento do endereço pelo CEP. CPFs de teste: `529.982.247-25` (cadastrada; e-mail `maria@exemplo.com.br`, telefone `(81) 99999-0000`) e `390.533.447-05` (novo).
 Para atualizar os `metadata.xml` depois de mudar um serviço: `npm start` (login do SAP ID no navegador) e salve o `$metadata` de cada serviço, por exemplo
 `curl http://localhost:8080/sap/opu/odata4/sap/zui_pc_pedidos_compras_o4/srvd/sap/zui_pc_pedidos_compras/0001/\$metadata`.
 Depois do deploy a loja abre em

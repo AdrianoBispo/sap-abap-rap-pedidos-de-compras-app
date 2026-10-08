@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "ClienteAtivo": true,
+    "ScoreCliente": "50",
+    "IsActiveEntity": true,
+    "HasActiveEntity": false,
+    "HasDraftEntity": false,
+    "ClienteUUID": "c0000000-0000-0000-0000-000000000001",
+    "Cpf": "52998224725",
+    "Nome": "Maria Silva",
+    "Email": "maria@exemplo.com.br",
+    "Telefone": "81999990000",
+    "CidadePrincipal": "Recife",
+    "UfPrincipal": "PE"
+  },
+  {
+    "ClienteAtivo": true,
+    "ScoreCliente": "50",
+    "IsActiveEntity": true,
+    "HasActiveEntity": false,
+    "HasDraftEntity": false,
+    "ClienteUUID": "c0000000-0000-0000-0000-000000000002",
+    "Cpf": "11144477735",
+    "Nome": "João Souza",
+    "Email": "joao@exemplo.com.br",
+    "Telefone": "11988887777",
+    "CidadePrincipal": "São Paulo",
+    "UfPrincipal": "SP"
+  }
+]

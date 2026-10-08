@@ -1,0 +1,27 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<ResponsivePopover
+		id="accountPopover"
+		title="{i18n>accountTitle}"
+		placement="Bottom"
+		contentWidth="18rem">
+		<content>
+			<VBox class="sapUiSmallMargin">
+				<Title
+					level="H4"
+					text="{session>/customer/Nome}"/>
+				<Text
+					class="sapUiTinyMarginTop"
+					text="{session>/customer/Cidade}/{session>/customer/Uf}"/>
+				<Text text="{i18n>checkoutCustomerCpf}: {path: 'session>/customer/Cpf', formatter: '.formatCpf'}"/>
+			</VBox>
+		</content>
+		<endButton>
+			<Button
+				text="{i18n>accountLogout}"
+				icon="sap-icon://log"
+				press=".onLogout"/>
+		</endButton>
+	</ResponsivePopover>
+</core:FragmentDefinition>

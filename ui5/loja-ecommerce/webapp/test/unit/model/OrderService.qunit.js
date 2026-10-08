@@ -59,6 +59,7 @@ sap.ui.define([
 
 		assert.ok(oCustomer.id, "cliente com chave");
 		assert.strictEqual(oCustomer.name, "Ana Souza");
+		assert.strictEqual(oCustomer.city, "Recife", "cidade do endereço principal");
 	});
 
 	QUnit.test("grava o pedido (rascunho, itens, ativação) e paga", async function(assert) {
