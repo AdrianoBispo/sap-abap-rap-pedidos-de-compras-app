@@ -56,7 +56,8 @@
       "desktop": true,
       "tablet": true,
       "phone": true
-    }
+    },
+    "fullWidth": true
   },
   "sap.ui5": {
     "flexEnabled": false,
@@ -143,6 +144,9 @@
           "id": "detail"
         }
       }
+    },
+    "config": {
+      "fullWidth": true
     }
   },
   "sap.fiori": {

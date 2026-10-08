@@ -10,6 +10,7 @@ sap.ui.define([
     return UIComponent.extend("analisecompras.Component", {
         metadata: {
             manifest: "json",
+            config: { fullWidth: true },
             interfaces: ["sap.ui.core.IAsyncContentCreation"]
         },
 
