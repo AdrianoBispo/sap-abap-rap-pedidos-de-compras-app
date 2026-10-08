@@ -17,6 +17,46 @@ sap.ui.define([], () => {
 			return oOperation.invoke(this.group, {"@odata.etag": "*"});
 		},
 
+		/**
+		 * Plain HTTP request to the service, for what the model cannot do: uploading the content of a stream
+		 * property. It reuses the session and the CSRF token of the model and ignores the ETag like invoke().
+		 * @param {sap.ui.model.odata.v4.ODataModel} oModel model of the service
+		 * @param {string} sMethod HTTP method (PUT, PATCH)
+		 * @param {string} sPath path relative to the service root
+		 * @param {Blob|string} vBody request body
+		 * @param {string} sContentType content type of the body
+		 * @returns {Promise<Response>} the response (an error status is thrown as an Error with the back-end message)
+		 */
+		async rawRequest(oModel, sMethod, sPath, vBody, sContentType) {
+			const sUrl = oModel.getServiceUrl() + sPath;
+			let sToken = (oModel.getHttpHeaders() || {})["X-CSRF-Token"];
+
+			if (!sToken || sToken === "Fetch") {
+				sToken = (await fetch(oModel.getServiceUrl(), {headers: {"X-CSRF-Token": "Fetch"}, credentials: "same-origin"}))
+					.headers.get("X-CSRF-Token");
+			}
+			const oResponse = await fetch(sUrl, {
+				method: sMethod,
+				credentials: "same-origin",
+				headers: {"Content-Type": sContentType, "X-CSRF-Token": sToken, "If-Match": "*", "Accept": "application/json"},
+				body: vBody
+			});
+
+			if (!oResponse.ok) {
+				let oBody;
+				try {
+					oBody = await oResponse.json();
+				} catch {
+					oBody = {};
+				}
+				const oError = new Error((oBody.error && oBody.error.message) || `${sMethod} ${sPath}: ${oResponse.status}`);
+				oError.error = oBody.error;
+				throw oError;
+			}
+
+			return oResponse;
+		},
+
 		onlyDigits(sValue) {
 			return String(sValue || "").replace(/\D/g, "");
 		},

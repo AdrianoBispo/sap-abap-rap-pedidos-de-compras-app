@@ -64,6 +64,27 @@ sap.ui.define([
 		},
 
 		/**
+		 * Number of orders of the customer that are not closed yet (not FINALIZADO nor CANCELADO).
+		 * @param {sap.ui.model.odata.v4.ODataModel} oModel model of the order service
+		 * @param {string} sCustomerId ClienteUUID
+		 * @returns {Promise<number>} number of open orders
+		 */
+		async countOpenOrders(oModel, sCustomerId) {
+			const oBinding = oModel.bindList("/Pedido", null, [], [
+				new Filter("IsActiveEntity", FilterOperator.EQ, true),
+				new Filter("ClienteUUID", FilterOperator.EQ, sCustomerId),
+				new Filter("StatusPedido", FilterOperator.NE, "FINALIZADO"),
+				new Filter("StatusPedido", FilterOperator.NE, "CANCELADO")
+			], {$select: ["NumeroPedido"]});
+
+			try {
+				return (await oBinding.requestContexts(0, 1000)).length;
+			} finally {
+				oBinding.destroy();
+			}
+		},
+
+		/**
 		 * Registers the order: creates the draft of the Pedido for the customer, creates the items, validates
 		 * (Prepare) and activates it. The activation reserves the stock and gives the order number; the order
 		 * is then ABERTO and waits for the payment. When a step fails, the draft is discarded.

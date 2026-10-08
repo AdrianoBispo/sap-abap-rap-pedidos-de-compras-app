@@ -5,8 +5,9 @@ sap.ui.define([
 	"./model/models",
 	"./model/Catalog",
 	"./controller/Account",
+	"./model/AccountService",
 	"sap/ui/Device"
-], (UIComponent, JSONModel, LocalStorageModel, models, Catalog, Account, Device) => {
+], (UIComponent, JSONModel, LocalStorageModel, models, Catalog, Account, AccountService, Device) => {
 	"use strict";
 
 	return UIComponent.extend("lojaecommerce.Component", {
@@ -35,6 +36,8 @@ sap.ui.define([
 			// customer of the session (login by CPF + e-mail or phone)
 			this.setModel(new LocalStorageModel("LOJA_SESSION", {customer: null}), "session");
 			this._oAccount = new Account(this);
+			// photo of the logged in customer (object URL, read with the session of the user; not persisted)
+			this.setModel(new JSONModel({photoUrl: ""}), "account");
 
 			// product comparison
 			this.setModel(new LocalStorageModel("LOJA_PRODUCT_COMPARISON", {
@@ -46,6 +49,10 @@ sap.ui.define([
 			this.setModel(models.createDeviceModel(), "device");
 
 			UIComponent.prototype.init.apply(this, arguments);
+
+			if (this.getCustomer()) {
+				this.refreshPhoto();
+			}
 
 			this.getRouter().initialize();
 
@@ -67,10 +74,41 @@ sap.ui.define([
 
 		setCustomer(oCustomer) {
 			this.getModel("session").setProperty("/customer", oCustomer);
+			if (oCustomer) {
+				this.refreshPhoto();
+			} else {
+				this.setPhotoUrl("");
+			}
 		},
 
 		logout() {
 			this.setCustomer(null);
+		},
+
+		/**
+		 * Reads the profile photo of the logged in customer from the back-end.
+		 * @returns {Promise} resolves when the photo is in the "account" model
+		 */
+		async refreshPhoto() {
+			const oCustomer = this.getCustomer();
+			const sUrl = oCustomer ? await AccountService.loadPhoto(this.getModel("customers"), oCustomer.ClienteUUID) : "";
+
+			// the customer may have logged out (or changed) while the photo was loading
+			if (this.getCustomer() === oCustomer) {
+				this.setPhotoUrl(sUrl);
+			} else if (sUrl) {
+				URL.revokeObjectURL(sUrl);
+			}
+		},
+
+		setPhotoUrl(sUrl) {
+			const oModel = this.getModel("account");
+			const sOld = oModel.getProperty("/photoUrl");
+
+			oModel.setProperty("/photoUrl", sUrl);
+			if (sOld && sOld !== sUrl) {
+				URL.revokeObjectURL(sOld);
+			}
 		},
 
 		/**

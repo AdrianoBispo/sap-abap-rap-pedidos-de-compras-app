@@ -3,11 +3,17 @@ sap.ui.define([
 	"sap/ui/core/Fragment",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageToast",
+	"sap/m/MessageBox",
+	"sap/ui/core/format/DateFormat",
 	"../model/AccountService",
+	"../model/ImageService",
 	"../model/OrderService",
 	"../model/types/CpfType"
-], (BaseObject, Fragment, JSONModel, MessageToast, AccountService, OrderService, CpfType) => {
+], (BaseObject, Fragment, JSONModel, MessageToast, MessageBox, DateFormat, AccountService, ImageService, OrderService,
+		CpfType) => {
 	"use strict";
+
+	const oInitialProfile = () => ({busy: false, error: "", customer: {}, addresses: []});
 
 	const oInitialLogin = () => ({cpf: "", cpfState: "None", method: "EMAIL", value: "", error: "", busy: false,
 		canLogin: false});
@@ -21,6 +27,7 @@ sap.ui.define([
 			BaseObject.call(this);
 			this._oComponent = oComponent;
 			this._oLoginModel = new JSONModel(oInitialLogin());
+			this._oProfileModel = new JSONModel(oInitialProfile());
 		},
 
 		/**
@@ -48,6 +55,8 @@ sap.ui.define([
 					controller: this
 				}).then((oControl) => {
 					oControl.setModel(this._oLoginModel, "login");
+					oControl.setModel(this._oProfileModel, "profile");
+					oControl.setModel(this._oComponent.getModel("account"), "account");
 					oControl.setModel(this._oComponent.getModel("session"), "session");
 					oControl.setModel(this._oComponent.getModel("i18n"), "i18n");
 					oControl.addStyleClass(this._oComponent.getContentDensityClass());
@@ -61,6 +70,155 @@ sap.ui.define([
 
 		formatCpf(sCpf) {
 			return OrderService.formatCpf(String(sCpf || ""));
+		},
+
+		// initials of the name for the avatar when there is no photo
+		initials(sName) {
+			return String(sName || "").split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s.charAt(0).toUpperCase()).join("");
+		},
+
+		formatPhone(sPhone) {
+			const sDigits = String(sPhone || "").replace(/\D/g, "");
+
+			if (sDigits.length === 11) {
+				return `(${sDigits.slice(0, 2)}) ${sDigits.slice(2, 7)}-${sDigits.slice(7)}`;
+			}
+
+			return sDigits.length === 10 ? `(${sDigits.slice(0, 2)}) ${sDigits.slice(2, 6)}-${sDigits.slice(6)}` : sPhone;
+		},
+
+		formatCep(sCep) {
+			const sDigits = String(sCep || "").replace(/\D/g, "");
+
+			return sDigits.length === 8 ? `${sDigits.slice(0, 5)}-${sDigits.slice(5)}` : sCep;
+		},
+
+		// date (yyyy-MM-dd) or timestamp of the back-end, in the language of the user
+		formatDate(sValue) {
+			if (!sValue) {
+				return "";
+			}
+			const bDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(sValue);
+
+			return DateFormat.getDateInstance({style: "medium", UTC: bDateOnly}).format(new Date(sValue));
+		},
+
+		// ---- settings: complete data and deactivation ----
+
+		/**
+		 * Opens the settings dialog with the complete data of the logged in customer.
+		 */
+		async onSettings() {
+			(await this._pPopover).close();
+			this._oProfileModel.setData(oInitialProfile());
+			const oDialog = await this._load("_pSettings", "AccountSettingsDialog", "settingsDialog");
+
+			oDialog.open();
+			await this._loadProfile();
+		},
+
+		async _loadProfile() {
+			const oModel = this._oProfileModel;
+			const oBundle = await this._oComponent.getModel("i18n").getResourceBundle();
+			const oCustomer = this._oComponent.getCustomer();
+
+			oModel.setProperty("/busy", true);
+			try {
+				const oProfile = await AccountService.loadProfile(this._oComponent.getModel("customers"),
+					oCustomer.ClienteUUID);
+
+				oModel.setProperty("/customer", oProfile.customer || {});
+				oModel.setProperty("/addresses", oProfile.addresses);
+				if (!oProfile.customer) {
+					oModel.setProperty("/error", oBundle.getText("settingsNotFound"));
+				}
+			} catch (oError) {
+				oModel.setProperty("/error", oBundle.getText("settingsLoadError") + " " + OrderService.errorText(oError));
+			} finally {
+				oModel.setProperty("/busy", false);
+			}
+		},
+
+		/**
+		 * Changes the profile photo: the picture is cropped to a square JPEG and sent to the customer in the back-end.
+		 * @param {sap.ui.base.Event} oEvent change event of the file uploader
+		 */
+		async onPhotoChange(oEvent) {
+			const oUploader = oEvent.getSource();
+			const oFile = (oEvent.getParameter("files") || [])[0];
+			const oModel = this._oProfileModel;
+			const oBundle = await this._oComponent.getModel("i18n").getResourceBundle();
+
+			if (!oFile) {
+				return;
+			}
+			oModel.setProperty("/busy", true);
+			oModel.setProperty("/error", "");
+			try {
+				const oImage = await ImageService.toSquareJpeg(oFile);
+
+				await AccountService.updatePhoto(this._oComponent.getModel("customers"),
+					this._oComponent.getCustomer().ClienteUUID, oImage, "perfil.jpg");
+				this._oComponent.setPhotoUrl(URL.createObjectURL(oImage));
+				MessageToast.show(oBundle.getText("settingsPhotoUpdated"));
+			} catch (oError) {
+				oModel.setProperty("/error", oBundle.getText("settingsPhotoError") + " " + OrderService.errorText(oError));
+			} finally {
+				oUploader.clear();
+				oModel.setProperty("/busy", false);
+			}
+		},
+
+		async onPhotoInvalid() {
+			const oBundle = await this._oComponent.getModel("i18n").getResourceBundle();
+
+			this._oProfileModel.setProperty("/error", oBundle.getText("settingsPhotoInvalid"));
+		},
+
+		async onSettingsClose() {
+			(await this._pSettings).close();
+		},
+
+		/**
+		 * Asks for confirmation (with the open orders, which stay) and deactivates the account.
+		 */
+		async onDeactivate() {
+			const oModel = this._oProfileModel;
+			const oBundle = await this._oComponent.getModel("i18n").getResourceBundle();
+			const oCustomer = this._oComponent.getCustomer();
+			let iOpenOrders = 0;
+
+			try {
+				iOpenOrders = await OrderService.countOpenOrders(this._oComponent.getModel("orders"), oCustomer.ClienteUUID);
+			} catch {
+				// the warning about open orders is only informative
+			}
+			const sMessage = oBundle.getText("settingsDeactivateConfirm")
+				+ (iOpenOrders ? "\n\n" + oBundle.getText("settingsDeactivateOpenOrders", [iOpenOrders]) : "");
+
+			MessageBox.warning(sMessage, {
+				title: oBundle.getText("settingsDeactivateTitle"),
+				actions: [oBundle.getText("settingsDeactivateButton"), MessageBox.Action.CANCEL],
+				emphasizedAction: MessageBox.Action.CANCEL,
+				onClose: async (sAction) => {
+					if (sAction !== oBundle.getText("settingsDeactivateButton")) {
+						return;
+					}
+					oModel.setProperty("/busy", true);
+					oModel.setProperty("/error", "");
+					try {
+						await AccountService.deactivate(this._oComponent.getModel("customers"), oCustomer.ClienteUUID);
+						(await this._pSettings).close();
+						this._oComponent.logout();
+						MessageBox.success(oBundle.getText("settingsDeactivated"));
+					} catch (oError) {
+						oModel.setProperty("/error", oBundle.getText("settingsDeactivateError") + " "
+							+ OrderService.errorText(oError));
+					} finally {
+						oModel.setProperty("/busy", false);
+					}
+				}
+			});
 		},
 
 		onLoginCpfLiveChange(oEvent) {
@@ -145,7 +303,7 @@ sap.ui.define([
 		},
 
 		destroy() {
-			["_pDialog", "_pPopover"].forEach(async (sPromise) => {
+			["_pDialog", "_pPopover", "_pSettings"].forEach(async (sPromise) => {
 				if (this[sPromise]) {
 					(await this[sPromise]).destroy();
 				}

@@ -8,6 +8,12 @@
 		contentWidth="18rem">
 		<content>
 			<VBox class="sapUiSmallMargin">
+				<Avatar
+					class="sapUiTinyMarginBottom"
+					displaySize="L"
+					src="{account>/photoUrl}"
+					initials="{path: 'session>/customer/Nome', formatter: '.initials'}"
+					fallbackIcon="sap-icon://person-placeholder"/>
 				<Title
 					level="H4"
 					text="{session>/customer/Nome}"/>
@@ -17,6 +23,12 @@
 				<Text text="{i18n>checkoutCustomerCpf}: {path: 'session>/customer/Cpf', formatter: '.formatCpf'}"/>
 			</VBox>
 		</content>
+		<beginButton>
+			<Button
+				text="{i18n>accountSettings}"
+				icon="sap-icon://action-settings"
+				press=".onSettings"/>
+		</beginButton>
 		<endButton>
 			<Button
 				text="{i18n>accountLogout}"

@@ -1,7 +1,7 @@
 [
   {
     "ClienteAtivo": true,
-    "ScoreCliente": "50",
+    "ScoreCliente": "67",
     "IsActiveEntity": true,
     "HasActiveEntity": false,
     "HasDraftEntity": false,
@@ -11,11 +11,15 @@
     "Email": "maria@exemplo.com.br",
     "Telefone": "81999990000",
     "CidadePrincipal": "Recife",
-    "UfPrincipal": "PE"
+    "UfPrincipal": "PE",
+    "Genero": "FEMININO",
+    "GeneroTexto": "Feminino",
+    "DataNascimento": "1990-05-20",
+    "CreatedAt": "2026-10-01T09:00:00Z"
   },
   {
     "ClienteAtivo": true,
-    "ScoreCliente": "50",
+    "ScoreCliente": "42",
     "IsActiveEntity": true,
     "HasActiveEntity": false,
     "HasDraftEntity": false,
@@ -25,6 +29,10 @@
     "Email": "joao@exemplo.com.br",
     "Telefone": "11988887777",
     "CidadePrincipal": "São Paulo",
-    "UfPrincipal": "SP"
+    "UfPrincipal": "SP",
+    "Genero": "MASCULINO",
+    "GeneroTexto": "Masculino",
+    "DataNascimento": "1985-11-02",
+    "CreatedAt": "2026-10-02T09:00:00Z"
   }
 ]
