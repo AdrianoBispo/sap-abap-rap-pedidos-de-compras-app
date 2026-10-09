@@ -66,6 +66,9 @@ links) para a app de destino:
 | Reembolso (`ZC_PC_REEMBOLSO_APP`) | Pedido (`PedidoUUID`/`NumeroPedido`) | `ZPCPedidoCompra` | Pedidos de Compras |
 | Reembolso (`ZC_PC_REEMBOLSO_APP`) | Cliente (`ClienteUUID`/`NomeCliente`), CPF (`CpfCliente`) | `ZPCCliente` | Gestão de Clientes |
 
+No reembolso, o Pedido é um link direto (`#WITH_INTENT_BASED_NAVIGATION`, ação `manage`): o clique
+abre a Object Page do pedido, sem o popover dos demais links.
+
 A app de destino abre direto a Object Page quando recebe a chave técnica (`ClienteUUID`,
 `ItemUUID`, `PedidoUUID`) ou a semântica (`Cpf`, `Sku`, `NumeroPedido`). No pedido e no reembolso o
 CPF chama `CpfCliente`; o backend o mapeia para `Cpf` com `@Consumption.semanticObjectMapping` (o
