@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+# Deploy no ABAP Repository do SAP BTP ABAP Environment (npm run deploy):
+# cria/atualiza a aplicação BSP ZPC_ANL_REEMB e o IAM App ZPC_ANL_REEMB_UI5R no pacote ZAVBS_PC_REEMBOLSOS.
+# Pacotes do software component ZLOCAL (trial) não usam transporte.
+
+specVersion: "4.0"
+metadata:
+  name: analisereembolsos
+type: application
+builder:
+  resources:
+    excludes:
+      - /test/**
+      - /localService/**
+  customTasks:
+    - name: deploy-to-abap
+      afterTask: generateCachebusterInfo
+      configuration:
+        ignoreCertErrors: false
+        target:
+          url: https://6449ad14-b137-4a27-8017-6421c2c4f0b0.abap.us10.hana.ondemand.com
+          client: "100"
+          authenticationType: reentranceTicket
+        app:
+          name: ZPC_ANL_REEMB
+          description: Análise de Pedidos de Reembolsos
+          package: ZAVBS_PC_REEMBOLSOS
+          transport: ""
+        exclude:
+          - /test/
