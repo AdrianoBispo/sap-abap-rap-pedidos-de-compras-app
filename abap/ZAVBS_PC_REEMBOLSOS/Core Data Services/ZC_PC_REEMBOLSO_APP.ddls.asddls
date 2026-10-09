@@ -8,16 +8,31 @@ define root view entity ZC_PC_REEMBOLSO_APP
   as projection on ZR_PC_REEMBOLSO
 {
   key ReembolsoUUID,
+
+      /* Navegação entre apps (FLP): o Pedido abre o pedido na app Pedidos de
+         Compras (chave PedidoUUID; NumeroPedido é a chave semântica) */
+      @Consumption.semanticObject: 'ZPCPedidoCompra'
       PedidoUUID,
 
       @Search.defaultSearchElement: true
+      @Consumption.semanticObject: 'ZPCPedidoCompra'
       NumeroPedido,
 
+      /* Navegação entre apps (FLP): Cliente e CPF abrem o cliente na app
+         Gestão de Clientes (chave ClienteUUID; CpfCliente vai como Cpf) */
+      @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
       @ObjectModel.text.element: [ 'NomeCliente' ]
       ClienteUUID,
       @Search.defaultSearchElement: true
       @Search.fuzzinessThreshold: 0.8
+      @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
       _Cliente.Nome          as NomeCliente,
+      @Search.defaultSearchElement: true
+      @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
+      _Cliente.Cpf           as CpfCliente,
 
       @ObjectModel.text.element: [ 'StatusReembolsoTexto' ]
       @UI.textArrangement: #TEXT_ONLY

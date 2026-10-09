@@ -40,6 +40,12 @@ annotate entity ZC_PC_REEMBOLSO_APP with
   @EndUserText.label: 'Cliente'
   NomeCliente;
 
+  @UI: { lineItem: [{ position: 17, label: 'CPF', importance: #HIGH }],
+         identification: [{ position: 8, label: 'CPF' }],
+         selectionField: [{ position: 25 }] }
+  @EndUserText.label: 'CPF'
+  CpfCliente;
+
   @UI: { lineItem:       [{ position: 20, label: 'Status', criticality: 'StatusReembolsoCriticality', importance: #HIGH }],
          identification: [{ position: 10, label: 'Status', criticality: 'StatusReembolsoCriticality' }],
          selectionField: [{ position: 30 }] }

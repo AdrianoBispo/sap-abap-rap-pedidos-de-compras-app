@@ -138,7 +138,9 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 - **Textos em vez de UUID**: os campos de cliente, endereço de entrega e item do pedido mostram
   apenas o texto descritivo (`@UI.textArrangement: #TEXT_ONLY`); o UUID técnico fica oculto.
 - **Autorização** por atividade (`01` criar, `02` alterar, `06` excluir, `16` executar).
-- **Navegação entre apps** via semantic objects (cliente e item viram links no pedido).
+- **Navegação entre apps** via semantic objects: no pedido, Cliente e CPF abrem o cliente (Gestão de
+  Clientes) e Item e SKU abrem o item (Gestão de Estoque), inclusive nos snapshots de pedidos
+  encerrados; no reembolso, o Pedido abre o pedido (Pedidos de Compras) e Cliente e CPF abrem o cliente.
 - **Concorrência** tratada: item em edição no Estoque impede o registro do pedido.
 
 ---
@@ -684,6 +686,7 @@ análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrut
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.3   | Navegação entre apps ampliada: CPF do cliente e nome do item como links no pedido e nos snapshots; no reembolso, links do Pedido (`ZPCPedidoCompra`) e do Cliente/CPF (`ZPCCliente`), com o CPF do cliente como novo campo; `CpfCliente` mapeado para `Cpf` (`@Consumption.semanticObjectMapping`) no backend |
 | v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas e app freestyle com as 20 análises); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |
 | v2.1   | Reembolso como BO e app próprios (Gestão de Reembolsos, `ZUI_PC_REEMBOLSOS`); remoção da ação Confirmar pedido (o Save registra o pedido e reserva o estoque; `Activate` não otimizado + `ReservarEstoqueRegistro`/`ValidarRegistro`); SKU gerado no Save com o prefixo da categoria; especificação v2.1 |
 | v1.5   | Score com Process Indicator, precheck de estoque zerado, remoção de peso/dimensões do item, cadastro automático de endereço, CEP único por cliente, textos em vez de UUID; sincronização do repositório com os pacotes `ZAVBS_*` (sem dicionário próprio) e o fluxo de reembolso |

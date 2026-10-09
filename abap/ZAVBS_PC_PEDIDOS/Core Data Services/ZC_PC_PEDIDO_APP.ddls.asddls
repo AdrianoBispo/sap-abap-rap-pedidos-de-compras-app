@@ -12,8 +12,11 @@ define root view entity ZC_PC_PEDIDO_APP
       @Search.defaultSearchElement: true
       NumeroPedido,
 
-      /* Navegação entre apps (FLP): link para a app Gestão de Clientes */
+      /* Navegação entre apps (FLP): Cliente, nome e CPF abrem o cliente na app
+         Gestão de Clientes (chave ClienteUUID; CpfCliente vai como Cpf, a
+         chave semântica de ZC_PC_CLIENTE_APP) */
       @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
       @ObjectModel.text.element: [ 'NomeCliente' ]
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_CLIENTE_VH', element: 'ClienteUUID' },
                                            useForValidation: true }]
@@ -22,9 +25,12 @@ define root view entity ZC_PC_PEDIDO_APP
       @Search.defaultSearchElement: true
       @Search.fuzzinessThreshold: 0.8
       @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
       _Cliente.Nome                   as NomeCliente,
 
       @Search.defaultSearchElement: true
+      @Consumption.semanticObject: 'ZPCCliente'
+      @Consumption.semanticObjectMapping.additionalBinding: [{ localElement: 'CpfCliente', element: 'Cpf' }]
       _Cliente.Cpf                    as CpfCliente,
 
       /* Dados do cliente exibidos na seção "Dados do Cliente" enquanto o pedido

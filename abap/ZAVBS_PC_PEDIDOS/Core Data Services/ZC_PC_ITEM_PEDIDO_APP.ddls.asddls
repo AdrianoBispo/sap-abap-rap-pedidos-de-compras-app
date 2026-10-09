@@ -7,7 +7,8 @@ define view entity ZC_PC_ITEM_PEDIDO_APP
   key ItemPedidoUUID,
       PedidoUUID,
 
-      /* Navegação entre apps (FLP): link para a app Gestão de Estoque */
+      /* Navegação entre apps (FLP): Item (nome) e SKU abrem o item na app
+         Gestão de Estoque (chave ItemUUID; Sku é a chave semântica) */
       @Consumption.semanticObject: 'ZPCItemEstoque'
       @ObjectModel.text.element: [ 'NomeItem' ]
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_ITEM_VH', element: 'ItemUUID' },
@@ -15,6 +16,7 @@ define view entity ZC_PC_ITEM_PEDIDO_APP
       ItemUUID,
       @Consumption.semanticObject: 'ZPCItemEstoque'
       _Item.Sku            as Sku,
+      @Consumption.semanticObject: 'ZPCItemEstoque'
       _Item.Nome           as NomeItem,
       _Item.QtdeDisponivel as QtdeDisponivelAtual,
 

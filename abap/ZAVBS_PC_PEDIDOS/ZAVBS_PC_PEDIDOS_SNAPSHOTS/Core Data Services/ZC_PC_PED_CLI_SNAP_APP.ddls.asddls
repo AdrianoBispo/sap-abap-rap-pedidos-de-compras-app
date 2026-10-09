@@ -6,8 +6,13 @@ define view entity ZC_PC_PED_CLI_SNAP_APP
 {
   key SnapshotUUID,
       PedidoUUID,
+      /* Navegação entre apps (FLP): nome e CPF do snapshot abrem o cliente
+         na app Gestão de Clientes (pedidos FINALIZADO/CANCELADO) */
+      @Consumption.semanticObject: 'ZPCCliente'
       ClienteUUID,
+      @Consumption.semanticObject: 'ZPCCliente'
       Cpf,
+      @Consumption.semanticObject: 'ZPCCliente'
       Nome,
       Email,
       Telefone,

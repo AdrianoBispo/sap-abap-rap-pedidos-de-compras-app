@@ -54,10 +54,23 @@ tabelas, tile) e a configuração das ferramentas.
 
 ### Navegação entre apps
 
-As projeções do pedido marcam `ClienteUUID`/`NomeCliente` com o semantic object `ZPCCliente` e o
-item com `ZPCItemEstoque`. A app de destino abre direto a Object Page quando recebe a chave
-semântica: `Cpf` no Cliente (o `annotation.xml` de pedidos mapeia `CpfCliente` → `Cpf`) e `Sku` no
-Item. A navegação funciona no launchpad do sistema, para quem tiver as duas apps nas suas roles.
+Os campos abaixo são marcados no backend com `@Consumption.semanticObject` e viram links (smart
+links) para a app de destino:
+
+| Origem | Campos | Semantic object | Destino |
+| --- | --- | --- | --- |
+| Pedido (`ZC_PC_PEDIDO_APP`) | Cliente (`ClienteUUID`/`NomeCliente`), CPF (`CpfCliente`) | `ZPCCliente` | Gestão de Clientes |
+| Item do pedido (`ZC_PC_ITEM_PEDIDO_APP`) | Item (`ItemUUID`/`NomeItem`), SKU (`Sku`) | `ZPCItemEstoque` | Gestão de Estoque |
+| Snapshot do cliente (`ZC_PC_PED_CLI_SNAP_APP`) | Nome, CPF | `ZPCCliente` | Gestão de Clientes |
+| Snapshot dos itens (`ZC_PC_PED_ITEM_SNAP_APP`) | Item (nome), SKU | `ZPCItemEstoque` | Gestão de Estoque |
+| Reembolso (`ZC_PC_REEMBOLSO_APP`) | Pedido (`PedidoUUID`/`NumeroPedido`) | `ZPCPedidoCompra` | Pedidos de Compras |
+| Reembolso (`ZC_PC_REEMBOLSO_APP`) | Cliente (`ClienteUUID`/`NomeCliente`), CPF (`CpfCliente`) | `ZPCCliente` | Gestão de Clientes |
+
+A app de destino abre direto a Object Page quando recebe a chave técnica (`ClienteUUID`,
+`ItemUUID`, `PedidoUUID`) ou a semântica (`Cpf`, `Sku`, `NumeroPedido`). No pedido e no reembolso o
+CPF chama `CpfCliente`; o backend o mapeia para `Cpf` com `@Consumption.semanticObjectMapping` (o
+`annotation.xml` de pedidos repete esse mapeamento). A navegação funciona no launchpad do sistema,
+para quem tiver as apps de origem e de destino nas suas roles.
 
 ## App de análises (freestyle)
 
