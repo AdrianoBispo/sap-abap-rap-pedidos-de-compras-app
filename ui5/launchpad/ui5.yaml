@@ -35,5 +35,11 @@ server:
             src: ../pedidos-compras/webapp
           - path: /apps/gestaoreembolsos
             src: ../gestao-reembolsos/webapp
-          - path: /apps/analisecompras
-            src: ../analise-compras/webapp
+          - path: /apps/analisepedidos
+            src: ../analise-pedidos/webapp
+          - path: /apps/analiseclientes
+            src: ../analise-clientes/webapp
+          - path: /apps/analiseestoque
+            src: ../analise-estoque/webapp
+          - path: /apps/analisereembolsos
+            src: ../analise-reembolsos/webapp
