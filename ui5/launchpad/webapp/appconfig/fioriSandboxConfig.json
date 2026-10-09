@@ -1,0 +1,136 @@
+{
+  "defaultRenderer": "fiori2",
+  "renderers": {
+    "fiori2": {
+      "componentData": {
+        "config": {
+          "enableSearch": false,
+          "rootIntent": "Shell-home"
+        }
+      }
+    }
+  },
+  "services": {
+    "LaunchPage": {
+      "adapter": {
+        "config": {
+          "groups": [
+            {
+              "id": "gestao",
+              "title": "Gestão",
+              "isPreset": true,
+              "isVisible": true,
+              "isDefaultGroup": true,
+              "isGroupLocked": false,
+              "tiles": [
+                {
+                  "id": "tile-gestaoclientes",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Gestão de Clientes",
+                    "subtitle": "Clientes e endereços",
+                    "icon": "sap-icon://customer",
+                    "targetURL": "#ZPCCliente-manage"
+                  }
+                },
+                {
+                  "id": "tile-gestaoestoque",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Gestão de Estoque",
+                    "subtitle": "Itens, SKU e disponibilidade",
+                    "icon": "sap-icon://product",
+                    "targetURL": "#ZPCItemEstoque-manage"
+                  }
+                },
+                {
+                  "id": "tile-pedidoscompras",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Pedidos de Compras",
+                    "subtitle": "Criar, pagar, aprovar e cancelar",
+                    "icon": "sap-icon://sales-order",
+                    "targetURL": "#ZPCPedidoCompra-manage"
+                  }
+                },
+                {
+                  "id": "tile-gestaoreembolsos",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Gestão de Reembolsos",
+                    "subtitle": "Aprovar ou rejeitar reembolsos",
+                    "icon": "sap-icon://expense-report",
+                    "targetURL": "#ZPCReembolso-manage"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "analises",
+              "title": "Análises",
+              "isPreset": true,
+              "isVisible": true,
+              "isDefaultGroup": false,
+              "isGroupLocked": false,
+              "tiles": [
+                {
+                  "id": "tile-analisecompras",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Análises de Compras",
+                    "subtitle": "Pedidos, clientes, estoque e reembolsos",
+                    "icon": "sap-icon://business-objects-experience",
+                    "targetURL": "#ZPCAnalise-display"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "NavTargetResolution": {
+      "adapter": {
+        "config": {
+          "applications": {
+            "ZPCCliente-manage": {
+              "additionalInformation": "SAPUI5.Component=gestaoclientes",
+              "applicationType": "URL",
+              "url": "/apps/gestaoclientes",
+              "title": "Gestão de Clientes",
+              "description": "Clientes e endereços"
+            },
+            "ZPCItemEstoque-manage": {
+              "additionalInformation": "SAPUI5.Component=gestaoestoque",
+              "applicationType": "URL",
+              "url": "/apps/gestaoestoque",
+              "title": "Gestão de Estoque",
+              "description": "Itens, SKU e disponibilidade"
+            },
+            "ZPCPedidoCompra-manage": {
+              "additionalInformation": "SAPUI5.Component=pedidoscompras",
+              "applicationType": "URL",
+              "url": "/apps/pedidoscompras",
+              "title": "Pedidos de Compras",
+              "description": "Criar, pagar, aprovar e cancelar"
+            },
+            "ZPCReembolso-manage": {
+              "additionalInformation": "SAPUI5.Component=gestaoreembolsos",
+              "applicationType": "URL",
+              "url": "/apps/gestaoreembolsos",
+              "title": "Gestão de Reembolsos",
+              "description": "Aprovar ou rejeitar reembolsos"
+            },
+            "ZPCAnalise-display": {
+              "additionalInformation": "SAPUI5.Component=analisecompras",
+              "applicationType": "URL",
+              "url": "/apps/analisecompras",
+              "title": "Análises de Compras",
+              "description": "Pedidos, clientes, estoque e reembolsos"
+            }
+          }
+        }
+      }
+    }
+  }
+}

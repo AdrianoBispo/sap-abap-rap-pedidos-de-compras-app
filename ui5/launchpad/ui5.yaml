@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+
+# Launchpad local com dados reais: o proxy encaminha /sap para o BTP ABAP
+# (login no navegador na primeira chamada) e cada app vizinha é publicada em
+# /apps/<sap.app.id>, direto do webapp/ dela.
+specVersion: "4.0"
+metadata:
+  name: launchpad
+type: application
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://ui5.sap.com
+        backend:
+          - path: /sap
+            url: https://6449ad14-b137-4a27-8017-6421c2c4f0b0.abap.us10.hana.ondemand.com
+            client: '100'
+            authenticationType: reentranceTicket
+    - name: fiori-tools-servestatic
+      afterMiddleware: compression
+      configuration:
+        paths:
+          - path: /apps/gestaoclientes
+            src: ../gestao-clientes/webapp
+          - path: /apps/gestaoestoque
+            src: ../gestao-estoque/webapp
+          - path: /apps/pedidoscompras
+            src: ../pedidos-compras/webapp
+          - path: /apps/gestaoreembolsos
+            src: ../gestao-reembolsos/webapp
+          - path: /apps/analisecompras
+            src: ../analise-compras/webapp

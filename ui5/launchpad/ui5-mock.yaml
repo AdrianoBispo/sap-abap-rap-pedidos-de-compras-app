@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+
+# Launchpad local sem backend: o mock server responde aos serviços OData V4 das
+# apps com o metadata de webapp/localService/ e dados gerados (Análises usa os
+# dados de demonstração do próprio analise-compras).
+specVersion: "4.0"
+metadata:
+  name: launchpad
+type: application
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://ui5.sap.com
+    - name: fiori-tools-servestatic
+      afterMiddleware: compression
+      configuration:
+        paths:
+          - path: /apps/gestaoclientes
+            src: ../gestao-clientes/webapp
+          - path: /apps/gestaoestoque
+            src: ../gestao-estoque/webapp
+          - path: /apps/pedidoscompras
+            src: ../pedidos-compras/webapp
+          - path: /apps/gestaoreembolsos
+            src: ../gestao-reembolsos/webapp
+          - path: /apps/analisecompras
+            src: ../analise-compras/webapp
+    - name: sap-fe-mockserver
+      beforeMiddleware: csp
+      configuration:
+        mountPath: /
+        services:
+          - urlPath: /sap/opu/odata4/sap/zui_pc_clientes_o4/srvd/sap/zui_pc_clientes/0001
+            metadataPath: ./webapp/localService/clientes/metadata.xml
+            mockdataPath: ./webapp/localService/clientes/data
+            generateMockData: true
+            resolveExternalServiceReferences: true
+          - urlPath: /sap/opu/odata4/sap/zui_pc_estoque_o4/srvd/sap/zui_pc_estoque/0001
+            metadataPath: ./webapp/localService/estoque/metadata.xml
+            mockdataPath: ./webapp/localService/estoque/data
+            generateMockData: true
+            resolveExternalServiceReferences: true
+          - urlPath: /sap/opu/odata4/sap/zui_pc_pedidos_compras_o4/srvd/sap/zui_pc_pedidos_compras/0001
+            metadataPath: ./webapp/localService/pedidos/metadata.xml
+            mockdataPath: ./webapp/localService/pedidos/data
+            generateMockData: true
+            resolveExternalServiceReferences: true
+          - urlPath: /sap/opu/odata4/sap/zui_pc_reembolsos_o4/srvd/sap/zui_pc_reembolsos/0001
+            metadataPath: ./webapp/localService/reembolsos/metadata.xml
+            mockdataPath: ./webapp/localService/reembolsos/data
+            generateMockData: true
+            resolveExternalServiceReferences: true
+          - urlPath: /sap/opu/odata4/sap/zui_pc_analitico_o4/srvd/sap/zui_pc_analitico/0001
+            metadataPath: ./webapp/localService/analitico/metadata.xml
+            mockdataPath: ../analise-compras/webapp/localService/mainService/data
+        annotations: []

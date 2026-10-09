@@ -1,0 +1,12 @@
+{
+  "_version": "2.0.0",
+  "sap.app": {
+    "id": "launchpad",
+    "type": "application",
+    "title": "Pedidos de Compras",
+    "description": "Launchpad local (sandbox do SAP Fiori launchpad) com as apps de Pedidos de Compras",
+    "applicationVersion": {
+      "version": "0.0.1"
+    }
+  }
+}
