@@ -787,6 +787,11 @@ CLASS lhc_pedido IMPLEMENTATION.
         item_uuid  TYPE sysuuid_x16,
         solicitado TYPE i,
       END OF ty_demanda.
+    TYPES:
+      BEGIN OF ty_ref,
+        cliente_uuid TYPE sysuuid_x16,
+        ref          TYPE zr_pc_pedido-ReferenciaImportacao,
+      END OF ty_ref.
 
     CONSTANTS:
       BEGIN OF c_col,
@@ -807,6 +812,7 @@ CLASS lhc_pedido IMPLEMENTATION.
     DATA lt_skus       TYPE STANDARD TABLE OF zr_pc_item-Sku WITH NON-UNIQUE KEY table_line.
     DATA lt_cli_status TYPE SORTED TABLE OF ty_cli_status WITH UNIQUE KEY cpf.
     DATA lt_demanda    TYPE SORTED TABLE OF ty_demanda WITH UNIQUE KEY item_uuid.
+    DATA lt_refs       TYPE STANDARD TABLE OF ty_ref WITH EMPTY KEY.
 
     lt_colunas = VALUE #(
       ( campo = c_col-ref        sinonimos = `REFERENCIA|REFERENCIADOPEDIDO|NUMEROPEDIDO|NUMERO|IDPEDIDO|ID|AGRUPADOR` obrigatoria = abap_true )
@@ -816,7 +822,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       ( campo = c_col-obs        sinonimos = `OBS|OBSERVACOES` ) ).
 
     LOOP AT keys INTO DATA(ls_key).
-      CLEAR: lt_erros, lt_linhas, lt_grupos, lt_cpfs, lt_skus, lt_cli_status, lt_demanda.
+      CLEAR: lt_erros, lt_linhas, lt_grupos, lt_cpfs, lt_skus, lt_cli_status, lt_demanda, lt_refs.
 
       IF zcl_pc_auth=>pedido_pode_criar( ) = abap_false.
         APPEND VALUE #( %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>sem_autorizacao ) ) TO reported-pedido.
@@ -844,6 +850,8 @@ CLASS lhc_pedido IMPLEMENTATION.
         ls_lin-ref = to_upper( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-ref ) ).
         IF ls_lin-ref IS INITIAL.
           APPEND |{ lv_pref }Pedido (referência que agrupa os itens) é obrigatório.| TO lt_erros.
+        ELSEIF strlen( ls_lin-ref ) > 40.
+          APPEND |{ lv_pref }Pedido (referência) excede 40 caracteres.| TO lt_erros.
         ENDIF.
 
         DATA(lv_cpf_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cpf ).
@@ -951,6 +959,28 @@ CLASS lhc_pedido IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
 
+      " A referência (coluna Pedido) é a chave de idempotência da importação:
+      " recusada se o cliente já tem pedido não cancelado com ela, para que
+      " reenviar a mesma planilha não duplique pedidos
+      lt_refs = VALUE #( FOR g IN lt_grupos WHERE ( cliente_uuid IS NOT INITIAL )
+                         ( cliente_uuid = g-cliente_uuid ref = g-ref ) ).
+      IF lt_refs IS NOT INITIAL.
+        SELECT ClienteUUID, ReferenciaImportacao, NumeroPedido
+          FROM zr_pc_pedido
+          FOR ALL ENTRIES IN @lt_refs
+          WHERE ClienteUUID          =  @lt_refs-cliente_uuid
+            AND ReferenciaImportacao =  @lt_refs-ref
+            AND StatusPedido         <> @zif_pc_constants=>c_status_pedido-cancelado
+          INTO TABLE @DATA(lt_ja_importados).
+        LOOP AT lt_grupos INTO DATA(ls_grp_dup) WHERE cliente_uuid IS NOT INITIAL.
+          READ TABLE lt_ja_importados INTO DATA(ls_dup)
+               WITH KEY ClienteUUID = ls_grp_dup-cliente_uuid ReferenciaImportacao = ls_grp_dup-ref.
+          IF sy-subrc = 0.
+            APPEND |Linha { ls_grp_dup-linha }: o pedido { ls_grp_dup-ref } do cliente { zcl_pc_util=>formatar_cpf( ls_grp_dup-cpf ) } já foi importado (pedido { ls_dup-NumeroPedido }).| TO lt_erros.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+
       " O estoque disponível tem de cobrir o total pedido na planilha inteira
       LOOP AT lt_linhas INTO DATA(ls_lin_est) WHERE item_uuid IS NOT INITIAL.
         READ TABLE lt_demanda ASSIGNING <ls_dem> WITH TABLE KEY item_uuid = ls_lin_est-item_uuid.
@@ -980,9 +1010,10 @@ CLASS lhc_pedido IMPLEMENTATION.
       CLEAR: lt_cria_ped, lt_cria_itm.
 
       LOOP AT lt_grupos INTO DATA(ls_grupo).
-        APPEND VALUE #( %cid        = |PED{ ls_grupo-linha }|
-                        ClienteUUID = ls_grupo-cliente_uuid
-                        Observacao  = ls_grupo-obs ) TO lt_cria_ped.
+        APPEND VALUE #( %cid                 = |PED{ ls_grupo-linha }|
+                        ClienteUUID          = ls_grupo-cliente_uuid
+                        Observacao           = ls_grupo-obs
+                        ReferenciaImportacao = ls_grupo-ref ) TO lt_cria_ped.
         APPEND VALUE #( %cid_ref = |PED{ ls_grupo-linha }|
                         %target  = VALUE #( FOR l IN lt_linhas WHERE ( ref = ls_grupo-ref )
                                             ( %cid           = |ITM{ l-linha }|
@@ -994,7 +1025,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
         ENTITY Pedido
-          CREATE FIELDS ( ClienteUUID Observacao )
+          CREATE FIELDS ( ClienteUUID Observacao ReferenciaImportacao )
           WITH lt_cria_ped
           CREATE BY \_Itens FIELDS ( ItemUUID QtdeItemPedido )
           WITH lt_cria_itm

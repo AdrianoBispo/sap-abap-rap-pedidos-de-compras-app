@@ -33,6 +33,9 @@ authorization master ( global )
   field ( readonly ) NumeroPedido, EnderecoUUID, EnderecoPrincipalCompleto, StatusPedido, StatusPagamento,
                      Currency, ValorTotal, DataFinalizacao, MotivoCancelamento, DataCancelamento, CanceladoPor,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
+  /* Referência da planilha (coluna Pedido): gravada só por ImportarPlanilha
+     (EML em local mode) e usada para recusar a reimportação do mesmo pedido */
+  field ( readonly ) ReferenciaImportacao;
   /* Indicadores de status mantidos por AtualizarFlagsStatus: dirigem a
      exibição dinâmica das seções da Object Page (ver ZC_PC_PEDIDO_APP.ddlx) */
   field ( readonly ) PedidoEncerrado, PedidoAtivoSemHistorico, PedidoNaoFinalizado, PedidoNaoCancelado;
@@ -107,6 +110,7 @@ authorization master ( global )
     StatusPedido              = status_pedido;
     StatusPagamento           = status_pagamento;
     Observacao                = observacao;
+    ReferenciaImportacao      = referencia_importacao;
     Currency                  = currency;
     ValorTotal                = valor_total;
     DataFinalizacao           = data_finalizacao;

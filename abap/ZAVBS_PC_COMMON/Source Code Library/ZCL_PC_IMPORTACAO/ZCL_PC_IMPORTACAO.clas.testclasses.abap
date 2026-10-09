@@ -43,6 +43,7 @@ CLASS ltcl_importacao DEFINITION FINAL FOR TESTING
     METHODS pedido_erros_de_linha  FOR TESTING.
     METHODS pedido_cpfs_diferentes FOR TESTING.
     METHODS pedido_sem_estoque     FOR TESTING.
+    METHODS pedido_referencia_longa FOR TESTING.
 ENDCLASS.
 
 
@@ -360,6 +361,170 @@ CLASS ltcl_importacao IMPLEMENTATION.
     importar_clientes( EXPORTING iv_csv = `` IMPORTING ev_falhou = DATA(lv_falhou) ev_texto = DATA(lv_texto) ).
     cl_abap_unit_assert=>assert_true( act = lv_falhou ).
     cl_abap_unit_assert=>assert_true( act = xsdbool( lv_texto CS `Nenhum arquivo` ) msg = lv_texto ).
+  ENDMETHOD.
+
+  METHOD pedido_referencia_longa.
+    dados_base( IMPORTING ev_cpf = DATA(lv_cpf) ev_sku = DATA(lv_sku) ev_existe = DATA(lv_existe) ).
+    IF lv_existe = abap_false.
+      RETURN.
+    ENDIF.
+
+    importar_pedidos(
+      EXPORTING iv_csv = |Pedido;CPF;SKU;Quantidade\n| &&
+                         |{ repeat( val = `R` occ = 41 ) };{ lv_cpf };{ lv_sku };1\n|
+      IMPORTING ev_falhou = DATA(lv_falhou)
+                ev_texto  = DATA(lv_texto) ).
+    cl_abap_unit_assert=>assert_true( act = lv_falhou ).
+    cl_abap_unit_assert=>assert_true( act = xsdbool( lv_texto CS `Linha 2: Pedido (referência) excede 40 caracteres` ) msg = lv_texto ).
+  ENDMETHOD.
+
+ENDCLASS.
+
+
+"! Reimportação de pedidos: a referência da planilha (coluna Pedido) é a chave
+"! de idempotência. ZR_PC_PEDIDO é dublado (OSQL test environment) com um
+"! pedido já importado, sem gravar nada no banco.
+CLASS ltcl_importacao_referencia DEFINITION FINAL FOR TESTING
+  DURATION SHORT
+  RISK LEVEL HARMLESS.
+
+  PRIVATE SECTION.
+    CLASS-DATA go_sql TYPE REF TO if_osql_test_environment.
+    CLASS-METHODS class_setup.
+    CLASS-METHODS class_teardown.
+    METHODS setup.
+
+    "! Grava no dublê um pedido com a referência DUP-AUNIT e devolve um cliente e
+    "! um item válidos para a planilha (ev_existe = false sem dados no sistema).
+    METHODS preparar
+      IMPORTING iv_status        TYPE zr_pc_pedido-StatusPedido
+                iv_outro_cliente TYPE abap_boolean DEFAULT abap_false
+      EXPORTING ev_cpf           TYPE string
+                ev_sku           TYPE string
+                ev_existe        TYPE abap_boolean.
+    METHODS importar
+      IMPORTING iv_cpf    TYPE string
+                iv_sku    TYPE string
+      EXPORTING ev_falhou TYPE abap_boolean
+                ev_texto  TYPE string.
+
+    METHODS reimportacao_recusada   FOR TESTING.
+    METHODS ref_de_outro_cliente    FOR TESTING.
+    METHODS ref_de_pedido_cancelado FOR TESTING.
+ENDCLASS.
+
+
+CLASS ltcl_importacao_referencia IMPLEMENTATION.
+
+  METHOD class_setup.
+    go_sql = cl_osql_test_environment=>create( i_dependency_list = VALUE #( ( 'ZR_PC_PEDIDO' ) ) ).
+  ENDMETHOD.
+
+  METHOD class_teardown.
+    go_sql->destroy( ).
+  ENDMETHOD.
+
+  METHOD setup.
+    go_sql->clear_doubles( ).
+  ENDMETHOD.
+
+  METHOD preparar.
+    DATA lt_pedidos TYPE STANDARD TABLE OF zr_pc_pedido WITH EMPTY KEY.
+
+    CLEAR: ev_cpf, ev_sku, ev_existe.
+    SELECT SINGLE c~cliente_uuid, c~cpf
+      FROM zta_pc_cliente AS c
+      INNER JOIN zta_pc_endereco AS e ON e~cliente_uuid = c~cliente_uuid
+      WHERE c~cliente_ativo = @abap_true
+        AND e~endereco_principal = @abap_true
+      INTO @DATA(ls_cli).
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+    SELECT SINGLE sku FROM zta_pc_item
+      WHERE item_ativo = @abap_true AND qtde_disponivel > 1
+      INTO @DATA(lv_sku).
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        lt_pedidos = VALUE #( ( PedidoUUID           = cl_system_uuid=>create_uuid_x16_static( )
+                                NumeroPedido         = '0000009999'
+                                ClienteUUID          = COND #( WHEN iv_outro_cliente = abap_true
+                                                               THEN cl_system_uuid=>create_uuid_x16_static( )
+                                                               ELSE ls_cli-cliente_uuid )
+                                StatusPedido         = iv_status
+                                ReferenciaImportacao = 'DUP-AUNIT' ) ).
+      CATCH cx_uuid_error INTO DATA(lx_uuid).
+        cl_abap_unit_assert=>fail( msg = lx_uuid->get_text( ) ).
+    ENDTRY.
+    go_sql->insert_test_data( lt_pedidos ).
+
+    ev_cpf    = ls_cli-cpf.
+    ev_sku    = lv_sku.
+    ev_existe = abap_true.
+  ENDMETHOD.
+
+  METHOD importar.
+    DATA(lv_csv) = |Pedido;CPF;SKU;Quantidade\n| &&
+                   |dup-aunit;{ iv_cpf };{ iv_sku };1\n|.
+    MODIFY ENTITIES OF zr_pc_pedido
+      ENTITY Pedido
+        EXECUTE ImportarPlanilha
+        FROM VALUE #( ( %cid   = 'IMP1'
+                        %param = VALUE #( _streamproperties = VALUE #(
+                                   streamproperty = cl_abap_conv_codepage=>create_out( )->convert( lv_csv ) ) ) ) )
+      FAILED   DATA(ls_failed)
+      REPORTED DATA(ls_reported).
+
+    ev_falhou = xsdbool( ls_failed-pedido IS NOT INITIAL ).
+    CLEAR ev_texto.
+    LOOP AT ls_reported-pedido INTO DATA(ls_rep) WHERE %msg IS BOUND.
+      ev_texto = |{ ev_texto } / { ls_rep-%msg->if_message~get_text( ) }|.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD reimportacao_recusada.
+    preparar( EXPORTING iv_status = zif_pc_constants=>c_status_pedido-aberto
+              IMPORTING ev_cpf = DATA(lv_cpf) ev_sku = DATA(lv_sku) ev_existe = DATA(lv_existe) ).
+    IF lv_existe = abap_false.
+      RETURN.
+    ENDIF.
+
+    " A referência é comparada em maiúsculas: dup-aunit = DUP-AUNIT
+    importar( EXPORTING iv_cpf = lv_cpf iv_sku = lv_sku
+              IMPORTING ev_falhou = DATA(lv_falhou) ev_texto = DATA(lv_texto) ).
+    cl_abap_unit_assert=>assert_true( act = lv_falhou msg = lv_texto ).
+    cl_abap_unit_assert=>assert_true(
+      act = xsdbool( lv_texto CS `o pedido DUP-AUNIT do cliente` AND lv_texto CS `já foi importado (pedido 0000009999)` )
+      msg = lv_texto ).
+  ENDMETHOD.
+
+  METHOD ref_de_outro_cliente.
+    preparar( EXPORTING iv_status = zif_pc_constants=>c_status_pedido-aberto iv_outro_cliente = abap_true
+              IMPORTING ev_cpf = DATA(lv_cpf) ev_sku = DATA(lv_sku) ev_existe = DATA(lv_existe) ).
+    IF lv_existe = abap_false.
+      RETURN.
+    ENDIF.
+
+    importar( EXPORTING iv_cpf = lv_cpf iv_sku = lv_sku
+              IMPORTING ev_falhou = DATA(lv_falhou) ev_texto = DATA(lv_texto) ).
+    cl_abap_unit_assert=>assert_false( act = lv_falhou msg = |Outro cliente pode usar a referência: { lv_texto }| ).
+    cl_abap_unit_assert=>assert_true( act = xsdbool( lv_texto CS `1 pedido(s) criado(s)` ) msg = lv_texto ).
+  ENDMETHOD.
+
+  METHOD ref_de_pedido_cancelado.
+    preparar( EXPORTING iv_status = zif_pc_constants=>c_status_pedido-cancelado
+              IMPORTING ev_cpf = DATA(lv_cpf) ev_sku = DATA(lv_sku) ev_existe = DATA(lv_existe) ).
+    IF lv_existe = abap_false.
+      RETURN.
+    ENDIF.
+
+    importar( EXPORTING iv_cpf = lv_cpf iv_sku = lv_sku
+              IMPORTING ev_falhou = DATA(lv_falhou) ev_texto = DATA(lv_texto) ).
+    cl_abap_unit_assert=>assert_false( act = lv_falhou msg = |Pedido cancelado libera a referência: { lv_texto }| ).
+    cl_abap_unit_assert=>assert_true( act = xsdbool( lv_texto CS `1 pedido(s) criado(s)` ) msg = lv_texto ).
   ENDMETHOD.
 
 ENDCLASS.

@@ -14,6 +14,7 @@ define table zta_pc_pedido_d {
   statuspedido              : abap.char(40);
   statuspagamento           : abap.char(30);
   observacao                : abap.char(500);
+  referenciaimportacao      : abap.char(40);
   currency                  : abap.cuky;
   @Semantics.amount.currencyCode : 'zta_pc_pedido_d.currency'
   valortotal                : abap.curr(15,2);

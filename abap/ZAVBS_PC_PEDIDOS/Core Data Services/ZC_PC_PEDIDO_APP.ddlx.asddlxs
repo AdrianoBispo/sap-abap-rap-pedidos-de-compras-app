@@ -149,6 +149,10 @@ annotate entity ZC_PC_PEDIDO_APP with
   @EndUserText.label: 'Observação'
   Observacao;
 
+  @UI: { identification: [{ position: 65, label: 'Referência de importação' }] }
+  @EndUserText.label: 'Referência de importação'
+  ReferenciaImportacao;
+
   @UI.hidden: true
   Currency;
 

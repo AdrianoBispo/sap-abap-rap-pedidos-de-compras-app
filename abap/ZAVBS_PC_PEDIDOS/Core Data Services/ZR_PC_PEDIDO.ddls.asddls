@@ -33,6 +33,9 @@ define root view entity ZR_PC_PEDIDO
       pedido_nao_finalizado as PedidoNaoFinalizado,
       pedido_nao_cancelado  as PedidoNaoCancelado,
       observacao            as Observacao,
+      /* Referência do pedido na planilha importada (coluna Pedido): gravada só
+         pela importação; impede reimportar o mesmo pedido para o mesmo cliente */
+      referencia_importacao as ReferenciaImportacao,
       currency              as Currency,
       @Semantics.amount.currencyCode: 'Currency'
       valor_total           as ValorTotal,

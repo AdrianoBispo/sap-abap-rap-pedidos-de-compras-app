@@ -600,6 +600,12 @@ ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
 - **Pedidos**: nasce `ABERTO`, com o endereço principal do cliente e o estoque reservado. Todas as
   linhas de um pedido precisam ter o mesmo CPF; o cliente deve estar ativo e ter endereço
   principal; o estoque disponível tem de cobrir a soma pedida em **toda** a planilha.
+- **Pedidos sem duplicidade**: a coluna **Pedido** é gravada no pedido como *Referência de
+  importação* (`ReferenciaImportacao`, somente leitura, até 40 caracteres) e funciona como chave de
+  idempotência. A mesma referência para o mesmo cliente é recusada enquanto houver pedido não
+  cancelado com ela (`Linha 2: o pedido P001 do cliente 100.003.571-97 já foi importado (pedido
+  0000000101).`), então reenviar a mesma planilha não cria pedidos repetidos. Outro cliente pode
+  usar a mesma referência, e um pedido cancelado a libera.
 - Permissões: Clientes e Estoque exigem a atividade de criação de `ZPC_ADMIN`; Pedidos, a de
   criação de `ZPC_PEDIDO` (no Trial, `ZIF_PC_CONSTANTS=>C_MODO_TRIAL` libera tudo).
 
@@ -611,7 +617,9 @@ ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
 - `ZCL_PC_PLANILHA` lê XLSX (XCO) e CSV; `ZCL_PC_IMPORTACAO` reúne a normalização de CPF/CEP, a
   conversão de CodeList e o resumo de erros. As mensagens longas usam `ZCX_PC_MSG=>TEXTO`
   (mensagem 049, `&1&2&3&4`), porque cada variável de mensagem T100 comporta só 50 caracteres.
-- Testes: `ZCL_PC_PLANILHA` (leitor) e `ZCL_PC_IMPORTACAO` (as três actions via EML).
+- Testes: `ZCL_PC_PLANILHA` (leitor) e `ZCL_PC_IMPORTACAO` (as três actions via EML). A classe
+  `ltcl_importacao_referencia` dubla `ZR_PC_PEDIDO` com o OSQL test environment para testar a
+  reimportação (recusada, outro cliente, pedido cancelado) sem gravar no banco.
 
 **Limitações**
 
@@ -716,6 +724,7 @@ análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrut
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.4   | Importação de pedidos sem duplicidade: a coluna Pedido vira `ReferenciaImportacao` (tabelas `ZTA_PC_PEDIDO`/`_D`, `ZR_PC_PEDIDO`, BDEF, projeção e MDE) e a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela; Pedido do reembolso abre direto a Object Page do pedido (`#WITH_INTENT_BASED_NAVIGATION`); testes em `ZCL_PC_IMPORTACAO` |
 | v2.3   | Navegação entre apps ampliada: CPF do cliente e nome do item como links no pedido e nos snapshots; no reembolso, links do Pedido (`ZPCPedidoCompra`) e do Cliente/CPF (`ZPCCliente`), com o CPF do cliente como novo campo; `CpfCliente` mapeado para `Cpf` (`@Consumption.semanticObjectMapping`) no backend |
 | v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas e app freestyle com as 20 análises); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |
 | v2.1   | Reembolso como BO e app próprios (Gestão de Reembolsos, `ZUI_PC_REEMBOLSOS`); remoção da ação Confirmar pedido (o Save registra o pedido e reserva o estoque; `Activate` não otimizado + `ReservarEstoqueRegistro`/`ValidarRegistro`); SKU gerado no Save com o prefixo da categoria; especificação v2.1 |

@@ -72,6 +72,7 @@ define root view entity ZC_PC_PEDIDO_APP
       _StatusPagamentoTxt.Criticality as StatusPagamentoCriticality,
 
       Observacao,
+      ReferenciaImportacao,
       Currency,
       ValorTotal,
       DataFinalizacao,
