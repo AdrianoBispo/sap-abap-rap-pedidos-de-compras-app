@@ -5,7 +5,8 @@ Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)**
 serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
 Além delas, `analise-compras/` é um app freestyle com todas as análises (veja
-[App de análises](#app-de-análises-freestyle)).
+[App de análises](#app-de-análises-freestyle)) e `launchpad/` é um launchpad local que reúne as
+cinco apps (veja [Launchpad local](#launchpad-local)).
 
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
 Extensions (`*.ddlx.cds`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
@@ -145,6 +146,46 @@ Em `analise-compras`, a suíte QUnit abre com `npm run unit-test`.
 
 O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
 `authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP.
+
+## Launchpad local
+
+`launchpad/` é um projeto UI5 só para desenvolvimento (não tem build nem deploy) que simula o SAP
+Fiori launchpad com o sandbox do `sap.ushell`. A página inicial tem os grupos **Gestão** (Clientes,
+Estoque, Pedidos e Reembolsos) e **Análises**, e cada tile abre a app vizinha pelo mesmo intent do
+inbound do manifest dela, o que habilita a navegação entre apps (pedido → cliente / item, *Abrir
+gestão* nas análises).
+
+```bash
+cd ui5/launchpad
+npm install
+npm start          # dados reais: proxy /sap → BTP ABAP (login no navegador na primeira chamada)
+npm run start-mock # sem backend: mock server com o metadata de webapp/localService/
+```
+
+```
+launchpad/
+├── ui5.yaml              proxy /sap → BTP + publicação das apps vizinhas em /apps/<sap.app.id>
+├── ui5-mock.yaml         igual, com o mock server no lugar do backend
+└── webapp/
+    ├── index.html        bootstrap do sandbox (sap.ushell) e do SAPUI5
+    ├── appconfig/fioriSandboxConfig.json   grupos, tiles e targets (intent → /apps/<id>)
+    ├── launchpad/init.js cria o shell (renderer fiori2)
+    └── localService/     metadata dos cinco serviços, para o start-mock
+```
+
+- As apps são servidas direto do `webapp/` de cada projeto (`fiori-tools-servestatic`): alterações
+  nelas aparecem no launchpad sem build. Cada app continua precisando do próprio `npm install` só
+  para os comandos dela; o launchpad usa apenas o código-fonte.
+- Os tiles e targets ficam em `appconfig/fioriSandboxConfig.json` e não em
+  `window["sap-ushell-config"]`: o sandbox carrega a própria configuração padrão (com o grupo
+  *Sample Applications*) por cima do objeto da página, e só o `appconfig` é aplicado depois dela.
+- No `start-mock`, os dados de Clientes, Estoque, Pedidos e Reembolsos são gerados pelo mock server
+  (valores como `Nome_1`); as Análises usam os dados de demonstração de
+  `analise-compras/webapp/localService/`. Para atualizar o metadata depois de mudar um serviço,
+  baixe `…/0001/$metadata` pelo `npm start` e substitua o arquivo em `webapp/localService/<serviço>/`.
+- Para incluir uma app: um tile em `groups`, um target em `NavTargetResolution.applications` (chave
+  = intent do inbound, `url` = `/apps/<sap.app.id>`) e o caminho em `fiori-tools-servestatic` nos
+  dois `ui5*.yaml`.
 
 ## Validar
 

@@ -2,7 +2,8 @@
 
 <p align="center">
   Quatro aplicações SAP Fiori Elements desacopladas — <b>Gestão de Clientes</b>, <b>Gestão de Estoque</b>,
-  <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — com backend RAP em ABAP Cloud no SAP BTP ABAP Environment.
+  <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — e o painel <b>Análises de Compras</b>, com backend RAP
+  em ABAP Cloud no SAP BTP ABAP Environment, reunidos num launchpad local.
 </p>
 
 <p align="center">
@@ -39,6 +40,7 @@
   - [Objetos criados manualmente](#objetos-criados-manualmente)
   - [Ordem de criação e ativação](#ordem-de-criação-e-ativação)
 - [Front-end Fiori](#front-end-fiori)
+  - [Launchpad local](#launchpad-local)
 - [Testes](#testes)
   - [Cenários de teste](#cenários-de-teste)
   - [Testes automatizados](#testes-automatizados)
@@ -77,23 +79,24 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 
 ## Demonstração
 
-<!--
-  ESPAÇO PARA O PRINT OU GIF DAS APLICAÇÕES
-
-  Opção 1: salve os arquivos em docs/assets/ com os nomes usados abaixo
-           (demo.gif, clientes.png, estoque.png, pedidos.png) ou ajuste os src.
-  Opção 2: edite este README no GitHub, arraste a imagem para o editor e substitua o src
-           pelo link https://github.com/user-attachments/... gerado.
-  Se não for usar as imagens por app, apague a tabela abaixo do GIF.
--->
+Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`) com os dados reais do
+sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Aplicações de Pedidos de Compras em execução no launchpad" width="900">
+  <img src="docs/assets/launchpad.png" alt="Launchpad local com os cinco tiles" width="900">
 </p>
 
-| Gestão de Clientes | Gestão de Estoque | Pedidos de Compras |
-| :----------------: | :---------------: | :----------------: |
-| <img src="docs/assets/clientes.png" alt="App Gestão de Clientes" width="280"> | <img src="docs/assets/estoque.png" alt="App Gestão de Estoque" width="280"> | <img src="docs/assets/pedidos.png" alt="App Pedidos de Compras" width="280"> |
+| Pedidos de Compras | Object Page do pedido |
+| :----------------: | :-------------------: |
+| <img src="docs/assets/pedidos.png" alt="Lista de pedidos" width="440"> | <img src="docs/assets/pedido-object-page.png" alt="Object Page de um pedido finalizado" width="440"> |
+
+| Gestão de Clientes | Gestão de Estoque |
+| :----------------: | :---------------: |
+| <img src="docs/assets/clientes.png" alt="Lista de clientes" width="440"> | <img src="docs/assets/estoque.png" alt="Lista de itens de estoque" width="440"> |
+
+| Gestão de Reembolsos | Análises de Compras |
+| :------------------: | :-----------------: |
+| <img src="docs/assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="docs/assets/analises.png" alt="Painel de análises de pedidos" width="440"> |
 
 ---
 
@@ -142,6 +145,8 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
   Clientes) e Item e SKU abrem o item (Gestão de Estoque), inclusive nos snapshots de pedidos
   encerrados; no reembolso, o Pedido abre o pedido (Pedidos de Compras) e Cliente e CPF abrem o cliente.
 - **Concorrência** tratada: item em edição no Estoque impede o registro do pedido.
+- **Launchpad local** (sandbox do SAP Fiori launchpad, `ui5/launchpad`) com os cinco tiles e a
+  navegação entre as apps, com dados reais do BTP ou com o mock server.
 
 ---
 
@@ -164,10 +169,12 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 ```mermaid
 flowchart LR
     subgraph UI["Front-end — SAP Fiori Elements (OData V4)"]
+        FLP["Launchpad local"]
         APPC["Gestão de Clientes"]
         APPE["Gestão de Estoque"]
         APPP["Pedidos de Compras"]
         APPR["Gestão de Reembolsos"]
+        APPA["Análises de Compras"]
     end
 
     subgraph BTP["SAP BTP ABAP Environment — RAP"]
@@ -175,13 +182,16 @@ flowchart LR
         SE["ZUI_PC_ESTOQUE_O4"] --> BOI["BO Item"]
         SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · snapshots"]
         SR["ZUI_PC_REEMBOLSOS_O4"] --> BOR["BO Reembolso"]
+        SA["ZUI_PC_ANALITICO_O4"] --> CUB["Cubos e consultas<br/>analíticas"]
         COMMON["ZAVBS_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists"]
     end
 
+    FLP --> APPC & APPE & APPP & APPR & APPA
     APPC --> SC
     APPE --> SE
     APPP --> SP
     APPR --> SR
+    APPA --> SA
     APPP -. semantic object .-> APPC
     APPP -. semantic object .-> APPE
     BOP -- reserva de estoque --> BOI
@@ -241,11 +251,11 @@ stateDiagram-v2
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
 │   ├── analise-compras/                app freestyle (SAPUI5) com as 20 análises, filtros e KPIs
-│   ├── loja-ecommerce/                 app freestyle (SAPUI5): loja virtual com os produtos do estoque
+│   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as cinco apps
 │   └── README.md                       guia do front-end
 │
 ├── docs/
-│   ├── assets/                         prints e GIFs usados neste README
+│   ├── assets/                         capturas de tela usadas neste README
 │   └── Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx
 │
 └── README.md
@@ -388,6 +398,25 @@ no Cloud Foundry (HTML5 repo) foi testada e descartada: o ABAP trial não aceita
 Work Zone recebe do IAS. Detalhes em [`ui5/README.md`](ui5/README.md#acesso-pelo-sap-build-work-zone-standard-edition).
 Em um sistema com os apps de administração, o caminho padrão continua sendo: `ZPC_*_UI5R` nos
 Business Catalogs `ZPC_BC_*` → Business Roles → *Manage Launchpad Spaces*.
+
+### Launchpad local
+
+`ui5/launchpad` simula o SAP Fiori launchpad: um sandbox (`sap.ushell`) com os cinco tiles, que abre
+as apps vizinhas direto do `webapp/` de cada uma, sem build nem deploy. Os intents dos tiles são os
+mesmos dos inbounds dos manifests (`ZPCCliente-manage`, `ZPCItemEstoque-manage`,
+`ZPCPedidoCompra-manage`, `ZPCReembolso-manage`, `ZPCAnalise-display`), então a navegação entre apps
+funciona como no launchpad do sistema: o cliente e o item do pedido abrem as apps de Clientes e
+Estoque, e o botão *Abrir gestão* das análises abre a app do domínio.
+
+```bash
+cd ui5/launchpad
+npm install
+npm start                   # dados reais do BTP ABAP; login no navegador na primeira chamada
+npm run start-mock          # sem backend: mock server com o metadata atual e dados gerados
+```
+
+As capturas de tela da [Demonstração](#demonstração) foram feitas nele. Detalhes em
+[`ui5/README.md`](ui5/README.md#launchpad-local).
 
 **Validação:** as apps Clientes, Estoque e Pedidos passam no `ui5 build`, no ESLint e no UI5 linter (sem achados), e foram
 testadas contra o backend real pelo proxy do Fiori tools.
@@ -675,7 +704,8 @@ análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrut
 - O *preview* do Service Binding continua útil para testar o backend isoladamente, mas não tem
   launchpad nem navegação entre apps.
 - No trial, o deploy das apps funciona, mas os tiles só aparecem para quem tiver as roles. Use o
-  launchpad local de cada app (`npm start` em `ui5/<app>`) para o teste completo.
+  [launchpad local](#launchpad-local) (`npm start` em `ui5/launchpad`) para o teste completo, com a
+  navegação entre as apps.
 - Os dados do cartão aparecem no diálogo da action (parâmetros da action não possuem máscara em
   Fiori Elements). Eles **não** são persistidos nem logados; apenas bandeira, últimos 4 dígitos e
   máscara são gravados.
