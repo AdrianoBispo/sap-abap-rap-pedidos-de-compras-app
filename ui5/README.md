@@ -5,8 +5,7 @@ Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)**
 serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
 Além delas, `analise-compras/` é um app freestyle com todas as análises (veja
-[App de análises](#app-de-análises-freestyle)) e `loja-ecommerce/` é a loja virtual freestyle com os
-produtos do estoque (veja o [README dela](loja-ecommerce/README.md)).
+[App de análises](#app-de-análises-freestyle)).
 
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
 Extensions (`*.ddlx.cds`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
@@ -142,7 +141,7 @@ npm start          # launchpad local (sandbox) com dados reais
 npm run start-mock # dados de mock, sem backend
 ```
 
-Em `analise-compras` e `loja-ecommerce`, a suíte QUnit abre com `npm run unit-test`.
+Em `analise-compras`, a suíte QUnit abre com `npm run unit-test`.
 
 O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
 `authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP.
@@ -174,7 +173,6 @@ Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 | Pedidos de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` |
 | Gestão de Reembolsos | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` |
 | Análises de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_analise/index.html` |
-| Loja Virtual | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_loja/index.html` |
 
 ### Acesso pelo SAP Build Work Zone, standard edition
 
