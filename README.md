@@ -2,8 +2,9 @@
 
 <p align="center">
   Quatro aplicações SAP Fiori Elements desacopladas — <b>Gestão de Clientes</b>, <b>Gestão de Estoque</b>,
-  <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — e o painel <b>Análises de Compras</b>, com backend RAP
-  em ABAP Cloud no SAP BTP ABAP Environment, reunidos num launchpad local.
+  <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — e quatro apps de análise (<b>Pedidos de Compras</b>,
+  <b>Clientes</b>, <b>Itens do Estoque</b> e <b>Pedidos de Reembolsos</b>), com backend RAP em ABAP Cloud no
+  SAP BTP ABAP Environment, reunidos num launchpad local.
 </p>
 
 <p align="center">
@@ -59,8 +60,9 @@
 
 ## Sobre o projeto
 
-Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP BTP ABAP Environment
-(Trial)**: backend **RAP** em [`abap/`](abap/) e front-end **SAP Fiori Elements** em [`ui5/`](ui5/).
+Código-fonte de quatro aplicações **Fiori Elements (OData V4)** e quatro apps de análise **SAPUI5
+freestyle** para o **SAP BTP ABAP Environment (Trial)**: backend **RAP** em [`abap/`](abap/) e
+front-end em [`ui5/`](ui5/).
 
 | App                | O que gerencia                                                      |
 | ------------------ | -------------------------------------------------------------------- |
@@ -68,6 +70,10 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 | Gestão de Estoque  | Itens (SKU, foto, categoria, descrição) e quantidade disponível      |
 | Pedidos de Compras | Pedidos, itens, pagamento simulado, cancelamento e histórico (snapshots) |
 | Gestão de Reembolsos | Aprovação e rejeição das solicitações de reembolso de pedidos cancelados com pagamento aprovado |
+| Análise de Pedidos de Compras | Valores, quantidades, ticket médio, status e pagamentos dos pedidos (somente leitura) |
+| Análise de Clientes | Clientes por gênero, UF, faixa de score e mês de cadastro (somente leitura) |
+| Análise de Itens do Estoque | Itens, quantidades reservada e disponível e valor em estoque por categoria (somente leitura) |
+| Análise de Pedidos de Reembolsos | Valores e quantidades das solicitações de reembolso por status, mês, UF e motivo (somente leitura) |
 
 > [!NOTE]
 > Os fontes foram escritos para ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com
@@ -79,11 +85,12 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** para o **SAP 
 
 ## Demonstração
 
-Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`) com os dados reais do
-sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
+Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`). As apps de gestão usam os
+dados reais do sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`); as de análise, os dados
+de demonstração do `npm run start-mock`.
 
 <p align="center">
-  <img src="docs/assets/launchpad.png" alt="Launchpad local com os cinco tiles" width="900">
+  <img src="docs/assets/launchpad.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
 </p>
 
 | Pedidos de Compras | Object Page do pedido |
@@ -94,9 +101,13 @@ sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
 | :----------------: | :---------------: |
 | <img src="docs/assets/clientes.png" alt="Lista de clientes" width="440"> | <img src="docs/assets/estoque.png" alt="Lista de itens de estoque" width="440"> |
 
-| Gestão de Reembolsos | Análises de Compras |
-| :------------------: | :-----------------: |
-| <img src="docs/assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="docs/assets/analises.png" alt="Painel de análises de pedidos" width="440"> |
+| Gestão de Reembolsos | Análise de Itens do Estoque |
+| :------------------: | :-------------------------: |
+| <img src="docs/assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="docs/assets/analise-estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> |
+
+| Análise de Pedidos de Reembolsos | Detalhe de uma análise |
+| :------------------------------: | :--------------------: |
+| <img src="docs/assets/analise-reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> | <img src="docs/assets/analise-detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="440"> |
 
 ---
 
@@ -145,7 +156,10 @@ sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
   Clientes) e Item e SKU abrem o item (Gestão de Estoque), inclusive nos snapshots de pedidos
   encerrados; no reembolso, o Pedido abre o pedido (Pedidos de Compras) e Cliente e CPF abrem o cliente.
 - **Concorrência** tratada: item em edição no Estoque impede o registro do pedido.
-- **Launchpad local** (sandbox do SAP Fiori launchpad, `ui5/launchpad`) com os cinco tiles e a
+- **Análises** em quatro apps freestyle, um por domínio (Pedidos de Compras, Clientes, Itens do
+  Estoque e Pedidos de Reembolsos): filtros, indicadores, 5 gráficos cada e página de detalhe com
+  tabela; o botão *Abrir gestão* leva ao app de gestão do domínio.
+- **Launchpad local** (sandbox do SAP Fiori launchpad, `ui5/launchpad`) com os oito tiles e a
   navegação entre as apps, com dados reais do BTP ou com o mock server.
 
 ---
@@ -156,11 +170,11 @@ sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
 | --------------- | ---------------------------------------------------------------------------------- |
 | Plataforma      | SAP BTP ABAP Environment (Trial, software component `ZLOCAL`)                      |
 | Backend         | ABAP Cloud (`strict ( 2 )`), RAP Managed com Draft, CDS View Entities, EML         |
-| Serviços        | OData V4: `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`, `ZUI_PC_PEDIDOS_COMPRAS_O4`   |
+| Serviços        | OData V4: `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`, `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4`, `ZUI_PC_ANALITICO_O4` |
 | Integração      | `cl_http_destination_provider` → API ViaCEP                                        |
-| Front-end       | SAP Fiori Elements V4 (List Report + Object Page), gerado com SAP Fiori tools, descriptor v2 |
+| Front-end       | SAP Fiori Elements V4 (List Report + Object Page), gerado com SAP Fiori tools, descriptor v2; apps de análise SAPUI5 freestyle (`sap.viz`, `$apply`) |
 | Ferramentas     | ADT (Eclipse), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint                      |
-| Testes          | ABAP Unit, OPA5 (testes de integração gerados pelo Fiori tools)                   |
+| Testes          | ABAP Unit, OPA5 (testes de integração gerados pelo Fiori tools), QUnit (apps de análise) |
 
 ---
 
@@ -168,13 +182,18 @@ sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`).
 
 ```mermaid
 flowchart LR
-    subgraph UI["Front-end — SAP Fiori Elements (OData V4)"]
+    subgraph UI["Front-end — SAP Fiori (OData V4)"]
         FLP["Launchpad local"]
         APPC["Gestão de Clientes"]
         APPE["Gestão de Estoque"]
         APPP["Pedidos de Compras"]
         APPR["Gestão de Reembolsos"]
-        APPA["Análises de Compras"]
+        subgraph ANL["Análises (SAPUI5 freestyle)"]
+            APAP["Pedidos de Compras"]
+            APAC["Clientes"]
+            APAE["Itens do Estoque"]
+            APAR["Pedidos de Reembolsos"]
+        end
     end
 
     subgraph BTP["SAP BTP ABAP Environment — RAP"]
@@ -186,12 +205,12 @@ flowchart LR
         COMMON["ZAVBS_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists"]
     end
 
-    FLP --> APPC & APPE & APPP & APPR & APPA
+    FLP --> APPC & APPE & APPP & APPR & ANL
     APPC --> SC
     APPE --> SE
     APPP --> SP
     APPR --> SR
-    APPA --> SA
+    ANL --> SA
     APPP -. semantic object .-> APPC
     APPP -. semantic object .-> APPE
     BOP -- reserva de estoque --> BOI
@@ -250,8 +269,11 @@ stateDiagram-v2
 │   ├── gestao-estoque/                 app Gestão de Estoque (projeto isolado)
 │   ├── pedidos-compras/                app Pedidos de Compras (projeto isolado)
 │   ├── gestao-reembolsos/              app Gestão de Reembolsos (projeto isolado)
-│   ├── analise-compras/                app freestyle (SAPUI5) com as 20 análises, filtros e KPIs
-│   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as cinco apps
+│   ├── analise-pedidos/                app freestyle (SAPUI5) Análise de Pedidos de Compras
+│   ├── analise-clientes/               app freestyle (SAPUI5) Análise de Clientes
+│   ├── analise-estoque/                app freestyle (SAPUI5) Análise de Itens do Estoque
+│   ├── analise-reembolsos/             app freestyle (SAPUI5) Análise de Pedidos de Reembolsos
+│   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as oito apps
 │   └── README.md                       guia do front-end
 │
 ├── docs/
@@ -381,8 +403,18 @@ Quatro apps **Fiori Elements OData V4** (List Report + Object Page), uma por ser
 | Pedidos de Compras | `ui5/pedidos-compras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | Pedido → Item / Pagamento             | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS`  |
 | Gestão de Reembolsos | `ui5/gestao-reembolsos` | `ZUI_PC_REEMBOLSOS_O4`    | Reembolso                             | `ZPCReembolso-manage`    | `ZPC_REEMBOLSOS` |
 
+Além delas, quatro apps **SAPUI5 freestyle** de análise, todos sobre o serviço `ZUI_PC_ANALITICO_O4`
+(um entity set por app; detalhes em [Análises](#análises)):
+
+| App | Pasta | Entity set | Tile (semantic object) | BSP |
+| --- | --- | --- | --- | --- |
+| Análise de Pedidos de Compras | `ui5/analise-pedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` |
+| Análise de Clientes | `ui5/analise-clientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` |
+| Análise de Itens do Estoque | `ui5/analise-estoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` |
+| Análise de Pedidos de Reembolsos | `ui5/analise-reembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` |
+
 ```bash
-cd ui5/pedidos-compras      # ou ui5/gestao-clientes, ui5/gestao-estoque, ui5/gestao-reembolsos
+cd ui5/pedidos-compras      # ou ui5/gestao-*, ui5/analise-*
 npm install
 npm start                   # launchpad local (sandbox) com dados reais; login BTP no navegador
 npm run start-mock          # dados de mock (sem backend)
@@ -391,9 +423,10 @@ npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* corr
 ```
 
 **Depois do deploy:** cada app abre direto no ABAP em
-`https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_<clientes|estoque|pedidos|reembolsos>/index.html`.
+`https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/<bsp em minúsculas>/index.html`
+(ex.: `zpc_clientes`, `zpc_anl_estoque`).
 No trial, sem acesso a *Maintain Business Roles* / *Manage Launchpad Spaces*, o ponto de entrada é
-o **SAP Build Work Zone, standard edition**, com tiles do tipo URL para essas quatro apps. A publicação
+o **SAP Build Work Zone, standard edition**, com tiles do tipo URL para essas oito apps. A publicação
 no Cloud Foundry (HTML5 repo) foi testada e descartada: o ABAP trial não aceita o usuário que o
 Work Zone recebe do IAS. Detalhes em [`ui5/README.md`](ui5/README.md#acesso-pelo-sap-build-work-zone-standard-edition).
 Em um sistema com os apps de administração, o caminho padrão continua sendo: `ZPC_*_UI5R` nos
@@ -401,12 +434,13 @@ Business Catalogs `ZPC_BC_*` → Business Roles → *Manage Launchpad Spaces*.
 
 ### Launchpad local
 
-`ui5/launchpad` simula o SAP Fiori launchpad: um sandbox (`sap.ushell`) com os cinco tiles, que abre
-as apps vizinhas direto do `webapp/` de cada uma, sem build nem deploy. Os intents dos tiles são os
-mesmos dos inbounds dos manifests (`ZPCCliente-manage`, `ZPCItemEstoque-manage`,
-`ZPCPedidoCompra-manage`, `ZPCReembolso-manage`, `ZPCAnalise-display`), então a navegação entre apps
-funciona como no launchpad do sistema: o cliente e o item do pedido abrem as apps de Clientes e
-Estoque, e o botão *Abrir gestão* das análises abre a app do domínio.
+`ui5/launchpad` simula o SAP Fiori launchpad: um sandbox (`sap.ushell`) com os oito tiles (grupos
+**Gestão** e **Análises**), que abre as apps vizinhas direto do `webapp/` de cada uma, sem build nem
+deploy. Os intents dos tiles são os mesmos dos inbounds dos manifests (`ZPCCliente-manage`,
+`ZPCItemEstoque-manage`, `ZPCPedidoCompra-manage`, `ZPCReembolso-manage`, `ZPCAnalisePedido-display`,
+`ZPCAnaliseCliente-display`, `ZPCAnaliseItemEstoque-display`, `ZPCAnaliseReembolso-display`), então a
+navegação entre apps funciona como no launchpad do sistema: o cliente e o item do pedido abrem as
+apps de Clientes e Estoque, e o botão *Abrir gestão* de cada análise abre a app de gestão do domínio.
 
 ```bash
 cd ui5/launchpad
@@ -452,6 +486,7 @@ Fluxo do pedido: **Criar** (draft) → **Salvar** (registra e reserva o estoque)
 | ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
 | ABAP Unit         | `ZCL_PC_UTIL`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_IMPORTACAO` e `ZCL_PC_PLANILHA` (`*.clas.testclasses.abap`) | `Ctrl+Shift+F10` no ADT |
 | OPA5 (gerados)    | `ui5/<app>/webapp/test/integration/`                                    | `npm run int-test` (mock)       |
+| QUnit             | `ui5/analise-*/webapp/test/unit/` (catálogo, consultas `$apply`, moldagem das linhas) | `npm run unit-test`             |
 
 **As classes de teste são permanentes**: ficam no SAP e neste repositório, e são ajustadas quando a
 funcionalidade que cobrem muda. `ZCL_PC_UTIL` tem 50 testes, todos passando:
@@ -689,11 +724,23 @@ consultas `ZC_PC_*_ANALISE` (com `@Aggregation.default` nas medidas e metadata e
 | Estoque    | `ZI_PC_ITEM_CUBE` → `ZC_PC_ITEM_ANALISE`         | `ZAVBS_PC_ESTOQUE`  |
 | Reembolsos | `ZI_PC_REEMB_CUBE` → `ZC_PC_REEMB_ANALISE`       | `ZAVBS_PC_REEMBOLSOS` |
 
-No front-end há um único app **freestyle** (SAPUI5, `ui5/analise-compras`) com as 20 análises dos
-quatro domínios: painel por domínio com filtros, indicadores e gráficos, e uma página de detalhe por
-análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrutura e o deploy estão em
-[`ui5/README.md`](ui5/README.md). Para ter dados nos gráficos, carregue os dados de demonstração
-(`ZCL_PC_SETUP`). O app ainda precisa ser implantado e verificado em execução no sistema.
+No front-end há quatro apps **freestyle** (SAPUI5), um por domínio, com 5 análises cada (20 no
+total): painel com filtros, indicadores e gráficos, e uma página de detalhe por análise (troca do tipo
+de gráfico e tabela de valores).
+
+| App | Pasta | Entity set | Tile | BSP / pacote |
+| --- | --- | --- | --- | --- |
+| Análise de Pedidos de Compras | `ui5/analise-pedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` |
+| Análise de Clientes | `ui5/analise-clientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` |
+| Análise de Itens do Estoque | `ui5/analise-estoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` |
+| Análise de Pedidos de Reembolsos | `ui5/analise-reembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` |
+
+Eles substituem o app único `analise-compras` (BSP `ZPC_ANALISE`, tile `ZPCAnalise-display`), que
+deve ser removido do sistema onde já foi implantado. Os cenários, a estrutura e o deploy estão em
+[`ui5/README.md`](ui5/README.md#apps-de-análise-freestyle). Para ter dados nos gráficos, carregue os
+dados de demonstração (`ZCL_PC_SETUP`). Os apps passam no ESLint, no `ui5 build` e na suíte QUnit, e
+foram testados no launchpad local com o mock server; ainda precisam ser implantados e verificados em
+execução no sistema.
 
 ---
 
@@ -724,6 +771,7 @@ análise (troca do tipo de gráfico e tabela de valores). Os cenários, a estrut
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.5   | App de análises dividido em quatro apps freestyle, um por domínio: Análise de Pedidos de Compras (`analise-pedidos`), Análise de Clientes (`analise-clientes`), Análise de Itens do Estoque (`analise-estoque`) e Análise de Pedidos de Reembolsos (`analise-reembolsos`), com tiles `ZPCAnalise*-display` e BSPs `ZPC_ANL_*` nos pacotes de domínio; launchpad local com oito tiles; remoção do `analise-compras` (BSP `ZPC_ANALISE`) |
 | v2.4   | Importação de pedidos sem duplicidade: a coluna Pedido vira `ReferenciaImportacao` (tabelas `ZTA_PC_PEDIDO`/`_D`, `ZR_PC_PEDIDO`, BDEF, projeção e MDE) e a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela; Pedido do reembolso abre direto a Object Page do pedido (`#WITH_INTENT_BASED_NAVIGATION`); testes em `ZCL_PC_IMPORTACAO` |
 | v2.3   | Navegação entre apps ampliada: CPF do cliente e nome do item como links no pedido e nos snapshots; no reembolso, links do Pedido (`ZPCPedidoCompra`) e do Cliente/CPF (`ZPCCliente`), com o CPF do cliente como novo campo; `CpfCliente` mapeado para `Cpf` (`@Consumption.semanticObjectMapping`) no backend |
 | v2.2   | Novo modelo de status do pedido (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO`, `CANCELADO`, `FINALIZADO`) e pagamento `DEVOLVIDO`; só os itens do pedido `ABERTO` são editáveis, com reserva de estoque incremental; Object Page dinâmica (Dados do Cliente / Dados do Pedido / Itens / Pagamento / Finalização / Cancelamento) com snapshots para pedidos encerrados; ações *Efetuar Pagamento* e *Aprovar pedido*; CEP de endereço gravado somente leitura (correção de dump); camada analítica (cubos, consultas e app freestyle com as 20 análises); suíte permanente de testes (50 em `ZCL_PC_UTIL`); especificação v2.2 |

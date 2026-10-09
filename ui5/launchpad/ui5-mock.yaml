@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
 
 # Launchpad local sem backend: o mock server responde aos serviços OData V4 das
-# apps com o metadata de webapp/localService/ e dados gerados (Análises usa os
-# dados de demonstração do próprio analise-compras).
+# apps com o metadata de webapp/localService/ e dados gerados (as Análises usam os
+# dados de demonstração de webapp/localService/analitico/data, os mesmos das quatro
+# apps de análise).
 specVersion: "4.0"
 metadata:
   name: launchpad
@@ -30,8 +31,14 @@ server:
             src: ../pedidos-compras/webapp
           - path: /apps/gestaoreembolsos
             src: ../gestao-reembolsos/webapp
-          - path: /apps/analisecompras
-            src: ../analise-compras/webapp
+          - path: /apps/analisepedidos
+            src: ../analise-pedidos/webapp
+          - path: /apps/analiseclientes
+            src: ../analise-clientes/webapp
+          - path: /apps/analiseestoque
+            src: ../analise-estoque/webapp
+          - path: /apps/analisereembolsos
+            src: ../analise-reembolsos/webapp
     - name: sap-fe-mockserver
       beforeMiddleware: csp
       configuration:
@@ -59,5 +66,5 @@ server:
             resolveExternalServiceReferences: true
           - urlPath: /sap/opu/odata4/sap/zui_pc_analitico_o4/srvd/sap/zui_pc_analitico/0001
             metadataPath: ./webapp/localService/analitico/metadata.xml
-            mockdataPath: ../analise-compras/webapp/localService/mainService/data
+            mockdataPath: ./webapp/localService/analitico/data
         annotations: []

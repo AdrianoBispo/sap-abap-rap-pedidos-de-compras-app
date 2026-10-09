@@ -74,13 +74,43 @@
               "isGroupLocked": false,
               "tiles": [
                 {
-                  "id": "tile-analisecompras",
+                  "id": "tile-analisepedidos",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Análises de Compras",
-                    "subtitle": "Pedidos, clientes, estoque e reembolsos",
-                    "icon": "sap-icon://business-objects-experience",
-                    "targetURL": "#ZPCAnalise-display"
+                    "title": "Análise de Pedidos de Compras",
+                    "subtitle": "Valores, status e pagamentos",
+                    "icon": "sap-icon://sales-order-item",
+                    "targetURL": "#ZPCAnalisePedido-display"
+                  }
+                },
+                {
+                  "id": "tile-analiseclientes",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Análise de Clientes",
+                    "subtitle": "Gênero, UF, cadastros e score",
+                    "icon": "sap-icon://customer-view",
+                    "targetURL": "#ZPCAnaliseCliente-display"
+                  }
+                },
+                {
+                  "id": "tile-analiseestoque",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Análise de Itens do Estoque",
+                    "subtitle": "Categorias, reservas e valor em estoque",
+                    "icon": "sap-icon://inventory",
+                    "targetURL": "#ZPCAnaliseItemEstoque-display"
+                  }
+                },
+                {
+                  "id": "tile-analisereembolsos",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Análise de Pedidos de Reembolsos",
+                    "subtitle": "Valores, status e motivos",
+                    "icon": "sap-icon://money-bills",
+                    "targetURL": "#ZPCAnaliseReembolso-display"
                   }
                 }
               ]
@@ -121,12 +151,33 @@
               "title": "Gestão de Reembolsos",
               "description": "Aprovar ou rejeitar reembolsos"
             },
-            "ZPCAnalise-display": {
-              "additionalInformation": "SAPUI5.Component=analisecompras",
+            "ZPCAnalisePedido-display": {
+              "additionalInformation": "SAPUI5.Component=analisepedidos",
               "applicationType": "URL",
-              "url": "/apps/analisecompras",
-              "title": "Análises de Compras",
-              "description": "Pedidos, clientes, estoque e reembolsos"
+              "url": "/apps/analisepedidos",
+              "title": "Análise de Pedidos de Compras",
+              "description": "Valores, status e pagamentos"
+            },
+            "ZPCAnaliseCliente-display": {
+              "additionalInformation": "SAPUI5.Component=analiseclientes",
+              "applicationType": "URL",
+              "url": "/apps/analiseclientes",
+              "title": "Análise de Clientes",
+              "description": "Gênero, UF, cadastros e score"
+            },
+            "ZPCAnaliseItemEstoque-display": {
+              "additionalInformation": "SAPUI5.Component=analiseestoque",
+              "applicationType": "URL",
+              "url": "/apps/analiseestoque",
+              "title": "Análise de Itens do Estoque",
+              "description": "Categorias, reservas e valor em estoque"
+            },
+            "ZPCAnaliseReembolso-display": {
+              "additionalInformation": "SAPUI5.Component=analisereembolsos",
+              "applicationType": "URL",
+              "url": "/apps/analisereembolsos",
+              "title": "Análise de Pedidos de Reembolsos",
+              "description": "Valores, status e motivos"
             }
           }
         }
