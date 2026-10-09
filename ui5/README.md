@@ -4,9 +4,10 @@ Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)**
 **SAP Fiori tools** (Application Generator, template `@sap/generator-fiori:lrop`), uma para cada
 serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
-Além delas, `analise-compras/` é um app freestyle com todas as análises (veja
-[App de análises](#app-de-análises-freestyle)) e `launchpad/` é um launchpad local que reúne as
-cinco apps (veja [Launchpad local](#launchpad-local)).
+Além delas, há quatro apps freestyle de análise, um por domínio (`analise-pedidos/`,
+`analise-clientes/`, `analise-estoque/` e `analise-reembolsos/`; veja
+[Apps de análise](#apps-de-análise-freestyle)), e `launchpad/` é um launchpad local que reúne as
+oito apps (veja [Launchpad local](#launchpad-local)).
 
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
 Extensions (`*.ddlx.cds`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
@@ -75,55 +76,63 @@ CPF chama `CpfCliente`; o backend o mapeia para `Cpf` com `@Consumption.semantic
 `annotation.xml` de pedidos repete esse mapeamento). A navegação funciona no launchpad do sistema,
 para quem tiver as apps de origem e de destino nas suas roles.
 
-## App de análises (freestyle)
+## Apps de análise (freestyle)
 
-`analise-compras/` é um app **SAPUI5 freestyle** (OData V4, somente leitura) que reúne todas as
-análises num único projeto. Ele substitui os 20 apps ALP (`analise-*`) e o Painel de Compras (OVP)
-que existiam antes. Lê o serviço **`ZUI_PC_ANALITICO`** (binding `ZUI_PC_ANALITICO_O4`), cujas views
-CDS analíticas (`ZI_PC_*_CUBE` → `ZC_PC_*_ANALISE`) têm `@Aggregation.default` nas medidas e
-`@OData.applySupportedForAggregation: #FULL`, o que permite `$apply=groupby/aggregate` no servidor.
+As análises ficam em quatro apps **SAPUI5 freestyle** (OData V4, somente leitura), um por domínio.
+Eles substituem o app único `analise-compras` (que, por sua vez, substituiu os 20 apps ALP
+`analise-*` e o Painel de Compras OVP). Todos leem o serviço **`ZUI_PC_ANALITICO`** (binding
+`ZUI_PC_ANALITICO_O4`), cujas views CDS analíticas (`ZI_PC_*_CUBE` → `ZC_PC_*_ANALISE`) têm
+`@Aggregation.default` nas medidas e `@OData.applySupportedForAggregation: #FULL`, o que permite
+`$apply=groupby/aggregate` no servidor. Cada app usa só o entity set do seu domínio.
 
-| App | Pasta | `sap.app.id` | Serviço | Tile (inbound) | BSP / pacote |
-| --- | --- | --- | --- | --- | --- |
-| Análises de Compras | `analise-compras/` | `analisecompras` | `ZUI_PC_ANALITICO_O4` | `ZPCAnalise-display` | `ZPC_ANALISE` / `ZAVBS_PC_COMMON` |
+| App | Pasta | `sap.app.id` | Entity set | Tile (inbound) | BSP / pacote | Abrir gestão |
+| --- | --- | --- | --- | --- | --- | --- |
+| Análise de Pedidos de Compras | `analise-pedidos/` | `analisepedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` | `ZPCPedidoCompra-manage` |
+| Análise de Clientes | `analise-clientes/` | `analiseclientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` | `ZPCCliente-manage` |
+| Análise de Itens do Estoque | `analise-estoque/` | `analiseestoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` | `ZPCItemEstoque-manage` |
+| Análise de Pedidos de Reembolsos | `analise-reembolsos/` | `analisereembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` | `ZPCReembolso-manage` |
 
-- **Painel** (`#/painel/<domínio>`): um domínio por vez (Pedidos, Clientes, Estoque, Reembolsos), com
-  barra de filtros, indicadores (KPIs) e os 5 gráficos do domínio, num total de 20 cenários.
+- **Painel** (`#/`): barra de filtros, indicadores (KPIs) e os 5 gráficos do domínio.
 - **Detalhe** (`#/analise/<cenário>`, clicando no título do card): gráfico grande com troca do tipo
   (colunas, barras, linha, rosca) e tabela com os valores, % do total e linha de total.
 - Os **filtros** (os mesmos `UI.SelectionFields` do serviço) valem para os KPIs e para todos os
-  gráficos do domínio e continuam aplicados ao abrir um detalhe e ao voltar. As opções vêm do
-  próprio serviço (`groupby` do campo).
+  gráficos e continuam aplicados ao abrir um detalhe e ao voltar. As opções vêm do próprio serviço
+  (`groupby` do campo).
 - **Abrir gestão** abre o app de gestão do domínio: navegação semântica (`ZPC*-manage`) no
   launchpad; fora dele, a BSP irmã (`../zpc_clientes/index.html` etc.) em outra aba.
-- Em telas estreitas (< 1024 px) o seletor de domínio vira uma lista suspensa.
+- Um hash desconhecido (por exemplo, um link antigo `#/painel/<domínio>` do app único) volta ao painel.
 
-| Domínio | Entity set | Cenários (id) |
-| --- | --- | --- |
-| Pedidos | `PedidoAnalise` | `PedValorPorStatus`, `PedPorMes`, `PedValorPorUf`, `PedPorPagamento`, `PedTicketMedio` |
-| Clientes | `ClienteAnalise` | `CliPorGenero`, `CliPorUf`, `CliPorFaixaScore`, `CliCadastrosPorMes`, `CliScorePorUf` |
-| Estoque | `ItemAnalise` | `EstDisponivelPorCategoria`, `EstItensPorSituacao`, `EstValorPorCategoria`, `EstMaisReservados` (top 10), `EstItensPorCategoria` |
-| Reembolsos | `ReembolsoAnalise` | `ReeValorPorStatus`, `ReeQtdePorStatus`, `ReeValorPorMes`, `ReeValorPorUf`, `ReePorMotivo` |
+| App | Filtros | KPIs | Cenários (id) |
+| --- | --- | --- | --- |
+| Pedidos | status do pedido, status do pagamento, UF, mês de criação | valor total, pedidos, ticket médio | `PedValorPorStatus`, `PedPorMes`, `PedValorPorUf`, `PedPorPagamento`, `PedTicketMedio` |
+| Clientes | gênero, cliente ativo, UF, faixa do score, nome | clientes, score médio | `CliPorGenero`, `CliPorUf`, `CliPorFaixaScore`, `CliCadastrosPorMes`, `CliScorePorUf` |
+| Estoque | categoria, situação do estoque, nome, SKU | itens, em estoque, reservada, disponível, valor em estoque | `EstDisponivelPorCategoria`, `EstItensPorSituacao`, `EstValorPorCategoria`, `EstMaisReservados` (top 10), `EstItensPorCategoria` |
+| Reembolsos | status do reembolso, UF, mês da solicitação | reembolsos, valor dos reembolsos | `ReeValorPorStatus`, `ReeQtdePorStatus`, `ReeValorPorMes`, `ReeValorPorUf`, `ReePorMotivo` |
 
 ### Estrutura
 
+Os quatro projetos têm a mesma estrutura e o mesmo motor; só mudam o catálogo
+(`model/Scenarios.js`), os textos, os testes, o `manifest.json` (id e tile) e o deploy:
+
 ```
-analise-compras/webapp/
-├── Component.js           estado compartilhado (domínio e filtros), serviço e roteamento
-├── manifest.json          rotas "" / painel/{domain} / analise/{scenario}, modelo OData V4, tile
-├── model/Scenarios.js     catálogo: domínios, filtros, KPIs e os 20 cenários (dimensão, medidas, gráfico)
+analise-<domínio>/webapp/
+├── Component.js           estado compartilhado (filtros), serviço e roteamento
+├── manifest.json          rotas "" / analise/{scenario}, modelo OData V4, tile
+├── model/Scenarios.js     catálogo do domínio: entity set, filtros, KPIs e os 5 cenários (dimensão, medidas, gráfico)
 ├── model/AnalyticsQuery.js monta o $apply (descritores) e molda as linhas; sem dependência de UI
 ├── service/AnalyticsService.js  ODataListBinding + $$aggregation (filter/groupby/aggregate)
 ├── control/AnalysisChart.js     VizFrame (sap.viz) configurado por dimensão, medidas e tipo
-├── control/FilterBar.js         filtros do domínio (lista, sim/não, texto)
+├── control/FilterBar.js         filtros (lista, sim/não, texto)
 ├── controller/ view/            Dashboard e Detail
 ├── i18n/i18n.properties         textos pt-BR (cenários, medidas, dimensões)
-├── localService/mainService/    metadata.xml e data/*.json (dados de demonstração do start-mock)
+├── localService/mainService/    metadata.xml e data/<EntitySet>.json (dados de demonstração do start-mock)
 └── test/                        suíte QUnit (Test Starter): catálogo e consultas
 ```
 
-Para **incluir um cenário**, acrescente uma entrada em `model/Scenarios.js` e os textos
+Para **incluir um cenário**, acrescente uma entrada em `model/Scenarios.js` do app e os textos
 `<id>.title` / `<id>.sub` no `i18n.properties` (o teste do catálogo falha se faltar alguma chave).
+Uma correção no motor (`AnalyticsQuery`, `AnalyticsService`, `control/`, `controller/`, `view/`)
+deve ser repetida nos quatro apps: os arquivos são iguais, a menos do namespace.
 
 > [!NOTE]
 > As medidas usam a agregação padrão do backend (no OData, *custom aggregates*), por isso o `$apply`
@@ -132,6 +141,11 @@ Para **incluir um cenário**, acrescente uma entrada em `model/Scenarios.js` e o
 > gráfico vier vazio ou com erro de `groupby`. O mock server (`start-mock`) soma `ValorMedio` e
 > `ScoreMedio`, em vez de tirar a média como o backend: use-o só para a interface.
 > Para ter dados no sistema, carregue os dados de demonstração (`ZCL_PC_SETUP`).
+
+> [!IMPORTANT]
+> Quem já implantou o app único precisa remover a BSP **`ZPC_ANALISE`** e o IAM App
+> `ZPC_ANALISE_UI5R` (pacote `ZAVBS_PC_COMMON`) no ADT, e trocar o tile `ZPCAnalise-display` pelos
+> quatro novos tiles.
 
 ## Executar localmente
 
@@ -142,7 +156,7 @@ npm start          # launchpad local (sandbox) com dados reais
 npm run start-mock # dados de mock, sem backend
 ```
 
-Em `analise-compras`, a suíte QUnit abre com `npm run unit-test`.
+Nos apps de análise (`analise-*`), a suíte QUnit abre com `npm run unit-test`.
 
 O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
 `authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP.
@@ -151,7 +165,8 @@ O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
 
 `launchpad/` é um projeto UI5 só para desenvolvimento (não tem build nem deploy) que simula o SAP
 Fiori launchpad com o sandbox do `sap.ushell`. A página inicial tem os grupos **Gestão** (Clientes,
-Estoque, Pedidos e Reembolsos) e **Análises**, e cada tile abre a app vizinha pelo mesmo intent do
+Estoque, Pedidos e Reembolsos) e **Análises** (Pedidos de Compras, Clientes, Itens do Estoque e
+Pedidos de Reembolsos), e cada tile abre a app vizinha pelo mesmo intent do
 inbound do manifest dela, o que habilita a navegação entre apps (pedido → cliente / item, *Abrir
 gestão* nas análises).
 
@@ -170,7 +185,7 @@ launchpad/
     ├── index.html        bootstrap do sandbox (sap.ushell) e do SAPUI5
     ├── appconfig/fioriSandboxConfig.json   grupos, tiles e targets (intent → /apps/<id>)
     ├── launchpad/init.js cria o shell (renderer fiori2)
-    └── localService/     metadata dos cinco serviços, para o start-mock
+    └── localService/     metadata dos cinco serviços (e os dados de demonstração do analítico), para o start-mock
 ```
 
 - As apps são servidas direto do `webapp/` de cada projeto (`fiori-tools-servestatic`): alterações
@@ -181,7 +196,8 @@ launchpad/
   *Sample Applications*) por cima do objeto da página, e só o `appconfig` é aplicado depois dela.
 - No `start-mock`, os dados de Clientes, Estoque, Pedidos e Reembolsos são gerados pelo mock server
   (valores como `Nome_1`); as Análises usam os dados de demonstração de
-  `analise-compras/webapp/localService/`. Para atualizar o metadata depois de mudar um serviço,
+  `webapp/localService/analitico/data/` (os mesmos `data/*.json` dos quatro apps de análise). Para
+  atualizar o metadata depois de mudar um serviço,
   baixe `…/0001/$metadata` pelo `npm start` e substitua o arquivo em `webapp/localService/<serviço>/`.
 - Para incluir uma app: um tile em `groups`, um target em `NavTargetResolution.applications` (chave
   = intent do inbound, `url` = `/apps/<sap.app.id>`) e o caminho em `fiori-tools-servestatic` nos
@@ -213,7 +229,10 @@ Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 | Gestão de Estoque  | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_estoque/index.html` |
 | Pedidos de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` |
 | Gestão de Reembolsos | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` |
-| Análises de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_analise/index.html` |
+| Análise de Pedidos de Compras | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_pedidos/index.html` |
+| Análise de Clientes | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_cliente/index.html` |
+| Análise de Itens do Estoque | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_estoque/index.html` |
+| Análise de Pedidos de Reembolsos | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_reemb/index.html` |
 
 ### Acesso pelo SAP Build Work Zone, standard edition
 
@@ -225,7 +244,7 @@ item) depende do shell do launchpad e não funciona nesse modo.
 
 No Site Manager: *Content Manager* → **+ New → App** → aba *Properties*: título, **Open App: In a
 new tab** e a URL; aba *Navigation*: um intent próprio (ex.: `ZPCClienteWeb` / `display`); aba
-*Visualization*: subtítulo e ícone. Depois, atribuir as apps (as quatro de gestão e a de análises) a um grupo e ao role
+*Visualization*: subtítulo e ícone. Depois, atribuir as apps (as quatro de gestão e as quatro de análise) a um grupo e ao role
 **Everyone**, e abrir o site.
 
 > **Por que não publicar as apps no Cloud Foundry (HTML5 repo + managed approuter)?**
