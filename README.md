@@ -34,6 +34,7 @@
 - [Tecnologias](#tecnologias)
 - [Arquitetura](#arquitetura)
   - [Fluxo do pedido](#fluxo-do-pedido)
+- [Diagramas](#diagramas)
 - [Estrutura do repositório](#estrutura-do-repositório)
   - [Convenção de arquivos](#convenção-de-arquivos)
 - [Pré-requisitos](#pré-requisitos)
@@ -180,49 +181,19 @@ de demonstração do `npm run start-mock`.
 
 ## Arquitetura
 
-```mermaid
-flowchart LR
-    subgraph UI["Front-end — SAP Fiori (OData V4)"]
-        FLP["Launchpad local"]
-        APPC["Gestão de Clientes"]
-        APPE["Gestão de Estoque"]
-        APPP["Pedidos de Compras"]
-        APPR["Gestão de Reembolsos"]
-        subgraph ANL["Análises (SAPUI5 freestyle)"]
-            APAP["Pedidos de Compras"]
-            APAC["Clientes"]
-            APAE["Itens do Estoque"]
-            APAR["Pedidos de Reembolsos"]
-        end
-    end
+Desenhada no draw.io com os ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do
+draw.io). O fonte editável está em [`docs/diagramas/arquitetura.drawio`](docs/diagramas/arquitetura.drawio).
 
-    subgraph BTP["SAP BTP ABAP Environment — RAP"]
-        SC["ZUI_PC_CLIENTES_O4"] --> BOC["BO Cliente + Endereço"]
-        SE["ZUI_PC_ESTOQUE_O4"] --> BOI["BO Item"]
-        SP["ZUI_PC_PEDIDOS_COMPRAS_O4"] --> BOP["BO Pedido<br/>itens · pagamento · snapshots"]
-        SR["ZUI_PC_REEMBOLSOS_O4"] --> BOR["BO Reembolso"]
-        SA["ZUI_PC_ANALITICO_O4"] --> CUB["Cubos e consultas<br/>analíticas"]
-        COMMON["ZAVBS_PC_COMMON<br/>constantes · mensagens · autorização<br/>numeração · CodeLists"]
-    end
+<p align="center">
+  <a href="docs/assets/arquitetura.png"><img src="docs/assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%"></a>
+</p>
 
-    FLP --> APPC & APPE & APPP & APPR & ANL
-    APPC --> SC
-    APPE --> SE
-    APPP --> SP
-    APPR --> SR
-    ANL --> SA
-    APPP -. semantic object .-> APPC
-    APPP -. semantic object .-> APPE
-    BOP -- reserva de estoque --> BOI
-    BOP -- snapshot --> BOC
-    BOP -- cria solicitação --> BOR
-    BOR -- cancela / retoma pedido --> BOP
-    BOC --> COMMON
-    BOI --> COMMON
-    BOP --> COMMON
-    BOR --> COMMON
-    BOC --> VIACEP[("API ViaCEP")]
-```
+- **Apps (BSP)** → **Service Bindings OData V4** → **BOs RAP / CDS**, uma linha por domínio; as quatro
+  análises usam o mesmo serviço `ZUI_PC_ANALITICO_O4`.
+- O BO Pedido reserva estoque no BO Item, grava os snapshots do cliente e dos itens e abre a
+  solicitação no BO Reembolso (EML); o BO Cliente consulta a API ViaCEP.
+- Acesso: no trial, pelo SAP Build Work Zone (tiles do tipo URL) com login do SAP ID; em
+  desenvolvimento, pelo launchpad local, que serve as apps de `ui5/` e encaminha `/sap` ao BTP.
 
 ### Fluxo do pedido
 
@@ -244,6 +215,35 @@ stateDiagram-v2
     FINALIZADO --> [*]
     CANCELADO --> [*]
 ```
+
+O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Item e BO Reembolso):
+
+<p align="center">
+  <a href="docs/assets/fluxo-pedido.png"><img src="docs/assets/fluxo-pedido.png" alt="Fluxograma do pedido: criação em rascunho, precheck de estoque, Salvar com reserva, pagamento, aprovação com baixa do estoque ou cancelamento com liberação da reserva ou abertura de reembolso" width="100%"></a>
+</p>
+
+---
+
+## Diagramas
+
+Todos os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
+Solution Diagram*: SAP BTP ABAP environment, SAP Build Work Zone, SAP HANA Cloud, Identity
+Authentication, Business Application Studio, usuário, API e serviço de terceiros) e a paleta SAP
+Horizon. As imagens ficam em [`docs/assets/`](docs/assets) e os fontes editáveis (`.drawio`) em
+[`docs/diagramas/`](docs/diagramas), com os links para abrir cada um no editor do draw.io.
+
+| Diagrama | Imagem | Fonte |
+| --- | --- | --- |
+| Arquitetura | [`arquitetura.png`](docs/assets/arquitetura.png) | [`arquitetura.drawio`](docs/diagramas/arquitetura.drawio) |
+| Fluxo do pedido de compra | [`fluxo-pedido.png`](docs/assets/fluxo-pedido.png) | [`fluxo-pedido.drawio`](docs/diagramas/fluxo-pedido.drawio) |
+| Fluxo de reembolso | [`fluxo-reembolso.png`](docs/assets/fluxo-reembolso.png) | [`fluxo-reembolso.drawio`](docs/diagramas/fluxo-reembolso.drawio) |
+| Endereço e consulta de CEP (ViaCEP) | [`fluxo-endereco-viacep.png`](docs/assets/fluxo-endereco-viacep.png) | [`fluxo-endereco-viacep.drawio`](docs/diagramas/fluxo-endereco-viacep.drawio) |
+| Importação em massa por planilha | [`fluxo-importacao.png`](docs/assets/fluxo-importacao.png) | [`fluxo-importacao.drawio`](docs/diagramas/fluxo-importacao.drawio) |
+| Apps de análise | [`fluxo-analises.png`](docs/assets/fluxo-analises.png) | [`fluxo-analises.drawio`](docs/diagramas/fluxo-analises.drawio) |
+
+Os fluxogramas usam raias por responsável (usuário, app, BO, serviço externo) e a mesma legenda:
+início em azul, etapas com borda azul, decisões em laranja, status do pedido em azul claro, fim em
+verde e erros em vermelho.
 
 ---
 
@@ -517,6 +517,10 @@ ative também o include `testclasses`, senão o ABAP Unit roda a versão antiga.
 A consulta do CEP é feita inteiramente no backend. Na app, o **CEP** é um campo padrão do Fiori
 Elements, sem extensão SAPUI5.
 
+<p align="center">
+  <a href="docs/assets/fluxo-endereco-viacep.png"><img src="docs/assets/fluxo-endereco-viacep.png" alt="Fluxograma do endereço: informar o CEP, determination PreencherEnderecoViaCep, reaproveitar CEP cadastrado ou consultar o ViaCEP, side effects, Salvar e validações ValidarCep e ValidarCepUnico" width="100%"></a>
+</p>
+
 ```mermaid
 sequenceDiagram
     actor U as Usuário
@@ -579,6 +583,10 @@ financeiro.
 O Reembolso é um BO próprio (`ZR_PC_REEMBOLSO`, root sem draft) com app dedicada, **Gestão de
 Reembolsos** (`ZUI_PC_REEMBOLSOS`). Não é mais filho do Pedido.
 
+<p align="center">
+  <a href="docs/assets/fluxo-reembolso.png"><img src="docs/assets/fluxo-reembolso.png" alt="Fluxograma do reembolso: cancelar pedido com pagamento aprovado, criar solicitação PENDENTE, pedido em PROCESSANDO_REEMBOLSO, aprovar (CancelarPorReembolso) ou rejeitar (RetomarPedido)" width="100%"></a>
+</p>
+
 1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
    cria a solicitação no BO Reembolso por EML (status `PENDENTE`, guardando `StatusPedidoAnterior`)
    e move o Pedido para `PROCESSANDO_REEMBOLSO`, mantendo a reserva de estoque.
@@ -600,6 +608,10 @@ Os três apps principais (**Gestão de Clientes**, **Gestão de Estoque** e **Pe
 têm o botão **Importar planilha** na lista. Ele abre uma janela para escolher um arquivo `.xlsx`
 ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
 [`docs/modelos-importacao/`](docs/modelos-importacao).
+
+<p align="center">
+  <a href="docs/assets/fluxo-importacao.png"><img src="docs/assets/fluxo-importacao.png" alt="Fluxograma da importação: escolher o arquivo, action ImportarPlanilha, leitura, normalização, validação de todas as linhas e criação por EML, tudo ou nada" width="100%"></a>
+</p>
 
 | App | Linha da planilha | Colunas (obrigatórias em **negrito**) |
 |---|---|---|
@@ -728,6 +740,10 @@ No front-end há quatro apps **freestyle** (SAPUI5), um por domínio, com 5 aná
 total): painel com filtros, indicadores e gráficos, e uma página de detalhe por análise (troca do tipo
 de gráfico e tabela de valores).
 
+<p align="center">
+  <a href="docs/assets/fluxo-analises.png"><img src="docs/assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, moldagem das linhas, painel e ações de filtrar, abrir detalhe ou abrir gestão" width="100%"></a>
+</p>
+
 | App | Pasta | Entity set | Tile | BSP / pacote |
 | --- | --- | --- | --- | --- |
 | Análise de Pedidos de Compras | `ui5/analise-pedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` |
@@ -771,6 +787,7 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `docs/assets/` e fontes `.drawio` em `docs/diagramas/`, referenciados no README |
 | v2.5   | App de análises dividido em quatro apps freestyle, um por domínio: Análise de Pedidos de Compras (`analise-pedidos`), Análise de Clientes (`analise-clientes`), Análise de Itens do Estoque (`analise-estoque`) e Análise de Pedidos de Reembolsos (`analise-reembolsos`), com tiles `ZPCAnalise*-display` e BSPs `ZPC_ANL_*` nos pacotes de domínio; launchpad local com oito tiles; remoção do `analise-compras` (BSP `ZPC_ANALISE`) |
 | v2.4   | Importação de pedidos sem duplicidade: a coluna Pedido vira `ReferenciaImportacao` (tabelas `ZTA_PC_PEDIDO`/`_D`, `ZR_PC_PEDIDO`, BDEF, projeção e MDE) e a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela; Pedido do reembolso abre direto a Object Page do pedido (`#WITH_INTENT_BASED_NAVIGATION`); testes em `ZCL_PC_IMPORTACAO` |
 | v2.3   | Navegação entre apps ampliada: CPF do cliente e nome do item como links no pedido e nos snapshots; no reembolso, links do Pedido (`ZPCPedidoCompra`) e do Cliente/CPF (`ZPCCliente`), com o CPF do cliente como novo campo; `CpfCliente` mapeado para `Cpf` (`@Consumption.semanticObjectMapping`) no backend |
@@ -831,6 +848,8 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
 
 - [Guia do front-end](ui5/README.md) — estrutura das apps, páginas, navegação, deploy e publicação
   dos tiles.
+- [Diagramas](docs/diagramas/README.md) — arquitetura e fluxogramas no draw.io (formas oficiais da
+  SAP), com as imagens em `docs/assets/` e os links para editar.
 - [Especificação técnica](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (.docx).
 - Projeto relacionado: [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep).
 
