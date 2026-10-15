@@ -850,6 +850,10 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
   dos tiles.
 - [Diagramas](docs/diagramas/README.md) — arquitetura e fluxogramas no draw.io (formas oficiais da
   SAP), com as imagens em `docs/assets/` e os links para editar.
+- [Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](docs/tutorial_autorizacao_btp_para_onpremise.md) —
+  objetos `SU21`, valores `SU24`, roles `PFCG`, `S_START`, DCL e diagnóstico com `SU53`/`STAUTHTRACE`.
+- [Tutorial: migração da consulta ViaCEP para o On-Premise](docs/tutorial_migracao_viacep_btp_para_onpremise.md)
+  — `CL_HTTP_CLIENT`, destination `SM59` e certificados `STRUST`.
 - [Especificação técnica](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (.docx).
 - Projeto relacionado: [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep).
 
