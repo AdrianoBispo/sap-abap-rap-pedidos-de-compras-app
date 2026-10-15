@@ -166,10 +166,10 @@ CONSTANTS c_modo_trial TYPE abap_boolean VALUE abap_false.
 
 3. Em cada objeto, use **Atividades permitidas** para restringir o campo `ACTVT` às atividades da tabela.
 
-> **Atenção:** o arquivo `ZPC_PEDIDO.susob.xml` do repositório só tem as atividades 01, 02, 03 e 06. Sem a
-> atividade **16 (Executar)**, nenhum usuário consegue `SimularPagamento`, `AprovarPedido`, `CancelarPedido`,
-> criar reembolso, `AprovarReembolso` ou `RejeitarReembolso` assim que o modo trial for desligado. Inclua a 16
-> no On-Premise (e corrija também o objeto no BTP).
+> **Atenção:** não esqueça a atividade **16 (Executar)** em `ZPC_PEDIDO` (já incluída no
+> `ZPC_PEDIDO.susob.xml` do repositório). Sem ela, nenhum usuário consegue `SimularPagamento`,
+> `AprovarPedido`, `CancelarPedido`, criar reembolso, `AprovarReembolso` ou `RejeitarReembolso` assim que o
+> modo trial for desligado.
 
 Se no futuro for necessário restringir por dados (ex.: por UF do endereço ou por centro), crie o campo em
 `SU20` (ex.: `ZPC_UF`, elemento de dados de UF) e acrescente-o ao objeto em `SU21`.
@@ -288,7 +288,7 @@ lo_ctrl->restrict_authorizations_to( lo_role ).
 | Item                                      | Ação no On-Premise                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------- |
 | `ZIF_PC_CONSTANTS=>c_modo_trial`          | Alterar para `abap_false`                                                          |
-| `ZPC_PEDIDO.susob.xml`                    | Incluir a atividade 16 (Executar)                                                  |
+| `ZPC_PEDIDO.susob.xml`                    | Já contém a atividade 16 (Executar); recriar com as mesmas atividades em `SU21`    |
 | `*.susob.xml` (classe `CPAE`)             | Recriar os objetos na classe própria `ZPC` via `SU21`                              |
 | `*.sia6.xml` (IAM Apps)                   | **Não transportar**: o tipo não existe no On-Premise; substituído por `SU24` + `PFCG` |
 | Business Catalogs / Business Roles        | Substituídos pelas roles `Z_PC_ADMIN` e `Z_PC_COMUM`                               |

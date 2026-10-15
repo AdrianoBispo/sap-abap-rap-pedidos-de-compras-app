@@ -337,7 +337,8 @@ no ADT):
    `GET NUMBER` dispara `UPDATE` síncrono em `NRIV`, proibido dentro de uma transação RAP, e o
    cadastro de pedido/item termina em dump `BEHAVIOR_ILLEGAL_STATEMENT`). Os intervalos 01 (pedido) e 02 (SKU) são criados
    pela classe `ZCL_PC_SETUP`.
-4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` e `ZPC_PEDIDO`.
+4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` (01, 02, 03, 06) e `ZPC_PEDIDO` (01, 02, 03, 06 e
+   16 – executar, exigida pelas actions do pedido e pelo reembolso).
 5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
    `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4` → **Publish**.
 6. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT acrescenta o sufixo

@@ -3,7 +3,8 @@
 "!
 "! Objetos de autorização (criar no ADT, campo ACTVT):
 "!  - ZPC_ADMIN  : 01 criar, 02 alterar, 06 excluir -> Clientes e Estoque
-"!  - ZPC_PEDIDO : 01 criar, 02 alterar, 16 executar -> Pedidos e suas actions
+"!  - ZPC_PEDIDO : 01 criar, 02 alterar, 06 excluir, 16 executar -> Pedidos,
+"!                 actions do pedido e Reembolsos
 "! Os objetos são atribuídos às IAM Apps (aba Authorizations) e as restrições
 "! são mantidas nas Business Roles ZPC_BR_ADMIN / ZPC_BR_COMUM.
 "!
