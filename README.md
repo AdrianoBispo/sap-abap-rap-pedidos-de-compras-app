@@ -788,6 +788,7 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
 | v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `docs/assets/` e fontes `.drawio` em `docs/diagramas/`, referenciados no README |
 | v2.5   | App de análises dividido em quatro apps freestyle, um por domínio: Análise de Pedidos de Compras (`analise-pedidos`), Análise de Clientes (`analise-clientes`), Análise de Itens do Estoque (`analise-estoque`) e Análise de Pedidos de Reembolsos (`analise-reembolsos`), com tiles `ZPCAnalise*-display` e BSPs `ZPC_ANL_*` nos pacotes de domínio; launchpad local com oito tiles; remoção do `analise-compras` (BSP `ZPC_ANALISE`) |
 | v2.4   | Importação de pedidos sem duplicidade: a coluna Pedido vira `ReferenciaImportacao` (tabelas `ZTA_PC_PEDIDO`/`_D`, `ZR_PC_PEDIDO`, BDEF, projeção e MDE) e a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela; Pedido do reembolso abre direto a Object Page do pedido (`#WITH_INTENT_BASED_NAVIGATION`); testes em `ZCL_PC_IMPORTACAO` |
@@ -853,6 +854,9 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
   SAP), com as imagens em `docs/assets/` e os links para editar.
 - [Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](docs/tutorial_autorizacao_btp_para_onpremise.md) —
   objetos `SU21`, valores `SU24`, roles `PFCG`, `S_START`, DCL e diagnóstico com `SU53`/`STAUTHTRACE`.
+- [Tutorial: controle de leitura nas CDS Views (DCL)](docs/tutorial_controle_leitura_cds_dcl.md) — implementação
+  opcional que exige a atividade 03 (Exibir) de `ZPC_ADMIN`/`ZPC_PEDIDO` para ler os dados, com as regras de
+  acesso de todas as views expostas.
 - [Tutorial: migração da consulta ViaCEP para o On-Premise](docs/tutorial_migracao_viacep_btp_para_onpremise.md)
   — `CL_HTTP_CLIENT`, destination `SM59` e certificados `STRUST`.
 - [Especificação técnica](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (.docx).

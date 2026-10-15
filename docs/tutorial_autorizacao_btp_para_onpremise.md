@@ -261,6 +261,9 @@ grant select on ZC_PC_CLIENTE
   where ( Uf ) = aspect pfcg_auth( ZPC_ADMIN, ZPC_UF, ACTVT = '03' );
 ```
 
+> O roteiro completo, com as regras de todas as views expostas, está em
+> [Tutorial: Controle de leitura nas CDS Views com Access Control (DCL)](tutorial_controle_leitura_cds_dcl.md).
+>
 > A DCL funciona igual no BTP e no On-Premise. Lembre-se de propagar `#CHECK` também para as views de
 > interface/projeção usadas diretamente em value helps.
 
