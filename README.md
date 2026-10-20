@@ -34,6 +34,7 @@
 - [Tecnologias](#tecnologias)
 - [Arquitetura](#arquitetura)
   - [Fluxo do pedido](#fluxo-do-pedido)
+  - [Arquitetura On-Premise](#arquitetura-on-premise)
 - [Diagramas](#diagramas)
 - [Estrutura do repositório](#estrutura-do-repositório)
   - [Convenção de arquivos](#convenção-de-arquivos)
@@ -64,6 +65,12 @@
 Código-fonte de quatro aplicações **Fiori Elements (OData V4)** e quatro apps de análise **SAPUI5
 freestyle** para o **SAP BTP ABAP Environment (Trial)**: backend **RAP** em [`abap/`](abap/) e
 front-end em [`ui5/`](ui5/).
+
+O backend tem dois cenários de implementação, com o mesmo código RAP:
+[`abap/abap-environment/`](abap/abap-environment) (**SAP BTP, ABAP environment**, cenário principal) e
+[`abap/on-premise/`](abap/on-premise) (**SAP S/4HANA 2025 FPS01**, somente as diferenças). O roteiro On-Premise,
+com limitações e diferenças, está na
+[Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01).
 
 | App                | O que gerencia                                                      |
 | ------------------ | -------------------------------------------------------------------- |
@@ -182,7 +189,8 @@ de demonstração do `npm run start-mock`.
 ## Arquitetura
 
 Desenhada no draw.io com os ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do
-draw.io). O fonte editável está em [`docs/diagramas/arquitetura.drawio`](docs/diagramas/arquitetura.drawio).
+draw.io). É a página 1 de [`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio)
+(ver [Diagramas](#diagramas)).
 
 <p align="center">
   <a href="docs/assets/arquitetura.png"><img src="docs/assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%"></a>
@@ -222,24 +230,39 @@ O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Ite
   <a href="docs/assets/fluxo-pedido.png"><img src="docs/assets/fluxo-pedido.png" alt="Fluxograma do pedido: criação em rascunho, precheck de estoque, Salvar com reserva, pagamento, aprovação com baixa do estoque ou cancelamento com liberação da reserva ou abertura de reembolso" width="100%"></a>
 </p>
 
+### Arquitetura On-Premise
+
+Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP roda em
+ABAP Cloud (tier 1) no próprio sistema, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta ao
+ViaCEP passa por um *wrapper* em Standard ABAP (tier 2) com `SM59`/`STRUST`, e a segurança usa `SU21`,
+`SU24` e `PFCG`. Fonte: página 7 de [`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio).
+
+<p align="center">
+  <a href="docs/assets/arquitetura-onpremise.png"><img src="docs/assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
+</p>
+
+Passo a passo, limitações e diferenças em relação ao BTP:
+[Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01).
+
 ---
 
 ## Diagramas
 
-Todos os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
-Solution Diagram*: SAP BTP ABAP environment, SAP Build Work Zone, SAP HANA Cloud, Identity
-Authentication, Business Application Studio, usuário, API e serviço de terceiros) e a paleta SAP
-Horizon. As imagens ficam em [`docs/assets/`](docs/assets) e os fontes editáveis (`.drawio`) em
-[`docs/diagramas/`](docs/diagramas), com os links para abrir cada um no editor do draw.io.
+Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
+Solution Diagram*) e a paleta SAP Horizon. Todos ficam num **único arquivo**,
+[`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio), com **uma página por
+diagrama**; cada página é exportada como imagem em [`docs/assets/`](docs/assets). Os links para abrir cada
+página no editor do draw.io estão em [`docs/diagramas/`](docs/diagramas/README.md).
 
-| Diagrama | Imagem | Fonte |
+| Página | Diagrama | Imagem |
 | --- | --- | --- |
-| Arquitetura | [`arquitetura.png`](docs/assets/arquitetura.png) | [`arquitetura.drawio`](docs/diagramas/arquitetura.drawio) |
-| Fluxo do pedido de compra | [`fluxo-pedido.png`](docs/assets/fluxo-pedido.png) | [`fluxo-pedido.drawio`](docs/diagramas/fluxo-pedido.drawio) |
-| Fluxo de reembolso | [`fluxo-reembolso.png`](docs/assets/fluxo-reembolso.png) | [`fluxo-reembolso.drawio`](docs/diagramas/fluxo-reembolso.drawio) |
-| Endereço e consulta de CEP (ViaCEP) | [`fluxo-endereco-viacep.png`](docs/assets/fluxo-endereco-viacep.png) | [`fluxo-endereco-viacep.drawio`](docs/diagramas/fluxo-endereco-viacep.drawio) |
-| Importação em massa por planilha | [`fluxo-importacao.png`](docs/assets/fluxo-importacao.png) | [`fluxo-importacao.drawio`](docs/diagramas/fluxo-importacao.drawio) |
-| Apps de análise | [`fluxo-analises.png`](docs/assets/fluxo-analises.png) | [`fluxo-analises.drawio`](docs/diagramas/fluxo-analises.drawio) |
+| 1 | Arquitetura (SAP BTP, ABAP environment) | [`arquitetura.png`](docs/assets/arquitetura.png) |
+| 2 | Fluxo do pedido de compra | [`fluxo-pedido.png`](docs/assets/fluxo-pedido.png) |
+| 3 | Fluxo de reembolso | [`fluxo-reembolso.png`](docs/assets/fluxo-reembolso.png) |
+| 4 | Endereço e consulta de CEP (ViaCEP) | [`fluxo-endereco-viacep.png`](docs/assets/fluxo-endereco-viacep.png) |
+| 5 | Importação em massa por planilha | [`fluxo-importacao.png`](docs/assets/fluxo-importacao.png) |
+| 6 | Apps de análise | [`fluxo-analises.png`](docs/assets/fluxo-analises.png) |
+| 7 | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](docs/assets/arquitetura-onpremise.png) |
 
 Os fluxogramas usam raias por responsável (usuário, app, BO, serviço externo) e a mesma legenda:
 início em azul, etapas com borda azul, decisões em laranja, status do pedido em azul claro, fim em
@@ -251,18 +274,22 @@ verde e erros em vermelho.
 
 ```text
 .
-├── abap/                               backend ABAP Cloud / RAP
-│   └── ZAVBS_PEDIDOS_COMPRAS           pacote principal (subpacote de ZAVBS_ESTUDOS no trial)
-│       ├── ZAVBS_PC_COMMON             constantes, mensagens, utilitários, autorização,
-│       │                               numeração, CodeLists, setup
-│       ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
-│       ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-│       ├── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
-│       │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
-│       │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
-│       └── ZAVBS_PC_REEMBOLSOS         BO Reembolso, serviço ZUI_PC_REEMBOLSOS
-│       (analítico: cubos ZI_PC_*_CUBE e consultas ZC_PC_*_ANALISE em cada pacote de domínio;
-│        serviço ZUI_PC_ANALITICO em ZAVBS_PC_COMMON)
+├── abap/                               backend ABAP Cloud / RAP (README.md explica os cenários)
+│   ├── abap-environment/               SAP BTP, ABAP environment — fonte completa
+│   │   │                               (pacote principal ZAVBS_PEDIDOS_COMPRAS, subpacote de ZAVBS_ESTUDOS no trial)
+│   │   ├── ZAVBS_PC_COMMON             constantes, mensagens, utilitários, autorização,
+│   │   │                               numeração, CodeLists, setup
+│   │   ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
+│   │   ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
+│   │   ├── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
+│   │   │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
+│   │   │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
+│   │   └── ZAVBS_PC_REEMBOLSOS         BO Reembolso, serviço ZUI_PC_REEMBOLSOS
+│   │   (analítico: cubos ZI_PC_*_CUBE e consultas ZC_PC_*_ANALISE em cada pacote de domínio;
+│   │    serviço ZUI_PC_ANALITICO em ZAVBS_PC_COMMON)
+│   └── on-premise/                     SAP S/4HANA 2025 FPS01 — somente as diferenças
+│       ├── ZAVBS_PC_COMMON             ZIF_PC_CONSTANTS sem modo trial
+│       └── ZAVBS_PC_COMMON_T2          tier 2 (Standard ABAP): ZCL_PC_VIACEP (SM59) e report de teste
 │
 ├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
 │   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
@@ -277,8 +304,12 @@ verde e erros em vermelho.
 │   └── README.md                       guia do front-end
 │
 ├── docs/
-│   ├── assets/                         capturas de tela usadas neste README
-│   └── Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx
+│   ├── assets/                         capturas de tela e imagens dos diagramas
+│   ├── diagramas/                      pedidos-de-compras.drawio: um arquivo, uma página por diagrama
+│   ├── modelos-importacao/             planilhas modelo (CSV/XLSX)
+│   ├── tutorial_*.md                   tutoriais On-Premise (autorização, ViaCEP) e DCL
+│   ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md        especificação técnica v2.3 (Markdown)
+│   └── Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx   especificação v2.2 (Word, histórico)
 │
 └── README.md
 ```
@@ -319,6 +350,12 @@ Um arquivo por objeto ADT:
 - **VS Code** com *SAP Fiori tools* ou **SAP Business Application Studio**.
 - Launchpad do sistema com **SAPUI5 1.136 ou superior** (o `manifest.json` usa descriptor v2).
 
+> [!TIP]
+> As instruções de instalação abaixo são do cenário principal (SAP BTP, ABAP environment). Para o
+> **SAP S/4HANA 2025 FPS01 On-Premise**, siga a
+> [Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)
+> e o [`abap/on-premise/README.md`](abap/on-premise/README.md).
+
 ---
 
 ## Instalação e configuração
@@ -328,7 +365,7 @@ Um arquivo por objeto ADT:
 Estes objetos não têm código-fonte editável diretamente no repositório (ou exigem um passo manual
 no ADT):
 
-1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
+1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `abap/abap-environment/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
    (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
 3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
@@ -788,6 +825,7 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.8   | Diagramas reunidos num único arquivo `docs/diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
 | v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
 | v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `docs/assets/` e fontes `.drawio` em `docs/diagramas/`, referenciados no README |
 | v2.5   | App de análises dividido em quatro apps freestyle, um por domínio: Análise de Pedidos de Compras (`analise-pedidos`), Análise de Clientes (`analise-clientes`), Análise de Itens do Estoque (`analise-estoque`) e Análise de Pedidos de Reembolsos (`analise-reembolsos`), com tiles `ZPCAnalise*-display` e BSPs `ZPC_ANL_*` nos pacotes de domínio; launchpad local com oito tiles; remoção do `analise-compras` (BSP `ZPC_ANALISE`) |
@@ -850,8 +888,8 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
 
 - [Guia do front-end](ui5/README.md) — estrutura das apps, páginas, navegação, deploy e publicação
   dos tiles.
-- [Diagramas](docs/diagramas/README.md) — arquitetura e fluxogramas no draw.io (formas oficiais da
-  SAP), com as imagens em `docs/assets/` e os links para editar.
+- [Diagramas](docs/diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
+  fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `docs/assets/` e links para editar.
 - [Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](docs/tutorial_autorizacao_btp_para_onpremise.md) —
   objetos `SU21`, valores `SU24`, roles `PFCG`, `S_START`, DCL e diagnóstico com `SU53`/`STAUTHTRACE`.
 - [Tutorial: controle de leitura nas CDS Views (DCL)](docs/tutorial_controle_leitura_cds_dcl.md) — implementação
@@ -859,7 +897,10 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
   acesso de todas as views expostas.
 - [Tutorial: migração da consulta ViaCEP para o On-Premise](docs/tutorial_migracao_viacep_btp_para_onpremise.md)
   — `CL_HTTP_CLIENT`, destination `SM59` e certificados `STRUST`.
-- [Especificação técnica](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (.docx).
+- [Especificação técnica v2.3](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md) (Markdown), com a
+  [implementação On-Premise no SAP S/4HANA 2025 FPS01](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01);
+  a versão anterior (v2.2) continua em [.docx](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx).
+- [Backend: cenários BTP e On-Premise](abap/README.md) — o que fica em `abap/abap-environment` e em `abap/on-premise`.
 - Projeto relacionado: [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep).
 
 ---
