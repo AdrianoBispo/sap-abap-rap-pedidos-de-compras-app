@@ -106,53 +106,53 @@ Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`) com os
 ABAP environment** (dados de demonstração do `ZCL_PC_SETUP`), executando os fluxos completos das apps.
 
 <p align="center">
-  <img src="assets/launchpad.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
+  <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
 </p>
 
 ### Gestão de Clientes: cadastro com consulta ao ViaCEP
 
 | Lista de clientes | Endereço preenchido pelo ViaCEP | Cliente cadastrado |
 | :---------------: | :-----------------------------: | :----------------: |
-| <img src="assets/clientes.png" alt="Lista de clientes" width="290"> | <img src="assets/cliente-endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="assets/cliente-object-page.png" alt="Object Page da cliente cadastrada" width="290"> |
+| <img src="assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="assets/telas/clientes/cliente.png" alt="Object Page da cliente cadastrada" width="290"> |
 
 ### Gestão de Estoque
 
 | Lista de itens | Item cadastrado (SKU gerado no Save) |
 | :------------: | :----------------------------------: |
-| <img src="assets/estoque.png" alt="Lista de itens de estoque" width="440"> | <img src="assets/item-object-page.png" alt="Object Page do item cadastrado" width="440"> |
+| <img src="assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="assets/telas/estoque/item.png" alt="Object Page do item cadastrado" width="440"> |
 
 ### Pedidos de Compras: do rascunho à finalização
 
 | Lista de pedidos | Rascunho com itens inline | Efetuar Pagamento |
 | :--------------: | :-----------------------: | :---------------: |
-| <img src="assets/pedidos.png" alt="Lista de pedidos" width="290"> | <img src="assets/pedido-rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="assets/pedido-pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
+| <img src="assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
 
 | Pedido finalizado (snapshot do cliente) | Itens, pagamento e finalização |
 | :-------------------------------------: | :----------------------------: |
-| <img src="assets/pedido-object-page.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="assets/pedido-itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="440"> |
+| <img src="assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="440"> |
 
 ### Cancelamento com pagamento aprovado e Gestão de Reembolsos
 
 | Cancelar pedido (motivo) | Pedido em processamento de reembolso | Lista de reembolsos |
 | :----------------------: | :----------------------------------: | :-----------------: |
-| <img src="assets/pedido-cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="290"> | <img src="assets/pedido-reembolso-pendente.png" alt="Pedido com status Processando reembolso" width="290"> | <img src="assets/reembolsos.png" alt="Lista de reembolsos" width="290"> |
+| <img src="assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="290"> | <img src="assets/telas/pedidos/processando-reembolso.png" alt="Pedido com status Processando reembolso" width="290"> | <img src="assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="290"> |
 
 | Solicitação pendente | Aprovar reembolso (motivo da decisão) | Reembolso aprovado |
 | :------------------: | :-----------------------------------: | :----------------: |
-| <img src="assets/reembolso-object-page.png" alt="Reembolso pendente" width="290"> | <img src="assets/reembolso-aprovacao.png" alt="Diálogo Aprovar reembolso" width="290"> | <img src="assets/reembolso-aprovado.png" alt="Reembolso aprovado" width="290"> |
+| <img src="assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="290"> | <img src="assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="290"> | <img src="assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="290"> |
 
 ### Análises
 
 | Análise de Pedidos de Compras | Análise de Clientes |
 | :---------------------------: | :-----------------: |
-| <img src="assets/analise-pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="440"> | <img src="assets/analise-clientes.png" alt="Painel da Análise de Clientes" width="440"> |
+| <img src="assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="440"> | <img src="assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="440"> |
 
 | Análise de Itens do Estoque | Análise de Pedidos de Reembolsos |
 | :-------------------------: | :------------------------------: |
-| <img src="assets/analise-estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> | <img src="assets/analise-reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> |
+| <img src="assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> | <img src="assets/telas/analises/reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> |
 
 <p align="center">
-  <img src="assets/analise-detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="700">
+  <img src="assets/telas/analises/detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="700">
 </p>
 
 ---
@@ -341,7 +341,9 @@ verde e erros em vermelho.
 │   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as oito apps
 │   └── README.md                       guia do front-end
 │
-├── assets/                             capturas de tela e imagens dos diagramas
+├── assets/                             imagens dos diagramas (arquitetura-*.png, fluxo-*.png)
+│   └── telas/                          capturas das apps: launchpad, clientes, estoque, pedidos,
+│                                       reembolsos e analises (uma pasta por app)
 ├── diagramas/                          pedidos-de-compras.drawio: um arquivo, uma página por diagrama
 │
 ├── docs/
