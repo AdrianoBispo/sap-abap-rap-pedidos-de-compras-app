@@ -26,6 +26,10 @@
   <img src="https://img.shields.io/github/repo-size/AdrianoBispo/sap-abap-rap-pedidos-de-compras-app?style=for-the-badge" alt="Tamanho do repositório">
 </p>
 
+<p align="center">
+  <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
+</p>
+
 ---
 
 ## Índice
@@ -80,21 +84,25 @@ ser reproduzido nos dois ambientes SAP de estudo:
 Telas capturadas no launchpad local (`ui5/launchpad`) com os dados de demonstração do SAP BTP, ABAP
 environment, executando os fluxos completos das apps.
 
-<p align="center">
-  <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
-</p>
-
-### Gestão de Clientes: cadastro com consulta ao ViaCEP
+<details>
+<summary><b>Gestão de Clientes: cadastro com consulta ao ViaCEP</b></summary>
+<br>
 
 | Lista de clientes | Endereço preenchido pelo ViaCEP | Cliente cadastrado |
 | :---------------: | :-----------------------------: | :----------------: |
 | <img src="assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="assets/telas/clientes/cliente.png" alt="Object Page da cliente cadastrada" width="290"> |
 
-### Gestão de Estoque
+</details>
+
+<details>
+<summary><b>Gestão de Estoque</b></summary>
+<br>
 
 | Lista de itens | Item cadastrado (SKU gerado no Save) |
 | :------------: | :----------------------------------: |
 | <img src="assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="assets/telas/estoque/item.png" alt="Object Page do item cadastrado" width="440"> |
+
+</details>
 
 ### Pedidos de Compras: do rascunho à finalização
 
@@ -106,7 +114,9 @@ environment, executando os fluxos completos das apps.
 | :-------------------------------------: | :----------------------------: |
 | <img src="assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="440"> |
 
-### Cancelamento com pagamento aprovado e Gestão de Reembolsos
+<details>
+<summary><b>Cancelamento com pagamento aprovado e Gestão de Reembolsos</b></summary>
+<br>
 
 | Cancelar pedido (motivo) | Pedido em processamento de reembolso | Lista de reembolsos |
 | :----------------------: | :----------------------------------: | :-----------------: |
@@ -121,7 +131,11 @@ environment, executando os fluxos completos das apps.
   <sub>Pedido aberto pelo link do reembolso (navegação entre apps): cancelado, pagamento devolvido e snapshot do cliente.</sub>
 </p>
 
-### Análises
+</details>
+
+<details>
+<summary><b>Análises</b></summary>
+<br>
 
 | Análise de Pedidos de Compras | Análise de Clientes |
 | :---------------------------: | :-----------------: |
@@ -130,6 +144,8 @@ environment, executando os fluxos completos das apps.
 | Análise de Itens do Estoque | Análise de Pedidos de Reembolsos |
 | :-------------------------: | :------------------------------: |
 | <img src="assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> | <img src="assets/telas/analises/reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> |
+
+</details>
 
 ---
 
@@ -289,6 +305,7 @@ Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 
 
 | Versão | Mudanças |
 | ------ | -------- |
+| v2.12  | Launchpad no início do README, logo após os badges, como no projeto CAP; telas da Demonstração recolhidas em seções expansíveis, com o fluxo de Pedidos de Compras sempre visível |
 | v2.11  | README próprio para cada app Fiori e para o launchpad local; prefixo `ZAVBS` dos pacotes documentado como opcional (escolha pessoal do autor), com a sugestão genérica `ZPK` na documentação, na Especificação Técnica v3.1 e nas apresentações |
 | v2.10  | README principal só com a visão geral; detalhes do backend em [`abap/README.md`](abap/README.md) e do front-end em [`ui5/README.md`](ui5/README.md); Especificação Técnica v3.0 escrita como requisitos técnicos para os dois ambientes, com diagramas e telas, em Markdown e Word |
 | v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise): `abap/` sem diretório por cenário, tutoriais de ViaCEP, autorização e DCL no `abap/README.md`, pacotes *Standard ABAP* no On-Premise e apresentações para os dois ambientes |
