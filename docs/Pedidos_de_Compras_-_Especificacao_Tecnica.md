@@ -5,7 +5,7 @@
 | Item | Valor |
 | --- | --- |
 | Documento | Especificação técnica — requisitos de construção da solução |
-| Versão | 3.0 (21/10/2026) |
+| Versão | 3.1 (21/10/2026) |
 | Ambientes-alvo | SAP BTP, ABAP environment (ABAP Cloud) e SAP S/4HANA On-Premise 2025 ou superior (Standard ABAP) |
 | Diagramas | `docs/pedidos-de-compras.drawio` (uma página por diagrama), exportados em `assets/` |
 
@@ -166,7 +166,7 @@ dois ambientes. A única classe com implementação diferente por ambiente é a 
 
 | Tipo de artefato | Padrão | Exemplo |
 | --- | --- | --- |
-| Pacotes | `ZAVBS_PC_*` | `ZAVBS_PC_COMMON`, `ZAVBS_PC_PEDIDOS` |
+| Pacotes | `<prefixo>_PC_*` (prefixo livre; sugestão: `ZPK`) | `ZPK_PC_COMMON`, `ZPK_PC_PEDIDOS` (neste repositório, `ZAVBS_PC_*`) |
 | Tabelas ativas | `ZTA_PC_*` | `ZTA_PC_CLIENTE`, `ZTA_PC_ITEM_PED` |
 | Tabelas draft | `ZTA_PC_*_D` | `ZTA_PC_CLIENTE_D`, `ZTA_PC_ITPED_D` |
 | Root/base CDS view entity | `ZR_PC_*` | `ZR_PC_PEDIDO` |
@@ -182,6 +182,12 @@ dois ambientes. A única classe com implementação diferente por ambiente é a 
 | On-Premise: classe de objetos / roles | `ZPC` / `Z_PC_*` | `Z_PC_ADMIN`, `Z_PC_COMUM` |
 | On-Premise: destination HTTP | `Z_*` | `Z_VIACEP` |
 | Aplicações (BSP) | `ZPC_*` / `ZPC_ANL_*` | `ZPC_PEDIDOS`, `ZPC_ANL_ESTOQUE` |
+
+O prefixo dos pacotes é livre. `ZAVBS`, usado neste repositório, é uma escolha pessoal do autor (as iniciais do
+seu nome completo) e é opcional. Cada projeto define os próprios prefixos; como sugestão genérica, adota-se
+`ZPK` (`ZPK_PEDIDOS_COMPRAS`, `ZPK_PC_COMMON`, `ZPK_PC_CLIENTES` etc.). Os demais prefixos da tabela também
+podem ser trocados, desde que permaneçam no namespace do cliente (`Z` ou `Y`), respeitem o tamanho máximo de
+cada tipo de objeto e sejam aplicados de forma consistente em todos os artefatos que os referenciam.
 
 Limites técnicos: nomes de tabela têm no máximo 16 caracteres (por isso `ZTA_PC_ITEM_PED`, `ZTA_PC_SNAP_CLI` e
 as tabelas draft abreviadas); CDS e classes, 30 caracteres. No BTP, o ADT acrescenta o sufixo `_EXT` às IAM
@@ -929,6 +935,12 @@ classe de exceção que implemente `IF_ABAP_BEHV_MESSAGE` (`ZCX_PC_MSG`, constan
 
 Versão de linguagem: ABAP for Cloud Development no SAP BTP, ABAP environment; Standard ABAP no On-Premise, com
 camada de transporte. As aplicações de front-end (BSPs) ficam no pacote do domínio correspondente.
+
+Os nomes acima usam o prefixo `ZAVBS` deste repositório, que é opcional (seção 4). Em outro projeto, a mesma
+estrutura pode ser criada com o prefixo genérico sugerido: `ZPK_PEDIDOS_COMPRAS`, `ZPK_PC_COMMON`,
+`ZPK_PC_CLIENTES`, `ZPK_PC_ESTOQUE`, `ZPK_PC_PEDIDOS` (com `ZPK_PC_PEDIDOS_PAGAMENTOS` e
+`ZPK_PC_PEDIDOS_SNAPSHOTS`) e `ZPK_PC_REEMBOLSOS`. O código ABAP não referencia o nome dos pacotes; só o
+descritor de deploy de cada aplicação (`ui5-deploy.yaml`) informa o pacote de destino da BSP.
 
 ## 24. Implantação e operação
 
