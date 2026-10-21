@@ -4,7 +4,7 @@
 *& Pedidos de Compras - teste da destination Z_VIACEP (On-Premise).
 *& Executar (F8) em cada sistema depois de configurar SM59 e STRUST, antes
 *& de testar o cadastro de endereço na app Gestão de Clientes.
-*& Pacote ZAVBS_PC_COMMON_T2 (Standard ABAP); não transportar para PRD se a
+*& Pacote ZAVBS_PC_COMMON (Standard ABAP); não transportar para PRD se a
 *& política do landscape proibir reports de teste.
 *&---------------------------------------------------------------------*
 REPORT zpc_teste_viacep.

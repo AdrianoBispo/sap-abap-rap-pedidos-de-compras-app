@@ -25,10 +25,10 @@ tabelas, tile) e a configuração das ferramentas.
 ```
 <app>/
 ├── package.json          scripts start / start-mock / build / lint / int-test / deploy
-├── ui5.yaml              servidor local: proxy /sap → BTP (reentranceTicket), UI5 da CDN
+├── ui5.yaml              servidor local: proxy /sap → sistema ABAP (BTP: reentranceTicket), UI5 da CDN
 ├── ui5-local.yaml        igual, com UI5 local
 ├── ui5-mock.yaml         mock server com o metadata de localService/
-├── ui5-deploy.yaml       deploy no ABAP Repository (BSP + IAM App)
+├── ui5-deploy.yaml       deploy no ABAP Repository (BSP; no BTP, também a IAM App)
 └── webapp/
     ├── manifest.json     descriptor v2: serviço, rotas LR → OP → sub-OP, tabelas, inbound do tile
     ├── Component.js      sap/fe/core/AppComponent
@@ -159,7 +159,8 @@ npm run start-mock # dados de mock, sem backend
 Nos apps de análise (`analise-*`), a suíte QUnit abre com `npm run unit-test`.
 
 O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
-`authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP.
+`authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP. Para um
+sistema On-Premise, troque o backend como em [Sistema On-Premise](#sistema-on-premise).
 
 ## Launchpad local
 
@@ -213,6 +214,8 @@ npm run int-test   # testes OPA5 gerados, com mock server (apps Fiori Elements)
 
 ## Deploy no SAP BTP ABAP Environment
 
+Para o On-Premise, veja [Sistema On-Premise](#sistema-on-premise).
+
 ```bash
 npm run deploy-test   # simula, sem gravar nada
 npm run deploy        # cria/atualiza a BSP ZPC_* e o IAM App ZPC_*_UI5R no pacote ZAVBS_PC_*
@@ -254,3 +257,55 @@ new tab** e a URL; aba *Navigation*: um intent próprio (ex.: `ZPCClienteWeb` / 
 > reconhece o usuário vindo do SAP ID (`sap.default`, `user_name` = e-mail): com o token do IAS,
 > o OData responde 401, inclusive após o `OAuth2UserTokenExchange` da destination. Uma destination
 > `OAuth2Password` com o usuário do SAP ID também não é viável quando a conta tem 2FA.
+
+## Sistema On-Premise
+
+As mesmas apps rodam num **SAP S/4HANA On-Premise** sem alteração de código: o que muda é o destino do
+proxy (`npm start`) e do deploy (`npm run deploy`).
+
+**Versão de deploy.** Os manifests exigem **SAPUI5 1.136 ou superior** (`minUI5Version` 1.136.0 nas apps
+de análise e 1.136.7 nas de gestão; descriptor v2 nas Fiori Elements). No sistema de referência do
+projeto, **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025, `SAP_BASIS` 816), o SAP Fiori front-end server
+2025 embarcado (`SAP_UI` 816) entrega o **SAPUI5 1.136**. Confira a versão em *Sobre* no launchpad ou em
+`/sap/public/bc/ui5_ui5/bootstrap_info.json`. Em releases anteriores (front-end server com SAPUI5 < 1.136)
+as apps não abrem até o front-end server ser atualizado.
+
+**Pré-requisitos no sistema.** Serviços ICF ativos em `SICF`: `/sap/bc/ui5_ui5`, `/sap/bc/ui2/flp`,
+`/sap/opu/odata4` e `/sap/opu/odata/ui5/abap_repository_srv` (serviço `/UI5/ABAP_REPOSITORY_SRV`, usado
+pelo deploy); usuário com `S_DEVELOP` no pacote e autorização para o repositório UI5; ordem de transporte
+Workbench.
+
+`ui5.yaml` (proxy do `npm start`):
+
+```yaml
+        backend:
+          - path: /sap
+            url: https://s4h2025.empresa.local:44300   # Web Dispatcher ou ICM do sistema DEV
+            client: '100'
+```
+
+Sem `authenticationType` (autenticação básica), o navegador pede usuário e senha do sistema na primeira
+chamada. `ui5-deploy.yaml`:
+
+```yaml
+        target:
+          url: https://s4h2025.empresa.local:44300
+          client: "100"
+        credentials:
+          username: env:ABAP_USER                      # nunca grave a senha no arquivo
+          password: env:ABAP_PASSWORD
+        app:
+          name: ZPC_PEDIDOS
+          description: Pedidos de Compras
+          package: ZAVBS_PC_PEDIDOS
+          transport: S4DK900123                        # ordem Workbench (obrigatória fora do $TMP)
+```
+
+- No On-Premise o deploy cria **só a aplicação BSP**; não há IAM App `<BSP>_UI5R`. O acesso ao tile vem da
+  role `PFCG` (catálogo e espaço do launchpad).
+- Se o certificado do sistema for de uma CA interna, instale-a na máquina de desenvolvimento em vez de usar
+  `ignoreCertErrors: true`.
+- Os tiles são criados em `/UI2/FLPAM` (catálogo técnico com tile + *target mapping* por app, com os mesmos
+  intents dos manifests) e `/UI2/FLPCM_CUST` (catálogos de negócio, espaço e página), como na
+  [Especificação Técnica, seção 26, passo 9](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#passo-9--conteúdo-do-sap-fiori-launchpad).
+  Com o launchpad do sistema, a navegação entre apps funciona como no launchpad local.

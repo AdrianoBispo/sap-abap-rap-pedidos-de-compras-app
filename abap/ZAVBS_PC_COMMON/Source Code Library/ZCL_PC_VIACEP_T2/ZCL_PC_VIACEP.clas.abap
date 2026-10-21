@@ -1,17 +1,17 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Consulta de CEP (ViaCEP)</p>
-"! Versão On-Premise (SAP S/4HANA 2025). Substitui a classe de mesmo nome de
-"! abap/abap-environment, que usa cl_http_destination_provider=>create_by_url.
+"! Versão On-Premise (SAP S/4HANA 2025). Substitui a classe de mesmo nome da
+"! pasta ZCL_PC_VIACEP, que usa cl_http_destination_provider=>create_by_url
+"! (SAP BTP, ABAP environment). Crie no sistema apenas uma das duas versões.
 "!
-"! Tier 2 (wrapper): a classe usa CL_HTTP_CLIENT, API clássica sem contrato
-"! de liberação para ABAP Cloud, por isso fica no pacote ZAVBS_PC_COMMON_T2
-"! com versão de linguagem "Standard ABAP". O BO Cliente (ABAP for Cloud
-"! Development) só pode chamá-la depois de liberada: no ADT, aba "API State"
-"! → Add Release Contract → "Use System-Internally (Contract C1)", com
-"! "Use in Cloud Development" marcado.
+"! A classe usa CL_HTTP_CLIENT, API clássica: crie-a no pacote ZAVBS_PC_COMMON
+"! com versão de linguagem "Standard ABAP", como os demais objetos do projeto
+"! no On-Premise. Só se os pacotes forem mantidos em "ABAP for Cloud
+"! Development" é preciso isolá-la num subpacote Standard ABAP e liberá-la com
+"! o contrato C1 (Use in Cloud Development).
 "!
 "! A URL não fica no código: host, porta, SSL e proxy estão na destination
 "! HTTP Z_VIACEP (SM59, tipo G) e a confiança TLS no STRUST (PSE SSL Client
-"! Anonymous). Ver docs/tutorial_migracao_viacep_btp_para_onpremise.md.
+"! Anonymous). Ver abap/README.md, seção 5.
 "!
 "! A interface pública (ty_endereco, ty_resultado, consultar) é um
 "! superconjunto da versão BTP: o behavior pool ZBP_R_PC_CLIENTE não muda.

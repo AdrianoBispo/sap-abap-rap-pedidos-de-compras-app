@@ -1,27 +1,874 @@
 # Backend ABAP / RAP
 
-O backend existe em dois cenários de implementação. O código RAP é o mesmo nos dois; o que muda é a
-plataforma, a conectividade e a segurança.
+Este diretório guarda o backend RAP das aplicações **Pedidos de Compras**. O mesmo código-fonte serve aos
+dois ambientes em que o projeto pode ser estudado:
 
-| Pasta | Cenário | Conteúdo |
+| Cenário | Ambiente | Versão de linguagem dos pacotes |
 | --- | --- | --- |
-| [`abap-environment/`](abap-environment) | **SAP BTP, ABAP environment** (cenário principal, Trial, software component `ZLOCAL`) | Todos os objetos do projeto: pacotes `ZAVBS_PC_COMMON`, `ZAVBS_PC_CLIENTES`, `ZAVBS_PC_ESTOQUE`, `ZAVBS_PC_PEDIDOS` e `ZAVBS_PC_REEMBOLSOS`, inclusive IAM Apps e objetos de comunicação do BTP. |
-| [`on-premise/`](on-premise) | **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025, On-Premise ou Private Edition) | Somente os objetos que **substituem** ou **acrescentam** algo ao cenário principal. Os demais são importados de `abap-environment/` sem alteração. |
+| **Principal — ABAP Cloud** | **SAP BTP, ABAP environment** (onde o projeto foi construído; Trial, software component `ZLOCAL`) | *ABAP for Cloud Development* (a única disponível) |
+| **Alternativo — On-Premise** | **SAP S/4HANA On-Premise** (referência: S/4HANA 2025 FPS01, ABAP Platform 2025) ou S/4HANA Cloud Private Edition | **Standard ABAP** |
+
+A aplicação foi construída primeiro no ABAP environment, mas o framework RAP é o mesmo nos dois
+ambientes: tabelas, CDS view entities, behavior definitions, behavior pools com EML, draft, service
+definitions e bindings, classes utilitárias e testes ABAP Unit. Por isso **não há um diretório por
+cenário**: as poucas diferenças estão explicadas neste README.
+
+> [!IMPORTANT]
+> No On-Premise, crie os pacotes com a versão de linguagem **Standard ABAP**. Todos os objetos RAP do
+> projeto são criados e ativados normalmente, sem erros, num pacote Standard ABAP. Não é preciso separar
+> código em um subpacote *tier 2* nem liberar classes com contrato **C1**. Só **dois objetos** mudam de
+> conteúdo (`ZIF_PC_CONSTANTS` e `ZCL_PC_VIACEP`), e a segurança passa a usar as transações clássicas
+> (`SU21`, `SU24`, `PFCG`).
+
+## Índice
+
+1. [Estrutura do diretório](#1-estrutura-do-diretório)
+2. [O que muda entre os cenários](#2-o-que-muda-entre-os-cenários)
+3. [Roteiro no SAP BTP, ABAP environment](#3-roteiro-no-sap-btp-abap-environment)
+4. [Roteiro no SAP On-Premise](#4-roteiro-no-sap-on-premise)
+5. [Consulta de CEP (ViaCEP) nos dois cenários](#5-consulta-de-cep-viacep-nos-dois-cenários)
+6. [Autorização (AUTHORITY-CHECK) nos dois cenários](#6-autorização-authority-check-nos-dois-cenários)
+7. [Controle de leitura nas CDS Views com Access Control (DCL)](#7-controle-de-leitura-nas-cds-views-com-access-control-dcl)
+8. [Referências](#8-referências)
+
+---
+
+## 1. Estrutura do diretório
 
 ```text
 abap/
-├── abap-environment/                SAP BTP, ABAP environment (fonte completa)
-│   ├── ZAVBS_PC_COMMON
-│   ├── ZAVBS_PC_CLIENTES
-│   ├── ZAVBS_PC_ESTOQUE
-│   ├── ZAVBS_PC_PEDIDOS
-│   └── ZAVBS_PC_REEMBOLSOS
-└── on-premise/                      SAP S/4HANA 2025 FPS01 (diferenças)
-    ├── ZAVBS_PC_COMMON              ZIF_PC_CONSTANTS com c_modo_trial = abap_false
-    └── ZAVBS_PC_COMMON_T2           tier 2 (Standard ABAP): ZCL_PC_VIACEP com CL_HTTP_CLIENT + SM59
+├── ZAVBS_PC_COMMON              constantes, mensagens, utilitários, autorização, numeração,
+│   │                            CodeLists, setup, serviço analítico ZUI_PC_ANALITICO
+│   └── Source Code Library/
+│       ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
+│       ├── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
+│       └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
+├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
+├── ZAVBS_PC_ESTOQUE             BO Item, value help de item, serviço ZUI_PC_ESTOQUE
+├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
+│   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
+│   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
+└── ZAVBS_PC_REEMBOLSOS          BO Reembolso, serviço ZUI_PC_REEMBOLSOS
 ```
 
-A convenção de arquivos (um arquivo por objeto ADT) está no [README principal](../README.md#convenção-de-arquivos).
-O passo a passo do cenário On-Premise, com as limitações e as diferenças em relação ao BTP, está na
-[Especificação Técnica, seção 26](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)
-e no [`on-premise/README.md`](on-premise/README.md).
+- `ZCL_PC_VIACEP/` e `ZCL_PC_VIACEP_T2/` contêm **a mesma classe** (`ZCL_PC_VIACEP`), com a mesma interface
+  pública: crie no sistema **apenas uma**, conforme o ambiente. O sufixo `_T2` (*tier 2*, Standard ABAP)
+  existe só para as duas versões conviverem no repositório.
+- A convenção de arquivos (um arquivo por objeto ADT) e a ordem de criação e ativação estão no
+  [README principal](../README.md#convenção-de-arquivos). Elas são as mesmas nos dois cenários.
+- A arquitetura de cada cenário está nas páginas 1 (BTP) e 7 (On-Premise) de
+  [`diagramas/pedidos-de-compras.drawio`](../diagramas/pedidos-de-compras.drawio)
+  ([`arquitetura.png`](../assets/arquitetura.png) e
+  [`arquitetura-onpremise.png`](../assets/arquitetura-onpremise.png)).
+
+---
+
+## 2. O que muda entre os cenários
+
+### 2.1. Objetos e configurações
+
+| Tema | SAP BTP, ABAP environment (ABAP Cloud) | SAP On-Premise |
+| --- | --- | --- |
+| Versão de linguagem dos pacotes | *ABAP for Cloud Development* | **Standard ABAP** |
+| Código RAP (tabelas, CDS, BDEF, pools, serviços, testes) | Igual | **Igual**, sem alteração |
+| `ZIF_PC_CONSTANTS=>c_modo_trial` | `abap_true` no Trial compartilhado (sem Business Roles) | **`abap_false`** (o `AUTHORITY-CHECK` passa a valer) |
+| `ZCL_PC_VIACEP` | Pasta `ZCL_PC_VIACEP/`: `cl_http_destination_provider=>create_by_url` | Pasta `ZCL_PC_VIACEP_T2/`: `CL_HTTP_CLIENT` + destination `Z_VIACEP` (`SM59`) + `STRUST` |
+| Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `ZPC_TESTE_VIACEP_T2/` (teste da destination) |
+| Objetos de autorização | ADT, classe `CPAE` (`*.susob.xml`) | `SU21`, classe própria `ZPC` (mesmos objetos e atividades) |
+| Vínculo serviço × autorização | IAM App (`*.sia6.xml`) | `SU24` (valores propostos) |
+| Agrupamento e atribuição | Business Catalog + Business Role | Role `PFCG` (`Z_PC_ADMIN`, `Z_PC_COMUM`) + `SU01` |
+| Acesso ao serviço OData | Automático pela IAM App | `S_START` (OData V4) ou `S_SERVICE` (OData V2) na role |
+| Objeto de numeração `ZPC_NR` | Editor do ADT (*Number Range Management*) | `SNRO` (mesmo domínio e buffer) |
+| Publicação dos service bindings | *Publish* no ADT (gera o serviço de entrada `*_G4BA`) | *Publish* no ADT ou `/IWFND/V4_ADMIN` (grupo de serviços, alias `LOCAL`) |
+| Pacotes e transporte | Software component `ZLOCAL`, sem transporte | Camada de transporte e ordens Workbench (`STMS`: DEV → QAS → PRD) |
+| Launchpad | SAP Build Work Zone (tiles URL no Trial) | SAP Fiori launchpad embarcado (`/UI2/FLPAM`, `/UI2/FLPCM_CUST`) |
+| Deploy das apps (`npm run deploy`) | BSP + IAM App `<BSP>_UI5R` | Só a BSP, com ordem de transporte |
+| Diagnóstico de autorização | *Display Authorization Trace* | `SU53`, `STAUTHTRACE`, `SUIM` |
+
+### 2.2. Objetos do repositório que só existem no BTP
+
+Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP environment. No On-Premise,
+**não os importe**: use o substituto indicado.
+
+| Objeto | Motivo | Substituto On-Premise |
+| --- | --- | --- |
+| `ZAVBS_PC_COMMON/Source Code Library/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
+| `*/Identity and Access Management/*.sia6.xml` e `*.txt` | IAM Apps não existem no On-Premise | `SU24` + roles `PFCG` ([seção 6.4](#64-passo-a-passo-no-sap-on-premise)) |
+| `ZAVBS_PC_REEMBOLSOS/Cloud Communication Management/*_G4BA.abap` | Serviço de entrada gerado pela publicação no BTP | Gerado ao publicar o binding (`/IWFND/V4_ADMIN`) |
+| `ZAVBS_PC_REEMBOLSOS/Authorizations/*.sush.xml` | Valores propostos gerados no BTP | `SU24` para o grupo de serviços |
+| `ZAVBS_PC_COMMON/Authorizations/*.susob.xml` (classe `CPAE`) | Classe de objetos do BTP | `ZPC_ADMIN` e `ZPC_PEDIDO` em `SU21`, classe `ZPC` (atividades 01, 02, 03, 06 e 16) |
+| `ZAVBS_PC_COMMON/Number Range Management/ZPC_NR.abap` | Editor do BTP | `ZPC_NR` na `SNRO` (domínio `ZPC_NR_NUMC10`, buffer em memória com 10 números) |
+| Tabela draft `ZTA_PC_REEMB_D` | Resíduo (o BO Reembolso não tem draft) | Não criar |
+
+---
+
+## 3. Roteiro no SAP BTP, ABAP environment
+
+1. Criar o pacote principal `ZAVBS_PEDIDOS_COMPRAS` e os subpacotes no software component `ZLOCAL`
+   (versão de linguagem *ABAP for Cloud Development*).
+2. Criar os objetos manuais (Message Class `ZPC_MSG`, domínio `ZPC_NR_NUMC10`, objeto de numeração `ZPC_NR`,
+   objetos de autorização `ZPC_ADMIN`/`ZPC_PEDIDO`) e importar os fontes deste diretório na ordem do
+   [README principal](../README.md#ordem-de-criação-e-ativação), usando a pasta `ZCL_PC_VIACEP/`.
+3. Publicar os service bindings no ADT.
+4. Criar as IAM Apps, os Business Catalogs e as Business Roles
+   ([seção 6.3](#63-configuração-no-sap-btp-abap-environment)). No Trial compartilhado, sem acesso a
+   *Maintain Business Roles*, mantenha `c_modo_trial = abap_true`.
+5. Executar `ZCL_PC_SETUP` (F9): intervalos de numeração, CodeLists e dados de demonstração.
+6. Front-end: `npm run deploy` em cada app de `ui5/` (BSP + IAM App `<BSP>_UI5R`).
+
+## 4. Roteiro no SAP On-Premise
+
+1. Conferir o release (`Sistema → Status` ou tabela `CVERS`). A referência do projeto é o S/4HANA 2025
+   FPS01 (ABAP Platform 2025, `SAP_BASIS` 816, SAPUI5 1.136). O código usa recursos recentes do RAP
+   (`strict ( 2 )`, `hidden: #(Campo)` em facets, action estática com parâmetro `deep`); em releases mais
+   antigos parte da sintaxe pode não ativar.
+2. Criar o pacote `ZAVBS_PEDIDOS_COMPRAS` e os subpacotes com a versão de linguagem **Standard ABAP**, numa
+   camada de transporte do landscape (`DEV → QAS → PRD`).
+3. Criar os objetos manuais: Message Class `ZPC_MSG` (ADT ou `SE91`), domínio `ZPC_NR_NUMC10` (ADT ou
+   `SE11`), objeto de numeração `ZPC_NR` (`SNRO`, buffer em memória com 10 números) e a classe `ZPC` com os
+   objetos `ZPC_ADMIN`/`ZPC_PEDIDO` (`SU21`).
+4. Importar os fontes deste diretório na ordem do
+   [README principal](../README.md#ordem-de-criação-e-ativação), com duas trocas:
+   - `ZIF_PC_CONSTANTS`: definir `c_modo_trial` como `abap_false`:
+
+     ```abap
+     "! No On-Premise fica sempre abap_false: ZCL_PC_AUTH executa o AUTHORITY-CHECK
+     "! em ZPC_ADMIN / ZPC_PEDIDO, atribuídos pelas roles PFCG Z_PC_ADMIN / Z_PC_COMUM.
+     "! Nunca transporte para QAS/PRD com abap_true.
+     CONSTANTS c_modo_trial TYPE abap_boolean VALUE abap_false.
+     ```
+
+   - `ZCL_PC_VIACEP`: criar a classe com o conteúdo de `ZCL_PC_VIACEP_T2/` no pacote `ZAVBS_PC_COMMON`
+     (o behavior pool `ZBP_R_PC_CLIENTE` não muda);
+   - não importar os objetos da [seção 2.2](#22-objetos-do-repositório-que-só-existem-no-btp).
+5. Basis: destination `Z_VIACEP` na `SM59`, certificados no `STRUST` e regra de proxy/firewall
+   ([seção 5](#5-consulta-de-cep-viacep-nos-dois-cenários)); testar com o report `ZPC_TESTE_VIACEP`.
+6. Publicar os service bindings (ADT ou `/IWFND/V4_ADMIN`), manter a `SU24`, criar as roles
+   `Z_PC_ADMIN`/`Z_PC_COMUM` na `PFCG` e atribuí-las aos usuários ([seção 6.4](#64-passo-a-passo-no-sap-on-premise)).
+7. Executar `ZCL_PC_SETUP` (F9) em DEV/QAS (intervalos de numeração e CodeLists; dados de demonstração).
+   Em PRD, criar só os intervalos `01` e `02` na `SNRO` e transportar o conteúdo de `ZTA_PC_CODELIST`.
+8. Front-end: `npm run deploy` apontando para o sistema On-Premise (com ordem de transporte) e conteúdo do
+   Fiori launchpad (catálogos, espaços e páginas) nas roles.
+
+O roteiro completo, com componentes, transporte, limitações e checklist, está na
+[Especificação Técnica, seção 26](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01).
+
+> [!TIP]
+> **E se eu quiser manter os pacotes em *ABAP for Cloud Development* no On-Premise?** É possível (modelo de
+> extensibilidade *tier 1*), mas aí `CL_HTTP_CLIENT` deixa de ser permitida no BO Cliente. Nesse caso,
+> coloque só `ZCL_PC_VIACEP` (versão `_T2`) num subpacote *Standard ABAP* e libere a classe no ADT (*API
+> State* → *Add Release Contract* → **Use System-Internally (C1)**, com *Use in Cloud Development*) antes
+> de ativar `ZBP_R_PC_CLIENTE`. Para estudar o RAP, o caminho mais simples é tudo em Standard ABAP.
+
+---
+
+## 5. Consulta de CEP (ViaCEP) nos dois cenários
+
+### 5.1. Antes e depois
+
+A regra funcional da classe é a mesma nos dois cenários: higienização e validação do CEP, cache por
+sessão (até 100 entradas), distinção entre CEP inválido e serviço indisponível, reconhecimento de CEP geral
+de município, extração dos campos do JSON e fechamento do cliente HTTP também em caso de erro. O que muda é
+a camada de conectividade.
+
+**SAP BTP, ABAP environment** — pasta `ZCL_PC_VIACEP/`:
+
+```text
+ZCL_PC_VIACEP (ABAP Cloud)
+    -> CL_HTTP_DESTINATION_PROVIDER=>CREATE_BY_URL
+    -> CL_WEB_HTTP_CLIENT_MANAGER
+    -> https://viacep.com.br/ws/{CEP}/json/
+```
+
+A URL é informada pelo código. Em um sistema produtivo do BTP, o recomendado é trocar `create_by_url` por
+um *Communication Scenario* + *Communication Arrangement* (`create_by_comm_arrangement`).
+
+**SAP On-Premise** — pasta `ZCL_PC_VIACEP_T2/`:
+
+```text
+ZCL_PC_VIACEP (Standard ABAP)
+    -> CL_HTTP_CLIENT=>CREATE_BY_DESTINATION
+    -> Destination Z_VIACEP na SM59
+    -> PSE SSL Client (Anonymous) no STRUST
+    -> https://viacep.com.br/ws/{CEP}/json/
+```
+
+No sistema On-Premise em que a migração foi testada, `CL_HTTP_DESTINATION_PROVIDER` não estava
+disponível. A responsabilidade fica dividida assim:
+
+- **Código ABAP:** validação do CEP, cache, chamada HTTP, tratamento do status e leitura do JSON;
+- **SM59:** host, porta, HTTPS, proxy e seleção da PSE;
+- **STRUST:** certificados confiáveis usados na validação TLS.
+
+### 5.2. Pré-requisitos no On-Premise
+
+- a classe está num pacote **Standard ABAP** (`CL_HTTP_CLIENT` é uma API clássica);
+- o servidor SAP tem acesso de saída à internet ou um proxy configurado;
+- há acesso, direto ou via equipe Basis, às transações `SM59` e `STRUST`;
+- o ICM e a biblioteca criptográfica suportam o TLS exigido pelo endpoint.
+
+### 5.3. Criar a destination HTTP na SM59
+
+1. Execute `SM59` → **Create**:
+
+   ```text
+   RFC Destination: Z_VIACEP
+   Connection Type: G   (conexão HTTP com servidor externo)
+   Description:     ViaCEP - Consulta de CEP
+   ```
+
+2. Aba **Technical Settings**:
+
+   ```text
+   Target Host: viacep.com.br     (sem protocolo e sem caminho)
+   Service No.: 443
+   Path Prefix: vazio             (o caminho /ws/{CEP}/json/ é montado no código)
+   ```
+
+   Se o ambiente depender de proxy, preencha também os campos de proxy da destination.
+
+3. Aba **Logon & Security**:
+
+   ```text
+   Logon Procedure: No Logon
+   SSL:             Active
+   SSL Certificate: ANONYM SSL Client (Anonymous)
+   ```
+
+   O ViaCEP é público e não exige usuário, senha ou certificado de cliente. A opção `ANONYM` não desativa a
+   validação do servidor: apenas seleciona a PSE de cliente SSL anônimo.
+
+4. Salve a destination.
+
+### 5.4. Configurar a confiança TLS no STRUST
+
+Numa chamada HTTPS, o ICM valida a cadeia X.509 do servidor antes de entregar a resposta ao ABAP. A
+destination pode estar correta e a rede acessível, mas a conexão falhar se nenhuma autoridade da cadeia for
+confiável na PSE. No teste da migração, a `SM59` retornou:
+
+```text
+SSSLERR_PEER_CERT_UNTRUSTED (-102)
+Failed to verify peer certificate. Peer not trusted.
+```
+
+A cadeia apresentada pelo endpoint era:
+
+```text
+CN=viacep.com.br
+    -> Sectigo Public Server Authentication CA DV R36
+        -> Sectigo Public Server Authentication Root R46
+            -> USERTrust RSA Certification Authority
+```
+
+A correção foi incluir na PSE anônima a raiz e, se necessário, o R46 *cross-signed*:
+
+1. Baixe do repositório oficial da Sectigo `USERTrustRSACertificationAuthority.crt` e
+   `SectigoPublicServerAuthenticationRootR46_USERTrust.crt`. Confira *Subject*, *Issuer*, validade e
+   impressão digital SHA-256.
+2. Em `STRUST`, entre no modo de alteração (`Ctrl+F1`) e selecione **SSL client → SSL Client (Anonymous)**.
+3. **Certificate → Import** do `USERTrustRSACertificationAuthority.crt` → **Add to Certificate List** →
+   salvar. Repita para o R46, se necessário.
+4. Volte à `SM59` e execute **Connection Test** em `Z_VIACEP`: o objetivo é eliminar erros de handshake,
+   certificado, DNS, proxy, conexão recusada e timeout.
+
+> Carregar o certificado na área de visualização não basta: é preciso **Add to Certificate List** e salvar a
+> PSE. Evite usar o certificado final `CN=viacep.com.br` como âncora, porque ele é renovado com frequência.
+
+### 5.5. A classe On-Premise
+
+O código completo está em
+[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PC_COMMON/Source%20Code%20Library/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
+A interface pública (`ty_endereco`, `ty_resultado`, `consultar`) é um superconjunto da versão BTP
+(acrescenta `status_http` e `mensagem_erro`), por isso o behavior pool `ZBP_R_PC_CLIENTE` não muda. A
+diferença está em `chamar_servico`:
+
+```abap
+" BTP (ZCL_PC_VIACEP/): URL no código
+DATA(lo_destino) = cl_http_destination_provider=>create_by_url(
+                     i_url = |{ c_url_base }{ iv_cep }/json/| ).
+lo_cliente = cl_web_http_client_manager=>create_by_http_destination( lo_destino ).
+DATA(lo_resposta) = lo_cliente->execute( if_web_http_client=>get ).
+```
+
+```abap
+" On-Premise (ZCL_PC_VIACEP_T2/): host, porta, SSL e proxy na destination Z_VIACEP
+cl_http_client=>create_by_destination(
+  EXPORTING  destination              = c_destination
+  IMPORTING  client                   = lo_cliente
+  EXCEPTIONS argument_not_found       = 1
+             destination_not_found    = 2
+             destination_no_authority = 3
+             plugin_not_active        = 4
+             internal_error           = 5
+             OTHERS                   = 6 ).
+
+cl_http_utility=>set_request_uri( request = lo_cliente->request
+                                  uri     = |/ws/{ iv_cep }/json/| ).
+lo_cliente->request->set_method( if_http_request=>co_request_method_get ).
+lo_cliente->send( EXPORTING timeout = c_timeout EXCEPTIONS OTHERS = 1 ).
+lo_cliente->receive( EXCEPTIONS OTHERS = 1 ).
+lo_cliente->response->get_status( IMPORTING code = lv_status reason = lv_motivo ).
+lv_json = lo_cliente->response->get_cdata( ).
+lo_cliente->close( ).
+```
+
+As exceções nomeadas de `CREATE_BY_DESTINATION`, `SEND` e `RECEIVE` podem variar conforme o release ou
+Support Package. Se o editor indicar uma exceção inexistente, abra a assinatura do método no sistema e
+mantenha só as disponíveis (ou use apenas `OTHERS = 1`).
+
+### 5.6. Report de teste
+
+[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PC_COMMON/Source%20Code%20Library/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
+chama `ZCL_PC_VIACEP=>consultar` e mostra o status HTTP e o endereço. Execute-o (F8) em cada sistema depois
+de configurar `SM59` e `STRUST`, antes de testar o cadastro de endereço na app Gestão de Clientes. Para um CEP
+válido (ex.: `01310-100`), ele deve retornar HTTP 200 e o endereço.
+
+### 5.7. Diagnóstico
+
+| Sintoma | Verificar |
+| --- | --- |
+| `Destination Z_VIACEP não encontrada na SM59.` | Nome da constante `c_destination`; existência da destination no cliente atual; criação em cada sistema |
+| Falha de autorização na destination | Autorizações do usuário para destinations RFC/HTTP (e `SM59`/`STRUST` para administração) |
+| `SSSLERR_PEER_CERT_UNTRUSTED` | `SSL = Active`, PSE `ANONYM` selecionada, raiz na lista da PSE, **Add to Certificate List**, PSE salva e distribuída entre os servidores de aplicação |
+| Timeout ou falha de comunicação | DNS, firewall, porta 443, proxy na `SM59`, logs do ICM na `SMICM`, texto de `GET_LAST_ERROR` |
+| Status HTTP inesperado | `200` processável; `400`/`404` CEP inválido; `408`/`429`/`5xx` indisponibilidade temporária (fora do cache) |
+
+### 5.8. Segurança, manutenção e transporte
+
+- Não desative a validação TLS para contornar erros de certificado e não grave senhas ou chaves no código.
+- Prefira a destination `SM59` a URLs fixas na classe; confie em CAs, não no certificado final do site.
+- Revise a validade e a cadeia de certificados periodicamente (calendário de Basis).
+- Não exponha detalhes de SSL e infraestrutura ao usuário final em produção.
+- O código e a configuração técnica seguem ciclos diferentes: a classe e o report vão por ordem
+  **Workbench**; a destination é transportada conforme a política do landscape ou recriada em cada sistema;
+  PSE, certificados, proxy e firewall são mantidos **em cada sistema** pela equipe Basis.
+
+### 5.9. Checklist (On-Premise)
+
+- [ ] `ZCL_PC_VIACEP` criada com o conteúdo de `ZCL_PC_VIACEP_T2/` num pacote **Standard ABAP**.
+- [ ] Destination `Z_VIACEP` tipo `G`, host `viacep.com.br`, porta `443`, *Path Prefix* vazio, *No Logon*, SSL
+      ativo com a PSE `ANONYM`.
+- [ ] `USERTrust RSA Certification Authority` (e o R46 *cross-signed*, se necessário) na PSE anônima.
+- [ ] *Connection Test* sem erro de handshake.
+- [ ] `ZPC_TESTE_VIACEP` retornando HTTP 200 para um CEP válido.
+- [ ] Configuração técnica documentada para os próximos sistemas.
+
+---
+
+## 6. Autorização (AUTHORITY-CHECK) nos dois cenários
+
+**O código de autorização é o mesmo nos dois cenários.** O `AUTHORITY-CHECK`, os métodos
+`get_global_authorizations` dos behavior pools e as regras de acesso CDS (DCL) funcionam da mesma forma. O
+que muda é **onde e como** os objetos de autorização são criados e atribuídos aos usuários.
+
+### 6.1. Visão geral
+
+| Etapa | SAP BTP, ABAP environment | SAP On-Premise |
+| --- | --- | --- |
+| Objeto de autorização | ADT (classe `CPAE`) | `SU21` (classe própria `ZPC`) ou ADT |
+| Campos de autorização | ADT | `SU20` |
+| Vínculo serviço × autorização | IAM App (`.sia6`) | `SU24` (valores propostos) |
+| Agrupamento para o usuário | Business Catalog | Role (`PFCG`) + catálogo/espaço do launchpad |
+| Atribuição ao usuário | Business Role (*Maintain Business Users*) | `PFCG` / `SU01` |
+| Acesso ao serviço OData | Automático pela IAM App | `S_START` (OData V4) ou `S_SERVICE` (OData V2) |
+| Diagnóstico | *Display Authorization Trace* | `SU53`, `STAUTHTRACE`, `SUIM` |
+
+```text
+SAP BTP, ABAP environment                         SAP On-Premise
+Usuário                                           Usuário (SU01)
+  -> Business Role (ZPC_BR_ADMIN / ZPC_BR_COMUM)    -> Role Z_PC_ADMIN / Z_PC_COMUM (PFCG)
+     -> Business Catalog                               -> S_START (V4) / S_SERVICE (V2)
+        -> IAM App (.sia6) do serviço                  -> ZPC_ADMIN / ZPC_PEDIDO (SU21, valores SU24)
+           -> ZPC_ADMIN / ZPC_PEDIDO (CPAE)            -> Catálogo/espaço do launchpad
+                         \                              /
+                          ZCL_PC_AUTH (AUTHORITY-CHECK)      <- mesmo código
+                            -> get_global_authorizations     <- mesmo código
+```
+
+### 6.2. O que já existe no código (igual nos dois cenários)
+
+#### Classe central `ZCL_PC_AUTH`
+
+Toda verificação passa por `ZCL_PC_AUTH` (pacote `ZAVBS_PC_COMMON`), que encapsula o `AUTHORITY-CHECK` dos
+objetos `ZPC_ADMIN` (clientes e estoque) e `ZPC_PEDIDO` (pedidos e reembolsos):
+
+```abap
+CONSTANTS: BEGIN OF c_actvt,
+             criar    TYPE c LENGTH 2 VALUE '01',
+             alterar  TYPE c LENGTH 2 VALUE '02',
+             excluir  TYPE c LENGTH 2 VALUE '06',
+             executar TYPE c LENGTH 2 VALUE '16',
+           END OF c_actvt.
+
+METHOD verificar_pedido.
+  IF zif_pc_constants=>c_modo_trial = abap_true.
+    rv_autorizado = abap_true.
+    RETURN.
+  ENDIF.
+  AUTHORITY-CHECK OBJECT 'ZPC_PEDIDO' ID 'ACTVT' FIELD iv_actvt.
+  rv_autorizado = xsdbool( sy-subrc = 0 ).
+ENDMETHOD.
+```
+
+| Método | Objeto | ACTVT | Usado em |
+| --- | --- | --- | --- |
+| `admin_pode_criar` | `ZPC_ADMIN` | 01 | Clientes e Estoque: `%create`, `ImportarPlanilha` |
+| `admin_pode_alterar` | `ZPC_ADMIN` | 02 | Clientes e Estoque: `%update`, `Edit`, `DefinirEnderecoPrincipal` |
+| `admin_pode_excluir` | `ZPC_ADMIN` | 06 | Clientes e Estoque: `%delete` |
+| `pedido_pode_criar` | `ZPC_PEDIDO` | 01 | Pedidos: `%create`, `ImportarPlanilha` |
+| `pedido_pode_alterar` | `ZPC_PEDIDO` | 02 | Pedidos: `%update`, `Edit` |
+| `pedido_pode_excluir` | `ZPC_PEDIDO` | 06 | Pedidos: `%delete` |
+| `pedido_pode_executar` | `ZPC_PEDIDO` | 16 | Pedidos: `SimularPagamento`, `AprovarPedido`, `CancelarPedido`; Reembolsos: `%create`, `AprovarReembolso`, `RejeitarReembolso` |
+
+#### Autorização global nos behavior definitions
+
+Os BOs `ZR_PC_PEDIDO`, `ZR_PC_ITEM`, `ZR_PC_CLIENTE` e `ZR_PC_REEMBOLSO` declaram
+`authorization master ( global )`. As entidades filhas do pedido usam `authorization dependent by _Pedido`,
+e as ações internas (`CancelarPorReembolso`, `RetomarPedido`, `ReservarEstoque`, `LiberarReserva`,
+`BaixarEstoque`) usam `authorization : none`, pois só são chamadas por EML dentro de uma operação já
+autorizada. Exemplo de `ZBP_R_PC_PEDIDO`:
+
+```abap
+METHOD get_global_authorizations.
+  IF requested_authorizations-%create = if_abap_behv=>mk-on.
+    result-%create = COND #( WHEN zcl_pc_auth=>pedido_pode_criar( ) = abap_true
+                             THEN if_abap_behv=>auth-allowed
+                             ELSE if_abap_behv=>auth-unauthorized ).
+  ENDIF.
+  ...
+  DATA(lv_exec) = COND #( WHEN zcl_pc_auth=>pedido_pode_executar( ) = abap_true
+                          THEN if_abap_behv=>auth-allowed
+                          ELSE if_abap_behv=>auth-unauthorized ).
+  IF requested_authorizations-%action-AprovarPedido = if_abap_behv=>mk-on.
+    result-%action-AprovarPedido = lv_exec.
+  ENDIF.
+ENDMETHOD.
+```
+
+O RAP chama esse método antes de cada operação. No Fiori Elements, **Criar**, **Editar**, **Excluir** e as
+ações ficam desabilitados, ou retornam erro 403, quando o resultado é `auth-unauthorized`.
+
+#### Modo trial
+
+`ZIF_PC_CONSTANTS=>c_modo_trial = abap_true` libera todas as verificações. Ele existe porque no **BTP Trial
+compartilhado** não é possível atribuir objetos de autorização próprios ao usuário. Em qualquer sistema em
+que as roles possam ser mantidas (BTP não trial ou On-Premise), use `abap_false`.
+
+### 6.3. Configuração no SAP BTP, ABAP environment
+
+1. **Objetos de autorização** (ADT, *Authorization Object*, classe `CPAE`): `ZPC_ADMIN` (`ACTVT` 01, 02, 03,
+   06) e `ZPC_PEDIDO` (`ACTVT` 01, 02, 03, 06, **16**), já no repositório como `*.susob.xml`.
+2. **Publicar** os service bindings no ADT.
+3. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT
+   acrescenta `_EXT`): aba *Services* com o serviço do app; aba *Authorizations* com `ZPC_ADMIN` ou
+   `ZPC_PEDIDO` e as atividades. **Publique** cada IAM App.
+4. **Business Catalogs** `ZPC_BC_CLIENTES`, `ZPC_BC_ESTOQUE`, `ZPC_BC_PEDIDOS`, `ZPC_BC_REEMBOLSOS` (um por
+   IAM App). Depois do deploy do front-end, cada catálogo recebe também a IAM App do tile (`<BSP>_UI5R`).
+5. **Business Roles** (app *Maintain Business Roles*): `ZPC_BR_ADMIN` (quatro catálogos) e `ZPC_BR_COMUM`
+   (`ZPC_BC_PEDIDOS` e `ZPC_BC_REEMBOLSOS`), com as restrições de atividade e a atribuição aos usuários.
+6. Definir `c_modo_trial = abap_false` e testar com *Display Authorization Trace*.
+
+### 6.4. Passo a passo no SAP On-Premise
+
+#### Passo 1 — Desligar o modo trial
+
+Em `ZIF_PC_CONSTANTS`, `c_modo_trial` **precisa** ser `abap_false` ([seção 4](#4-roteiro-no-sap-on-premise)).
+Enquanto estiver `abap_true`, nenhum `AUTHORITY-CHECK` é executado e qualquer usuário com acesso ao serviço
+cria, altera, exclui e executa ações.
+
+#### Passo 2 — Classe e objetos de autorização (`SU21`)
+
+1. Em `SU21`, crie a classe de objetos **`ZPC`** — *Pedidos de Compras* (a classe `CPAE` é do BTP).
+2. Crie os objetos na classe `ZPC` e, em **Atividades permitidas**, restrinja o campo `ACTVT`:
+
+| Objeto | Texto | Campo | Atividades permitidas |
+| --- | --- | --- | --- |
+| `ZPC_ADMIN` | Cadastros (clientes e estoque) | `ACTVT` | 01, 02, 03, 06 |
+| `ZPC_PEDIDO` | Pedidos e reembolsos | `ACTVT` | 01, 02, 03, 06, **16** |
+
+> **Atenção:** sem a atividade **16 (Executar)** em `ZPC_PEDIDO`, ninguém consegue `SimularPagamento`,
+> `AprovarPedido`, `CancelarPedido`, criar reembolso, `AprovarReembolso` ou `RejeitarReembolso` depois que o
+> modo trial é desligado.
+
+Para restringir por dados no futuro (ex.: por UF), crie o campo em `SU20` (ex.: `ZPC_UF`) e acrescente-o ao
+objeto em `SU21` ([seção 7.6](#76-variações-filtro-por-linha)).
+
+#### Passo 3 — Publicar os serviços OData
+
+| Serviço | Versão | Como publicar |
+| --- | --- | --- |
+| `ZUI_PC_PEDIDOS_COMPRAS_O4` | V4 | ADT (*Publish* no binding) ou `/IWFND/V4_ADMIN` |
+| `ZUI_PC_CLIENTES_O4` | V4 | idem |
+| `ZUI_PC_ESTOQUE_O4` | V4 | idem |
+| `ZUI_PC_REEMBOLSOS_O4` | V4 | idem |
+| `ZUI_PC_ANALITICO_O4` | V4 | idem (apps de análise) |
+| `ZUI_PC_ANALITICO_O2` | V2 | `/IWFND/MAINT_SERVICE` (binding V2 opcional) |
+
+No OData V4, a publicação cria um **grupo de serviços**, que é o valor verificado pelo objeto `S_START`. No
+OData V2, o serviço é registrado em `/IWFND/MAINT_SERVICE` e verificado pelo objeto `S_SERVICE`.
+
+#### Passo 4 — Valores propostos (`SU24`)
+
+Vincule cada serviço aos objetos que ele usa, para que a `PFCG` traga os objetos certos ao adicionar o
+serviço ao menu da role. Tipo de aplicação: **grupo de serviços OData V4** (`G4BA`) ou serviço externo
+`IWSG` (V2).
+
+| Serviço | Objeto | Valores propostos de `ACTVT` |
+| --- | --- | --- |
+| `ZUI_PC_CLIENTES_O4` | `ZPC_ADMIN` | 01, 02, 03, 06 |
+| `ZUI_PC_ESTOQUE_O4` | `ZPC_ADMIN` | 01, 02, 03, 06 |
+| `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPC_PEDIDO` | 01, 02, 03, 06, 16 |
+| `ZUI_PC_REEMBOLSOS_O4` | `ZPC_PEDIDO` | 03, 16 |
+| `ZUI_PC_ANALITICO_O4` | `ZPC_PEDIDO`, `ZPC_ADMIN` | 03 (somente com DCL, [seção 7](#7-controle-de-leitura-nas-cds-views-com-access-control-dcl)) |
+
+Grave os dados da `SU24` numa ordem Workbench.
+
+#### Passo 5 — Roles (`PFCG`)
+
+Duas roles simples, equivalentes às Business Roles do BTP:
+
+| Role | Perfil | `ZPC_ADMIN` | `ZPC_PEDIDO` |
+| --- | --- | --- | --- |
+| `Z_PC_ADMIN` | Administrador: cadastros, pedidos e reembolsos | 01, 02, 03, 06 | 01, 02, 03, 06, 16 |
+| `Z_PC_COMUM` | Usuário comum: consulta cadastros e opera pedidos | 03 | 01, 02, 03 |
+
+Para cada role:
+
+1. **Menu** → *Inserir nó* → *Autorização para serviço*: OData V4 tipo **`G4BA`** (gera `S_START` com
+   `AUTHPGMID = R3TR`, `AUTHOBJTYP = G4BA`, `AUTHOBJNAM = <grupo de serviços>`); OData V2 tipo **`IWSG`**
+   (gera `S_SERVICE`).
+2. (Opcional) inclua no menu o catálogo/espaço do Fiori launchpad com os tiles das apps.
+3. **Autorizações** → *Alterar dados de autorização*: `ZPC_ADMIN`/`ZPC_PEDIDO` vêm da `SU24`; ajuste as
+   atividades conforme a tabela.
+4. **Gerar** o perfil e gravar a role numa ordem de transporte.
+
+O usuário comum não recebe a atividade 16: cria e altera pedidos, mas não paga, não aprova e não cancela.
+
+#### Passo 6 — Atribuir aos usuários (`SU01` / `PFCG`)
+
+1. Em `SU01` (aba **Funções**) ou na aba **Usuário** da `PFCG`, atribua `Z_PC_ADMIN` ou `Z_PC_COMUM`.
+2. Na `PFCG`, execute a **Comparação de usuários**.
+3. Faça logoff/logon (ou limpe o cache do launchpad).
+
+### 6.5. Testes unitários de autorização
+
+Para testar `get_global_authorizations` sem depender das roles de quem executa o teste, use
+`CL_AUNIT_AUTHORITY_CHECK` (nos dois cenários, com `c_modo_trial = abap_false`):
+
+```abap
+DATA(lo_ctrl) = cl_aunit_authority_check=>get_controller( ).
+DATA(lo_role) = cl_aunit_authority_check=>create_auth_object_set(
+  VALUE #( ( object = 'ZPC_PEDIDO'
+             authorizations = VALUE #( ( VALUE #( ( fieldname = 'ACTVT' fieldvalues = VALUE #( ( lower_value = '03' ) ) ) ) ) ) ) ) ).
+lo_ctrl->restrict_authorizations_to( lo_role ).
+
+" Executa a operação por EML e verifica que %create foi negado
+```
+
+### 6.6. Teste do cenário
+
+1. Crie dois usuários: `PC_ADMIN` (`Z_PC_ADMIN` / `ZPC_BR_ADMIN`) e `PC_COMUM` (`Z_PC_COMUM` /
+   `ZPC_BR_COMUM`).
+2. Com `PC_COMUM`: em **Gestão de Clientes**, **Criar**, **Editar** e **Excluir** ficam indisponíveis; em
+   **Pedidos de Compras**, cria e edita pedidos, mas **Efetuar Pagamento**, **Aprovar** e **Cancelar** são
+   negados; em **Gestão de Reembolsos**, **Aprovar**/**Rejeitar** são negados.
+3. Com `PC_ADMIN`, todas as operações funcionam.
+4. On-Premise: remova a role de `PC_COMUM` e confirme que os serviços retornam **403 Forbidden** (falta
+   `S_START`).
+
+### 6.7. Diagnóstico
+
+| Sintoma | Causa provável | Como verificar / corrigir |
+| --- | --- | --- |
+| App não abre; serviço retorna **403** | Falta `S_START` (V4) ou `S_SERVICE` (V2) na role | `SU53` logo após o erro; incluir o serviço no menu da `PFCG` |
+| **Criar/Editar/Excluir** desabilitados | `AUTHORITY-CHECK` em `ZPC_ADMIN`/`ZPC_PEDIDO` falhou | `STAUTHTRACE` (BTP: *Display Authorization Trace*) |
+| Ações do pedido negadas até para o admin | Atividade 16 ausente em `ZPC_PEDIDO` | `SU21` → *Atividades permitidas* |
+| Todos conseguem tudo | `c_modo_trial` ainda `abap_true` | `ZIF_PC_CONSTANTS` |
+| Lista vazia sem mensagem | DCL ativa e usuário sem atividade 03 | `STAUTHTRACE`; `SACMSEL` simula a regra de acesso |
+| Role alterada sem efeito | Perfil não gerado ou sem comparação de usuários | `PFCG` → gerar perfil → comparação |
+| Tile não aparece no launchpad | Catálogo/espaço fora da role | `/UI2/FLPD_CUST` ou `/UI2/FLPCM_CUST` e menu da `PFCG`; `/UI2/INVALIDATE_GLOBAL_CACHES` |
+
+### 6.8. Segurança e transporte
+
+- **Nunca** transporte para produção com `c_modo_trial = abap_true`.
+- Mantenha o `AUTHORITY-CHECK` concentrado em `ZCL_PC_AUTH`; os behavior pools só consultam a classe.
+- Ações com `authorization : none` só podem ser chamadas por EML interno (não as exponha na projeção).
+- `ImportarPlanilha` revalida `pedido_pode_criar`/`admin_pode_criar` na implementação, porque grava em massa.
+- Revise as roles com `SUIM` e use roles derivadas se houver restrição por organização.
+
+| Objeto (On-Premise) | Ordem | Observação |
+| --- | --- | --- |
+| Classe `ZPC`, objetos `ZPC_*` (`SU21`) e campos (`SU20`) | Workbench | — |
+| Valores propostos (`SU24`) | Workbench | Vinculados aos serviços |
+| Publicação dos serviços OData | Customizing ou manual | `/IWFND/V4_ADMIN` ou `/IWFND/MAINT_SERVICE` |
+| Roles `Z_PC_ADMIN` / `Z_PC_COMUM` | Workbench ou Customizing | Gerar o perfil no destino |
+| Catálogos/espaços do launchpad | Customizing | `/UI2/FLPD_CUST` ou `/UI2/FLPCM_CUST` |
+| Atribuição de usuários | — | **Não** transportada: em cada sistema (ou CUA/IdM) |
+
+### 6.9. Checklist
+
+- [ ] `c_modo_trial = abap_false` (exceto no BTP Trial compartilhado).
+- [ ] `ZPC_ADMIN` e `ZPC_PEDIDO` criados (BTP: ADT/`CPAE`; On-Premise: `SU21`/`ZPC`), com a atividade 16 em
+      `ZPC_PEDIDO`.
+- [ ] Serviços OData publicados.
+- [ ] BTP: IAM Apps publicadas, Business Catalogs e Business Roles. On-Premise: `SU24`, roles `PFCG` com
+      `S_START`/`S_SERVICE` e perfis gerados.
+- [ ] Catálogo/espaço do launchpad nas roles; usuários atribuídos.
+- [ ] Testes com `PC_ADMIN` e `PC_COMUM` sem negações inesperadas (`SU53`/`STAUTHTRACE`).
+
+---
+
+## 7. Controle de leitura nas CDS Views com Access Control (DCL)
+
+> **Implementação opcional**, válida para o **SAP BTP, ABAP environment** e para o **SAP On-Premise**. Ative-a
+> somente onde for possível atribuir os objetos de autorização aos usuários
+> ([seção 7.3](#73-pré-requisitos)).
+
+### 7.1. Objetivo
+
+O projeto controla a **escrita** (criar, alterar, excluir e executar ações) com `AUTHORITY-CHECK` em
+`ZCL_PC_AUTH`. A **leitura** não é controlada: todas as CDS Views estão com
+`@AccessControl.authorizationCheck: #NOT_REQUIRED` e não há regras de acesso. Qualquer usuário com acesso a
+um serviço OData consegue listar e ler todos os registros dele — clientes (CPF, e-mail, telefone,
+endereços), pagamentos (cartão mascarado), reembolsos e análises.
+
+Este roteiro exige a atividade **03 (Exibir)** de `ZPC_ADMIN` e `ZPC_PEDIDO` para ler os dados:
+
+1. criar uma regra de acesso (`define role`) para cada view exposta nos serviços;
+2. trocar a anotação dessas views para `#CHECK`;
+3. incluir a atividade 03 nas roles dos usuários;
+4. testar e diagnosticar.
+
+### 7.2. Como funciona
+
+| Operação | Onde é verificada | Mecanismo |
+| --- | --- | --- |
+| Criar, alterar, excluir, ações | `get_global_authorizations` (behavior pool) | `AUTHORITY-CHECK` (`ZCL_PC_AUTH`) |
+| Ler (lista, Object Page, análises, value helps) | Banco de dados, no `SELECT` da CDS View | **Access Control (DCL)** |
+
+O RAP **não** chama o behavior pool nas consultas do OData: lista, Object Page, value helps e o `$apply` das
+análises viram um `SELECT` na CDS View exposta. Quem protege a leitura é a DCL, que o ABAP acrescenta como
+condição `WHERE` em todo `SELECT` sobre a view.
+
+```abap
+@EndUserText.label: 'Acesso aos pedidos de compra'
+@MappingRole: true
+define role ZC_PC_PEDIDO_APP {
+  grant select on ZC_PC_PEDIDO_APP
+    where ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '03' );
+}
+```
+
+- `aspect pfcg_auth( <objeto>, <campos>, ACTVT = '03' )` consulta as autorizações do usuário (role `PFCG` ou
+  Business Role do BTP).
+- `( ) = aspect pfcg_auth(...)` — lista vazia: **tudo ou nada**. Com a autorização, o usuário vê todos os
+  registros; sem ela, vê **zero** registros (sem mensagem de erro).
+- Com elementos na lista (ex.: `( UfPrincipal ) = aspect pfcg_auth( ZPC_ADMIN, ZPC_UF, ACTVT = '03' )`) a
+  regra filtra **linha a linha** ([seção 7.6](#76-variações-filtro-por-linha)).
+
+| `@AccessControl.authorizationCheck` | Efeito |
+| --- | --- |
+| `#NOT_REQUIRED` (atual) | Aplica a DCL se existir; sem aviso se não existir |
+| `#CHECK` (recomendado) | Aplica a DCL; **aviso de sintaxe** se a view não tiver regra |
+| `#NOT_ALLOWED` | Ignora qualquer DCL (nunca use em view exposta) |
+
+**As regras ficam só na camada de consumo** (views `ZC_*` expostas). As views `ZR_*` e os cubos `ZI_*_CUBE`
+continuam sem DCL, porque os behavior pools fazem `SELECT` direto nelas:
+
+| Behavior pool | Lê por ABAP SQL | Para quê |
+| --- | --- | --- |
+| `ZBP_R_PC_PEDIDO` | `zr_pc_cliente`, `zr_pc_endereco`, `zr_pc_item`, `zr_pc_item_pedido`, `zr_pc_pedido` | Cliente ativo, endereço, estoque e referência de importação |
+| `ZBP_R_PC_CLIENTE` | `zr_pc_endereco`, `zr_pc_pedido`, `zr_pc_codelist` | Endereço principal, CEP já cadastrado, pedidos do cliente |
+| `ZBP_R_PC_ITEM` | `zr_pc_codelist` | Textos e prefixos de categoria |
+
+Com DCL em `ZR_PC_CLIENTE` ou `ZR_PC_ITEM`, um usuário que só tem `ZPC_PEDIDO` não conseguiria criar pedidos
+(o cliente "não existiria" e o estoque "estaria zerado"). Para proteger também a camada R, use
+`WITH PRIVILEGED ACCESS` em cada `SELECT` interno dos behavior pools.
+
+### 7.3. Pré-requisitos
+
+- `c_modo_trial = abap_false`: a DCL **não** respeita o modo trial; `pfcg_auth` sempre consulta as
+  autorizações reais.
+- Atividade **03** em `ZPC_ADMIN` e `ZPC_PEDIDO` (já existe nos dois objetos).
+- Possibilidade de atribuir a atividade 03: **BTP** — Business Roles com restrição de leitura (não disponível
+  no BTP Trial compartilhado); **On-Premise** — roles `PFCG`.
+
+> **Não ative no BTP Trial.** Sem Business Roles configuráveis ninguém recebe `ACTVT = 03`, e todas as listas,
+> Object Pages, value helps e análises passam a voltar vazias.
+
+### 7.4. Mapa das regras
+
+| Serviço | View exposta | Regra de leitura |
+| --- | --- | --- |
+| `ZUI_PC_CLIENTES` | `ZC_PC_CLIENTE_APP`, `ZC_PC_ENDERECO_APP` | `ZPC_ADMIN` 03 |
+| | `ZC_PC_CEP_VH` | `ZPC_ADMIN` 01 **ou** 02 (quem cadastra endereços) |
+| | `ZC_PC_GENERO_VH` | sem regra (lista de códigos) |
+| `ZUI_PC_ESTOQUE` | `ZC_PC_ITEM_APP` | `ZPC_ADMIN` 03 |
+| | `ZC_PC_CATEGORIA_VH`, `ZC_PC_STATUSEST_VH` | sem regra |
+| | `I_CurrencyStdVH` | da SAP (já protegida) |
+| `ZUI_PC_PEDIDOS_COMPRAS` | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP`, `ZC_PC_PAGAMENTO_APP`, `ZC_PC_PED_CLI_SNAP_APP`, `ZC_PC_PED_ITEM_SNAP_APP` | `ZPC_PEDIDO` 03 |
+| | `ZC_PC_CLIENTE_VH`, `ZC_PC_ENDERECO_VH`, `ZC_PC_ITEM_VH` | `ZPC_ADMIN` 03 **ou** `ZPC_PEDIDO` 01 **ou** 02 |
+| | `ZC_PC_STATUSPED_VH`, `ZC_PC_STATUSPAG_VH`, `ZC_PC_METODOPAG_VH` | sem regra |
+| `ZUI_PC_REEMBOLSOS` | `ZC_PC_REEMBOLSO_APP` | `ZPC_PEDIDO` 03 |
+| | `ZC_PC_STATUSREEMB_VH` | sem regra |
+| `ZUI_PC_ANALITICO` | `ZC_PC_PEDIDO_ANALISE`, `ZC_PC_REEMB_ANALISE` | `ZPC_PEDIDO` 03 |
+| | `ZC_PC_CLIENTE_ANALISE`, `ZC_PC_ITEM_ANALISE` | `ZPC_ADMIN` 03 |
+
+- **Toda entidade exposta precisa da própria regra**, inclusive as filhas: `GET .../ItemPedido` ou
+  `GET .../Pagamento` leem as filhas direto pelo entity set.
+- **Value helps do pedido** aceitam quem lê cadastros **ou** quem cria/altera pedidos; sem isso, quem só
+  opera pedidos não escolheria cliente, endereço e item.
+- **Campos do cliente dentro do pedido** (`NomeCliente`, `CpfCliente`...) vêm da camada R e continuam visíveis
+  para quem lê o pedido; o link para Gestão de Clientes abrirá vazio para esse usuário.
+- **Listas de códigos** ficam sem regra (`#NOT_REQUIRED`).
+
+### 7.5. Passo a passo
+
+1. **Criar a regra no ADT**: botão direito na view → **New Access Control**; nome igual ao da view; mesmo
+   pacote da view; template *Define Role with PFCG Aspect*.
+2. **Trocar a anotação** das views protegidas para `@AccessControl.authorizationCheck: #CHECK`. Deixe
+   `#NOT_REQUIRED` nas views `ZR_*`, `ZI_*_CUBE`, nos value helps de códigos e nas abstract entities
+   `ZPC_A_*`. Ative regras e views juntas (*Activate All*, `Ctrl+Shift+F3`).
+3. **Incluir a atividade 03 nas roles**:
+   - **BTP:** confirme `ZPC_ADMIN`/`ZPC_PEDIDO` nas IAM Apps (inclusive a do serviço analítico) e publique;
+     em *Maintain Business Roles* → `ZPC_BR_ADMIN`/`ZPC_BR_COMUM` → *Maintain Restrictions*, libere a
+     atividade 03 em *Read, Value Help*.
+   - **On-Premise:** as roles da [seção 6.4](#64-passo-a-passo-no-sap-on-premise) já têm a atividade 03.
+     Para um perfil só de consulta, crie `Z_PC_CONSULTA` com `ZPC_ADMIN` 03 e `ZPC_PEDIDO` 03. Inclua o
+     serviço analítico na `SU24` com os dois objetos, gere o perfil e faça a comparação de usuários.
+
+#### Regras de acesso
+
+Clientes (`ZAVBS_PC_CLIENTES`):
+
+```abap
+@EndUserText.label: 'Acesso aos clientes'
+@MappingRole: true
+define role ZC_PC_CLIENTE_APP {
+  grant select on ZC_PC_CLIENTE_APP
+    where ( ) = aspect pfcg_auth( ZPC_ADMIN, ACTVT = '03' );
+}
+```
+
+Repita trocando nome, `grant select on` e texto para `ZC_PC_ENDERECO_APP` e `ZC_PC_CLIENTE_ANALISE`. O value
+help de CEP aceita quem cria ou altera endereços:
+
+```abap
+@EndUserText.label: 'Acesso ao value help de CEP'
+@MappingRole: true
+define role ZC_PC_CEP_VH {
+  grant select on ZC_PC_CEP_VH
+    where ( ) = aspect pfcg_auth( ZPC_ADMIN, ACTVT = '01' )
+       or ( ) = aspect pfcg_auth( ZPC_ADMIN, ACTVT = '02' );
+}
+```
+
+Value helps usados pelo app de pedidos (`ZC_PC_CLIENTE_VH`, `ZC_PC_ENDERECO_VH` e, no pacote
+`ZAVBS_PC_ESTOQUE`, `ZC_PC_ITEM_VH`):
+
+```abap
+@EndUserText.label: 'Acesso ao value help de clientes'
+@MappingRole: true
+define role ZC_PC_CLIENTE_VH {
+  grant select on ZC_PC_CLIENTE_VH
+    where ( ) = aspect pfcg_auth( ZPC_ADMIN,  ACTVT = '03' )
+       or ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '01' )
+       or ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '02' );
+}
+```
+
+Estoque (`ZAVBS_PC_ESTOQUE`): `ZC_PC_ITEM_APP` e `ZC_PC_ITEM_ANALISE` com
+`where ( ) = aspect pfcg_auth( ZPC_ADMIN, ACTVT = '03' )`.
+
+Pedidos (`ZAVBS_PC_PEDIDOS`): `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP`, `ZC_PC_PAGAMENTO_APP`,
+`ZC_PC_PED_CLI_SNAP_APP`, `ZC_PC_PED_ITEM_SNAP_APP` e `ZC_PC_PEDIDO_ANALISE` com
+`where ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '03' )`. Alternativa para as filhas: herdar a condição
+da raiz pela associação `_Pedido`, assim uma mudança futura vale para todas:
+
+```abap
+grant select on ZC_PC_PAGAMENTO_APP
+  where inheriting conditions from entity ZC_PC_PEDIDO_APP
+    replacing { root with _Pedido };
+```
+
+Reembolsos (`ZAVBS_PC_REEMBOLSOS`): `ZC_PC_REEMBOLSO_APP` e `ZC_PC_REEMB_ANALISE` com
+`where ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '03' )`.
+
+Total: **17 regras de acesso** e 17 views trocadas para `#CHECK`.
+
+### 7.6. Variações: filtro por linha
+
+**Por UF do cliente** (cada analista só vê os clientes da sua região):
+
+1. Crie o campo de autorização **`ZPC_UF`** (BTP: ADT → *Authorization Field*; On-Premise: `SU20`) e
+   acrescente-o a `ZPC_ADMIN` (ADT ou `SU21`), com os valores nas roles (`SP`, `RJ`; `*` para o administrador).
+2. Declare em `ZCL_PC_AUTH` que a escrita global não depende da UF:
+
+   ```abap
+   AUTHORITY-CHECK OBJECT 'ZPC_ADMIN'
+     ID 'ACTVT'  FIELD iv_actvt
+     ID 'ZPC_UF' DUMMY.
+   ```
+
+3. Use o campo na regra:
+
+   ```abap
+   define role ZC_PC_CLIENTE_APP {
+     grant select on ZC_PC_CLIENTE_APP
+       where ( UfPrincipal ) = aspect pfcg_auth( ZPC_ADMIN, ZPC_UF, ACTVT = '03' );
+   }
+   ```
+
+Clientes sem endereço principal têm `UfPrincipal` vazia e só aparecem para quem tem `*`. O filtro de leitura
+não restringe a escrita por UF: isso exigiria `authorization master ( instance )`.
+
+**Pelo usuário que criou o pedido** (quem tem 03 vê todos; quem só cria vê os seus):
+
+```abap
+define role ZC_PC_PEDIDO_APP {
+  grant select on ZC_PC_PEDIDO_APP
+    where ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '03' )
+       or ( CreatedBy = aspect user
+            and ( ) = aspect pfcg_auth( ZPC_PEDIDO, ACTVT = '01' ) );
+}
+```
+
+### 7.7. Teste, diagnóstico e transporte
+
+| Usuário | Autorizações | Resultado esperado |
+| --- | --- | --- |
+| `PC_ADMIN` | `ZPC_ADMIN` 01/02/03/06, `ZPC_PEDIDO` 01/02/03/06/16 | Todas as apps listam normalmente; análises com os mesmos totais |
+| `PC_COMUM` | `ZPC_ADMIN` 03, `ZPC_PEDIDO` 01/02/03 | Vê tudo; escolhe cliente, endereço e item no pedido; cria um pedido completo (as leituras da camada R não são afetadas) |
+| `PC_SEM_LEIT` | Acesso aos serviços, **sem** 03 | Listas, Object Pages, análises e entity sets filhos vazios; value helps de códigos funcionam |
+
+| Sintoma | Causa provável | Correção |
+| --- | --- | --- |
+| Lista vazia, sem erro | Usuário sem `ACTVT = 03` | *Display Authorization Trace* (BTP) / `STAUTHTRACE` (On-Premise) |
+| Tudo vazio para todos | DCL no BTP Trial ou roles sem 03 | [Seção 7.3](#73-pré-requisitos) |
+| Value help de cliente/item vazio no pedido | Regra do VH sem o `or` de `ZPC_PEDIDO` 01/02 | Regras da seção 7.5 |
+| Pedido não salva ("cliente inexistente") | DCL numa view `ZR_*` | Remover a regra ou usar `WITH PRIVILEGED ACCESS` |
+| Itens/pagamento visíveis sem acesso ao pedido | Filha sem regra própria | Criar a regra da filha |
+| Aviso "no access control" | View `#CHECK` sem regra ativa | Criar/ativar a regra |
+
+No On-Premise, `SACMSEL` mostra a condição gerada pela DCL para um usuário e uma view, e `SUIM` lista quem
+tem a atividade 03. Transporte as regras **junto com** as views alteradas (BTP: gCTS/abapGit; On-Premise:
+ordem Workbench), e só depois de as roles do destino já terem a atividade 03. Para desfazer, exclua as regras
+e volte as views para `#NOT_REQUIRED`.
+
+---
+
+## 8. Referências
+
+- SAP Help — *ABAP RESTful Application Programming Model*: *Authorization Control* e
+  *Implementing Global Authorization* (`get_global_authorizations`).
+- ABAP Keyword Documentation — *ABAP CDS - Access Control* (`DEFINE ROLE`, `aspect pfcg_auth`,
+  `aspect user`, `inheriting conditions`), `@AccessControl.authorizationCheck`, `WITH PRIVILEGED ACCESS`,
+  `AUTHORITY-CHECK` e `CL_AUNIT_AUTHORITY_CHECK`.
+- SAP Help — *ABAP Language Versions* (*Standard ABAP* e *ABAP for Cloud Development*) e *Release Contracts*.
+- SAP Help — *Authorization Objects* (`SU21`), *Maintaining Authorization Default Values* (`SU24`),
+  *Role Administration* (`PFCG`) e *System Trace for Authorizations* (`STAUTHTRACE`).
+- SAP Help — *SAP Gateway Foundation: OData V4 Service Group Authorization* (`S_START`, `/IWFND/V4_ADMIN`).
+- SAP Help — *Establishing a Connection Using a Destination (SM59)* e *Trust Manager* (`STRUST`).
+- SAP Help — *Identity and Access Management* do SAP BTP, ABAP environment (IAM Apps, Business Catalogs,
+  Business Roles).
+- Sectigo Knowledge Base — *Sectigo Root Certificates*.
