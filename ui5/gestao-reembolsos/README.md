@@ -11,7 +11,7 @@ já pago; aqui não há criação, edição nem exclusão.
 | Serviço | `ZUI_PC_REEMBOLSOS` (binding OData V4 `ZUI_PC_REEMBOLSOS_O4`) |
 | Entity set | `Reembolso` |
 | Tile (inbound) | `ZPCReembolso-manage` — "Gestão de Reembolsos" / "Aprovar ou rejeitar reembolsos" |
-| BSP / pacote | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
+| BSP / pacote | `ZPC_REEMBOLSOS` / `ZAVBS_PC_REEMBOLSOS` |
 | SAPUI5 mínimo | 1.136.7 |
 
 ## Telas
@@ -113,7 +113,9 @@ npm run undeploy      # remove a BSP
 | Acesso | Tile pelo business catalog (ou tile URL no SAP Build Work Zone) | Catálogo `/UI2/FLPAM` e role `PFCG` |
 | URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` |
 
-A BSP fica no pacote `ZAVBS_PC_PEDIDOS` (o BO Reembolso está em `ZAVBS_PC_REEMBOLSOS`).
+O prefixo `ZAVBS` do pacote `ZAVBS_PC_REEMBOLSOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
+projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
+`ZPK_PC_REEMBOLSOS`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
 Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_PEDIDO`, atividade 16 (aprovar e rejeitar), em
 [`abap/README.md`](../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).

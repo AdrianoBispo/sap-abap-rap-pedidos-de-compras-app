@@ -20,7 +20,7 @@ tabelas, tile) e a configuração das ferramentas.
 | Gestão de Clientes | [`gestao-clientes/`](gestao-clientes/) | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
 | Gestão de Estoque  | [`gestao-estoque/`](gestao-estoque/) | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
 | Pedidos de Compras | [`pedidos-compras/`](pedidos-compras/) | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
-| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
+| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_REEMBOLSOS` |
 
 ## Estrutura de cada app
 
@@ -265,6 +265,11 @@ npm run deploy        # cria/atualiza a BSP ZPC_* e o IAM App ZPC_*_UI5R no paco
 No trial, os pacotes do software component `ZLOCAL` não usam transporte. Em sistemas com
 transporte, preencha `transport:` em `ui5-deploy.yaml`.
 
+O `package:` de cada `ui5-deploy.yaml` usa os pacotes deste repositório (`ZAVBS_PC_*`). O prefixo `ZAVBS` é
+uma escolha pessoal do autor, com as iniciais do seu nome completo, e é opcional: no seu projeto, informe os
+pacotes que você criou, com o prefixo que preferir (sugestão genérica: `ZPK_PC_*`; veja
+[`abap/README.md`](../abap/README.md#12-prefixo-dos-pacotes)).
+
 Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 
 | App | URL |
@@ -338,7 +343,7 @@ chamada. `ui5-deploy.yaml`:
         app:
           name: ZPC_PEDIDOS
           description: Pedidos de Compras
-          package: ZAVBS_PC_PEDIDOS
+          package: ZAVBS_PC_PEDIDOS                    # ou o seu pacote, ex.: ZPK_PC_PEDIDOS
           transport: S4DK900123                        # ordem Workbench (obrigatória fora do $TMP)
 ```
 
