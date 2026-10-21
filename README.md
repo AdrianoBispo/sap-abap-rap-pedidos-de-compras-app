@@ -141,6 +141,11 @@ ABAP environment** (dados de demonstração do `ZCL_PC_SETUP`), executando os fl
 | :------------------: | :-----------------------------------: | :----------------: |
 | <img src="assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="290"> | <img src="assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="290"> | <img src="assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="290"> |
 
+<p align="center">
+  <img src="assets/telas/pedidos/cancelado.png" alt="Pedido cancelado pelo reembolso aprovado, com pagamento devolvido e o snapshot do cliente" width="700"><br>
+  <sub>Pedido aberto pelo link do reembolso (navegação entre apps): cancelado, pagamento devolvido e snapshot do cliente.</sub>
+</p>
+
 ### Análises
 
 | Análise de Pedidos de Compras | Análise de Clientes |
