@@ -2,7 +2,7 @@
 
 Quatro apps **SAP Fiori Elements (OData V4, List Report + Object Page)** geradas com o
 **SAP Fiori tools** (Application Generator, template `@sap/generator-fiori:lrop`), uma para cada
-serviço RAP de gestão. Cada app é um **projeto isolado**: tem o próprio
+serviço RAP de gestão do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
 Além delas, há quatro apps freestyle de análise, um por domínio (`analise-pedidos/`,
 `analise-clientes/`, `analise-estoque/` e `analise-reembolsos/`; veja
