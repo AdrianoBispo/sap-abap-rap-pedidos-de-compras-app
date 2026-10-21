@@ -4,8 +4,8 @@
 
 | Item | Valor |
 | --- | --- |
-| Cenário principal | SAP BTP, ABAP environment (Trial, software component `ZLOCAL`) — código em [`abap/abap-environment/`](../abap/abap-environment) |
-| Cenário alternativo | SAP S/4HANA 2025 FPS01 On-Premise (ABAP Platform 2025) — diferenças em [`abap/on-premise/`](../abap/on-premise) e na [seção 26](#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01) |
+| Cenário principal | SAP BTP, ABAP environment (ABAP Cloud; Trial, software component `ZLOCAL`) — código em [`abap/`](../abap) |
+| Cenário alternativo | SAP S/4HANA 2025 FPS01 On-Premise (ABAP Platform 2025, pacotes *Standard ABAP*) — mesmo código; diferenças em [`abap/README.md`](../abap/README.md) e na [seção 26](#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01) |
 | Diagramas | [`diagramas/pedidos-de-compras.drawio`](../diagramas/README.md): um arquivo, uma página por diagrama (arquitetura, fluxos e arquitetura On-Premise) |
 | Versão anterior | [`Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx`](Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (v2.2, Word) |
 
@@ -956,10 +956,10 @@ ui5/ (quatro aplicações Fiori Elements V4 / BSP: ZPC_CLIENTES, ZPC_ESTOQUE, ZP
 +-- analise-pedidos, analise-clientes, analise-estoque, analise-reembolsos (SAPUI5 freestyle)
 ```
 
-No repositório, os pacotes acima ficam em `abap/abap-environment/` (cenário SAP BTP, ABAP environment). O
-cenário On-Premise reaproveita esses fontes e guarda apenas as diferenças em `abap/on-premise/`
-(`ZIF_PC_CONSTANTS` sem modo trial e o subpacote tier 2 `ZAVBS_PC_COMMON_T2` com `ZCL_PC_VIACEP`); ver
-seção 26.
+No repositório, os pacotes acima ficam em `abap/` e servem aos dois cenários. A única classe com duas
+versões é `ZCL_PC_VIACEP` (`ZCL_PC_VIACEP/` para o SAP BTP, ABAP environment e `ZCL_PC_VIACEP_T2/` para o
+On-Premise); no On-Premise, `ZIF_PC_CONSTANTS` recebe `c_modo_trial = abap_false`. Ver
+[`abap/README.md`](../abap/README.md) e a seção 26.
 
 # 20. Deploy e Operação
 
@@ -1109,16 +1109,17 @@ O cenário principal desta especificação é o **SAP BTP, ABAP environment**. E
 mesma solução num **SAP S/4HANA 2025 FPS01 On-Premise** (ABAP Platform 2025); o roteiro vale também para o
 SAP S/4HANA Cloud Private Edition 2025, em que a infraestrutura é operada pela SAP.
 
-A ideia central: o S/4HANA 2025 executa o modelo de desenvolvimento **ABAP Cloud** dentro do próprio sistema
-(*ABAP for Cloud Development*, tier 1 do modelo de extensibilidade de três camadas). Por isso, **o código RAP
-é reutilizado sem alteração** — tabelas, CDS, behavior definitions e pools, serviços, classes e testes. O que
+A ideia central: o framework RAP é o mesmo no ABAP environment e no S/4HANA 2025. No On-Premise os pacotes
+são criados com a versão de linguagem **Standard ABAP**, e **todos os objetos RAP do projeto são criados e
+ativados normalmente, sem erros** — tabelas, CDS, behavior definitions e pools, serviços, classes e testes.
+Só dois objetos mudam de conteúdo (`ZIF_PC_CONSTANTS` e `ZCL_PC_VIACEP`). O que
 muda é tudo o que o BTP fornece como serviço gerenciado: identidade e autorização, conectividade de saída,
 launchpad, ciclo de vida do sistema e transporte.
 
 ## 26.1 Arquitetura de implementação
 
 <p align="center">
-  <a href="../assets/arquitetura-onpremise.png"><img src="../assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy de saída, firewall e API ViaCEP" width="100%"></a>
+  <a href="../assets/arquitetura-onpremise.png"><img src="../assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy de saída, firewall e API ViaCEP" width="100%"></a>
 </p>
 
 Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagramas/pedidos-de-compras.drawio).
@@ -1130,10 +1131,10 @@ Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagram
    Repository, servidas por `/sap/bc/ui5_ui5`).
 3. As aplicações chamam os serviços **OData V4** publicados no **SAP Gateway** embarcado
    (`/sap/opu/odata4/...`). O acesso a cada grupo de serviços é verificado pelo objeto `S_START`.
-4. Os serviços expõem os **BOs RAP** (ABAP for Cloud Development). As regras de negócio, o EML entre BOs e o
+4. Os serviços expõem os **BOs RAP** (pacotes Standard ABAP). As regras de negócio, o EML entre BOs e o
    draft funcionam exatamente como no BTP; os dados ficam no **SAP HANA** do próprio sistema.
-5. Para consultar o CEP, o BO Cliente chama **`ZCL_PC_VIACEP`**, um *wrapper* em Standard ABAP (tier 2)
-   liberado para uso em ABAP Cloud. Ele usa `CL_HTTP_CLIENT` com a destination **`Z_VIACEP`** (SM59) e a
+5. Para consultar o CEP, o BO Cliente chama **`ZCL_PC_VIACEP`** (versão On-Premise, pasta
+   `ZCL_PC_VIACEP_T2/`). Ele usa `CL_HTTP_CLIENT` com a destination **`Z_VIACEP`** (SM59) e a
    confiança TLS do **STRUST**, sai pelo **proxy** da DMZ, atravessa o **firewall** e chega à **API ViaCEP**.
 6. O desenvolvimento ocorre no **Eclipse + ADT** (e SAP GUI para Basis) no sistema DEV; o front-end é
    publicado com o **SAP Fiori tools**; tudo segue por **transporte** (STMS) para QAS e PRD.
@@ -1160,8 +1161,8 @@ Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagram
 - **SAP Gateway** embarcado ativo (`/IWFND/V4_ADMIN` acessível, alias `LOCAL`) e serviços ICF ativos em
   `SICF`: `/sap/bc/adt`, `/sap/bc/ui5_ui5`, `/sap/bc/ui2/flp`, `/sap/opu/odata4` e
   `/sap/opu/odata/ui5/abap_repository_srv` (deploy das BSPs).
-- **ATC** configurado com a variante de ABAP Cloud (`ABAP_CLOUD_DEVELOPMENT_DEFAULT`) para os pacotes
-  tier 1 e a variante padrão da empresa para o tier 2.
+- **ATC** configurado com a variante padrão da empresa (opcionalmente, a variante
+  `ABAP_CLOUD_DEVELOPMENT_DEFAULT` para avaliar a prontidão do código para ABAP Cloud).
 - Usuário de desenvolvimento com acesso ao ADT (`S_ADT_RES`, `S_DEVELOP`, `S_RFC`) e, para Basis/segurança,
   às transações `SM59`, `STRUST`, `SNRO`, `SU21`, `SU24`, `PFCG`, `SU01`, `/IWFND/V4_ADMIN`,
   `/UI2/FLPAM`, `/UI2/FLPCM_CUST`, `SU53` e `STAUTHTRACE` (ou apoio das equipes responsáveis).
@@ -1177,9 +1178,12 @@ Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagram
    transporte; aqui todo objeto vai para uma ordem Workbench.
 2. Crie os subpacotes `ZAVBS_PC_COMMON`, `ZAVBS_PC_CLIENTES`, `ZAVBS_PC_ESTOQUE`, `ZAVBS_PC_PEDIDOS`
    (com `ZAVBS_PC_PEDIDOS_PAGAMENTOS` e `ZAVBS_PC_PEDIDOS_SNAPSHOTS`) e `ZAVBS_PC_REEMBOLSOS` com a versão de
-   linguagem **ABAP for Cloud Development**: o ADT passa a aceitar apenas APIs liberadas, como no BTP.
-3. Crie o subpacote **`ZAVBS_PC_COMMON_T2`** (abaixo de `ZAVBS_PC_COMMON`) com a versão de linguagem
-   **Standard ABAP**. Ele abriga só o código que precisa de API clássica (tier 2).
+   linguagem **Standard ABAP**. Todos os objetos RAP do projeto ativam sem erros nessa versão, e
+   `ZCL_PC_VIACEP` pode usar `CL_HTTP_CLIENT` sem subpacote separado nem contrato de liberação.
+3. (Opcional) Para seguir o modelo *tier 1* (ABAP Cloud no próprio S/4HANA), crie os subpacotes com
+   *ABAP for Cloud Development*; nesse caso `ZCL_PC_VIACEP` precisa ficar num subpacote Standard ABAP,
+   liberada com o contrato **C1** (*Use in Cloud Development*) antes de ativar `ZBP_R_PC_CLIENTE`
+   ([`abap/README.md`](../abap/README.md#4-roteiro-no-sap-on-premise)).
 
 ### Passo 2 — Objetos criados manualmente
 
@@ -1193,22 +1197,19 @@ Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagram
 
 ### Passo 3 — Importar os fontes
 
-1. Crie os objetos de [`abap/abap-environment/`](../abap/abap-environment) na mesma ordem do cenário
+1. Crie os objetos de [`abap/`](../abap) na mesma ordem do cenário
    principal (README, *Ordem de criação e ativação*): interfaces e classes base → tabelas → CDS base →
    abstract entities e value helps → tabelas draft (*quick fix* `Create draft table`) → projeções e
    metadata extensions → behavior definitions e pools → service definitions e bindings.
-2. **Substitua** dois objetos pelas versões de [`abap/on-premise/`](../abap/on-premise):
+2. **Ajuste** dois objetos:
    - `ZIF_PC_CONSTANTS` com `c_modo_trial = abap_false` (as verificações de `ZCL_PC_AUTH` passam a valer);
-   - `ZCL_PC_VIACEP` no pacote `ZAVBS_PC_COMMON_T2`, com `CL_HTTP_CLIENT` e a destination `Z_VIACEP`
-     (mesma interface pública da versão BTP; o behavior pool `ZBP_R_PC_CLIENTE` não muda).
-3. **Libere** `ZCL_PC_VIACEP` para ABAP Cloud antes de ativar `ZBP_R_PC_CLIENTE`: no ADT, aba *API State*
-   → *Add Release Contract* → **Use System-Internally (C1)**, com *Use in Cloud Development* marcado. Sem o
-   contrato, a ativação do behavior pool falha porque um objeto ABAP Cloud não pode chamar código Standard
-   ABAP não liberado.
-4. **Não importe** os objetos exclusivos do BTP: IAM Apps (`*.sia6.xml`), o serviço de entrada
+   - `ZCL_PC_VIACEP` com o conteúdo de `ZCL_PC_VIACEP_T2/` no pacote `ZAVBS_PC_COMMON`, com `CL_HTTP_CLIENT`
+     e a destination `Z_VIACEP` (mesma interface pública da versão BTP; o behavior pool `ZBP_R_PC_CLIENTE`
+     não muda).
+3. **Não importe** os objetos exclusivos do BTP: IAM Apps (`*.sia6.xml`), o serviço de entrada
    `*_G4BA` (*Cloud Communication Management*), os valores propostos `*.sush.xml`, os objetos de
    autorização da classe `CPAE` (recriados no passo 2) e a tabela draft residual `ZTA_PC_REEMB_D`.
-5. O repositório guarda os fontes no formato do ADT (um arquivo por objeto), não no formato abapGit: a
+4. O repositório guarda os fontes no formato do ADT (um arquivo por objeto), não no formato abapGit: a
    criação é feita no ADT copiando cada fonte, como no BTP. Para automatizar, converta para abapGit ou gCTS.
 
 ### Passo 4 — Conectividade com o ViaCEP (SM59, STRUST e proxy)
@@ -1218,10 +1219,10 @@ Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagram
 | Destination | `SM59` → *Conexões HTTP com servidor externo* (tipo **G**) `Z_VIACEP`: host `viacep.com.br`, porta `443`, *Path Prefix* vazio, *Sem logon*, SSL **ativo** com a PSE *SSL Client (Anônimo)*; proxy HTTP(S) da empresa, se houver. |
 | Certificados | `STRUST` → PSE *SSL Client Anônimo*: importar a cadeia da autoridade certificadora do ViaCEP (raiz e intermediárias) e gravar. Renovar quando a cadeia mudar. |
 | Rede | Regra de firewall/proxy para `viacep.com.br:443` a partir dos servidores de aplicação. |
-| Teste | Report `ZPC_TESTE_VIACEP` (em `abap/on-premise`): deve retornar HTTP 200 e o endereço para um CEP válido. |
+| Teste | Report `ZPC_TESTE_VIACEP` (em `abap/ZAVBS_PC_COMMON/.../ZPC_TESTE_VIACEP_T2/`): deve retornar HTTP 200 e o endereço para um CEP válido. |
 
 O passo a passo detalhado, com o diagnóstico de `SSSLERR_PEER_CERT_UNTRUSTED`, timeout e status HTTP, está em
-[Tutorial: migração da consulta ViaCEP para o On-Premise](tutorial_migracao_viacep_btp_para_onpremise.md).
+[`abap/README.md`, seção 5](../abap/README.md#5-consulta-de-cep-viacep-nos-dois-cenários).
 
 ### Passo 5 — Publicar os serviços OData V4
 
@@ -1242,8 +1243,8 @@ O passo a passo detalhado, com o diagnóstico de `SSSLERR_PEER_CERT_UNTRUSTED`, 
 | Diagnóstico | `SU53`, `STAUTHTRACE`, `SUIM`. |
 
 O roteiro completo, inclusive testes com `CL_AUNIT_AUTHORITY_CHECK`, está em
-[Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](tutorial_autorizacao_btp_para_onpremise.md). Se for
-preciso restringir também a **leitura**, siga o [tutorial de DCL](tutorial_controle_leitura_cds_dcl.md), que
+[`abap/README.md`, seção 6](../abap/README.md#6-autorização-authority-check-nos-dois-cenários). Se for
+preciso restringir também a **leitura**, siga a [seção 7 (DCL)](../abap/README.md#7-controle-de-leitura-nas-cds-views-com-access-control-dcl), que
 funciona igual nos dois cenários.
 
 ### Passo 7 — Carga inicial (numeração e CodeLists)
@@ -1319,7 +1320,7 @@ customTasks:
 
 | Objeto | Transporte | Observação |
 | --- | --- | --- |
-| Fontes ABAP (tier 1 e tier 2), tabelas, CDS, BDEF, serviços, contrato C1 | Workbench | Liberar a ordem após ATC sem erros. |
+| Fontes ABAP, tabelas, CDS, BDEF, serviços | Workbench | Liberar a ordem após ATC sem erros. |
 | BSPs (deploy do front-end) | Workbench | Ordem informada no `ui5-deploy.yaml`. |
 | Objetos `SU21`, valores `SU24` | Workbench | — |
 | Roles `PFCG` | Workbench ou Customizing | Gerar o perfil e fazer a comparação de usuários no destino. |
@@ -1333,7 +1334,7 @@ customTasks:
 
 1. ABAP Unit (`Ctrl+Shift+F10`) em `ZCL_PC_UTIL`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_IMPORTACAO` e
    `ZCL_PC_PLANILHA`: os mesmos testes do BTP devem passar.
-2. ATC nos pacotes tier 1 (variante ABAP Cloud) e tier 2.
+2. ATC nos pacotes do projeto, sem erros.
 3. `ZPC_TESTE_VIACEP` em cada sistema; depois, cadastro de endereço na app Gestão de Clientes.
 4. Cenários da seção 18 com dois usuários: `PC_ADMIN` (`Z_PC_ADMIN`) e `PC_COMUM` (`Z_PC_COMUM`), incluindo as
    negações esperadas (botões desabilitados, `403` sem `S_START`).
@@ -1344,8 +1345,8 @@ customTasks:
 | Tema | SAP BTP, ABAP environment (cenário principal) | SAP S/4HANA 2025 FPS01 On-Premise |
 | --- | --- | --- |
 | Operação da plataforma | SaaS/PaaS gerenciado pela SAP; atualizações trimestrais automáticas | Gerenciado pelo cliente (ou pela SAP na Private Edition); upgrades e FPS/SPS planejados |
-| Modelo de linguagem | Somente ABAP for Cloud Development | ABAP Cloud (tier 1) **e** Standard ABAP (tier 2) no mesmo sistema |
-| Código RAP (CDS, BDEF, pools, serviços) | `abap/abap-environment` | **O mesmo**, sem alteração |
+| Versão de linguagem dos pacotes | Somente ABAP for Cloud Development | **Standard ABAP** (opcionalmente ABAP for Cloud Development, tier 1) |
+| Código RAP (CDS, BDEF, pools, serviços) | `abap/` | **O mesmo**, sem alteração |
 | Pacotes e transporte | Software component `ZLOCAL`, sem transporte (gCTS/ABAP CTS nos sistemas não trial) | Pacotes com camada de transporte e ordens Workbench/Customizing (`STMS`, DEV → QAS → PRD) |
 | Usuários e login | SAP ID service / Identity Authentication | Usuários `SU01`, SSO por SAML 2.0 ou Kerberos via Web Dispatcher |
 | Objetos de autorização | Classe `CPAE`, criados no ADT | Classe própria `ZPC` em `SU21` (mesmos objetos e atividades) |
@@ -1353,7 +1354,7 @@ customTasks:
 | Agrupamento e atribuição | Business Catalog + Business Role (*Maintain Business Roles*) | Role `PFCG` (`Z_PC_ADMIN`, `Z_PC_COMUM`) com `S_START` e conteúdo do launchpad |
 | Modo trial (`c_modo_trial`) | `abap_true` no trial compartilhado | **Sempre `abap_false`** |
 | Publicação OData | *Publish* no ADT (gera serviço de entrada `*_G4BA`) | *Publish* no ADT ou `/IWFND/V4_ADMIN` (grupo de serviços, alias `LOCAL`) |
-| Consulta ViaCEP | `cl_http_destination_provider=>create_by_url` (URL no código); em produção, *Communication Arrangement* | Wrapper tier 2 `ZCL_PC_VIACEP` com `CL_HTTP_CLIENT` + `SM59` (`Z_VIACEP`) + `STRUST` + proxy |
+| Consulta ViaCEP | `ZCL_PC_VIACEP/`: `cl_http_destination_provider=>create_by_url` (URL no código); em produção, *Communication Arrangement* | `ZCL_PC_VIACEP_T2/`: `CL_HTTP_CLIENT` + `SM59` (`Z_VIACEP`) + `STRUST` + proxy |
 | Numeração | Objeto `ZPC_NR` no editor do ADT | Objeto `ZPC_NR` na `SNRO` (mesmo buffer em memória) |
 | Launchpad | SAP Build Work Zone (tiles URL no trial) ou launchpad do ABAP environment | SAP Fiori launchpad embarcado: `/UI2/FLPAM`, `/UI2/FLPCM_CUST`, espaços e páginas |
 | Deploy das apps | `npm run deploy` gera BSP + IAM App `<BSP>_UI5R` | `npm run deploy` gera só a BSP; exige ordem de transporte |
@@ -1363,15 +1364,13 @@ customTasks:
 
 ## 26.6 Limitações e cuidados no cenário On-Premise
 
-1. **Código tier 2.** `ZCL_PC_VIACEP` usa `CL_HTTP_CLIENT`, API clássica sem contrato de liberação para ABAP
-   Cloud. Ela fica isolada em `ZAVBS_PC_COMMON_T2`, liberada com contrato C1, e deve continuar mínima. Em
-   cada upgrade, rode o ATC e revise as exceções de `CREATE_BY_DESTINATION`/`SEND`/`RECEIVE`, que podem
-   mudar entre releases. O código tier 2 não é *cloud-ready*: se a solução migrar para o BTP ou para o
-   S/4HANA Cloud Public Edition, volta-se à classe de `abap-environment`.
+1. **API clássica no ViaCEP.** A versão On-Premise de `ZCL_PC_VIACEP` usa `CL_HTTP_CLIENT`, permitida em
+   Standard ABAP. Em cada upgrade, rode o ATC e revise as exceções de `CREATE_BY_DESTINATION`/`SEND`/
+   `RECEIVE`, que podem mudar entre releases. Esse código não é *cloud-ready*: se a solução migrar para o BTP
+   ou para o S/4HANA Cloud Public Edition, volta-se à versão da pasta `ZCL_PC_VIACEP/`.
 2. **`create_by_url` não usado.** No sistema On-Premise em que a migração foi testada,
    `CL_HTTP_DESTINATION_PROVIDER` não estava disponível para o código. A alternativa ABAP Cloud seria um
-   *Communication Scenario* com *Communication Arrangement*; ela não foi testada neste projeto e deve ser
-   avaliada no release antes de eliminar o tier 2.
+   *Communication Scenario* com *Communication Arrangement*; ela não foi testada neste projeto.
 3. **Dependência da internet.** Como no BTP, ViaCEP indisponível bloqueia o cadastro e a alteração de
    endereço (regra 10.2). No On-Premise há mais pontos de falha (proxy, firewall, certificados no `STRUST`)
    e todos são mantidos pela empresa; a renovação da cadeia de certificados deve entrar no calendário de
@@ -1400,10 +1399,9 @@ customTasks:
 ## 26.7 Checklist do cenário On-Premise
 
 - [ ] Release confirmado em `CVERS`: S/4HANA 2025 FPS01, ABAP Platform 2025, SAPUI5 1.136.
-- [ ] Pacotes criados: tier 1 em *ABAP for Cloud Development*, `ZAVBS_PC_COMMON_T2` em *Standard ABAP*.
+- [ ] Pacotes criados com a versão de linguagem *Standard ABAP*.
 - [ ] `ZPC_MSG`, `ZPC_NR_NUMC10`, `SNRO ZPC_NR` (buffer 10), `SU21 ZPC_ADMIN`/`ZPC_PEDIDO` (com 16).
-- [ ] Fontes de `abap-environment` importados, com `ZIF_PC_CONSTANTS` e `ZCL_PC_VIACEP` de `on-premise`.
-- [ ] `ZCL_PC_VIACEP` liberado com contrato C1 (*Use in Cloud Development*).
+- [ ] Fontes de `abap/` importados, com `c_modo_trial = abap_false` e `ZCL_PC_VIACEP` de `ZCL_PC_VIACEP_T2/`.
 - [ ] Objetos exclusivos do BTP não importados (`*.sia6`, `*_G4BA`, `*.sush`, `ZTA_PC_REEMB_D`).
 - [ ] `SM59 Z_VIACEP`, `STRUST`, proxy/firewall configurados; `ZPC_TESTE_VIACEP` com HTTP 200.
 - [ ] Cinco grupos de serviços OData V4 publicados.

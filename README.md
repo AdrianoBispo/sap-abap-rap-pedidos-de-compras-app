@@ -66,10 +66,10 @@ Código-fonte de quatro aplicações **Fiori Elements (OData V4)** e quatro apps
 freestyle** para o **SAP BTP ABAP Environment (Trial)**: backend **RAP** em [`abap/`](abap/) e
 front-end em [`ui5/`](ui5/).
 
-O backend tem dois cenários de implementação, com o mesmo código RAP:
-[`abap/abap-environment/`](abap/abap-environment) (**SAP BTP, ABAP environment**, cenário principal) e
-[`abap/on-premise/`](abap/on-premise) (**SAP S/4HANA 2025 FPS01**, somente as diferenças). O roteiro On-Premise,
-com limitações e diferenças, está na
+O backend tem dois cenários de implementação, com o mesmo código RAP em [`abap/`](abap/): o
+**SAP BTP, ABAP environment** (ABAP Cloud, cenário principal) e o **SAP S/4HANA On-Premise** (pacotes
+*Standard ABAP*). As poucas diferenças estão explicadas no [`abap/README.md`](abap/README.md); o roteiro
+On-Premise completo, com limitações e checklist, está na
 [Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01).
 
 | App                | O que gerencia                                                      |
@@ -232,13 +232,13 @@ O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Ite
 
 ### Arquitetura On-Premise
 
-Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP roda em
-ABAP Cloud (tier 1) no próprio sistema, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta ao
-ViaCEP passa por um *wrapper* em Standard ABAP (tier 2) com `SM59`/`STRUST`, e a segurança usa `SU21`,
-`SU24` e `PFCG`. Fonte: página 7 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
+Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP é criado
+em pacotes *Standard ABAP* e ativa sem erros, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta
+ao ViaCEP usa a versão On-Premise de `ZCL_PC_VIACEP` (`CL_HTTP_CLIENT` com `SM59`/`STRUST`), e a segurança
+usa `SU21`, `SU24` e `PFCG`. Fonte: página 7 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
 
 <p align="center">
-  <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
+  <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
 </p>
 
 Passo a passo, limitações e diferenças em relação ao BTP:
@@ -274,22 +274,20 @@ verde e erros em vermelho.
 
 ```text
 .
-├── abap/                               backend ABAP Cloud / RAP (README.md explica os cenários)
-│   ├── abap-environment/               SAP BTP, ABAP environment — fonte completa
-│   │   │                               (pacote principal ZAVBS_PEDIDOS_COMPRAS, subpacote de ZAVBS_ESTUDOS no trial)
-│   │   ├── ZAVBS_PC_COMMON             constantes, mensagens, utilitários, autorização,
-│   │   │                               numeração, CodeLists, setup
-│   │   ├── ZAVBS_PC_CLIENTES           BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
-│   │   ├── ZAVBS_PC_ESTOQUE            BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-│   │   ├── ZAVBS_PC_PEDIDOS            BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
-│   │   │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
-│   │   │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
-│   │   └── ZAVBS_PC_REEMBOLSOS         BO Reembolso, serviço ZUI_PC_REEMBOLSOS
-│   │   (analítico: cubos ZI_PC_*_CUBE e consultas ZC_PC_*_ANALISE em cada pacote de domínio;
-│   │    serviço ZUI_PC_ANALITICO em ZAVBS_PC_COMMON)
-│   └── on-premise/                     SAP S/4HANA 2025 FPS01 — somente as diferenças
-│       ├── ZAVBS_PC_COMMON             ZIF_PC_CONSTANTS sem modo trial
-│       └── ZAVBS_PC_COMMON_T2          tier 2 (Standard ABAP): ZCL_PC_VIACEP (SM59) e report de teste
+├── abap/                               backend RAP, o mesmo para ABAP Cloud e On-Premise
+│   │                                   (README.md: diferenças, ViaCEP, autorização e DCL nos dois cenários;
+│   │                                    pacote principal ZAVBS_PEDIDOS_COMPRAS)
+│   ├── ZAVBS_PC_COMMON                 constantes, mensagens, utilitários, autorização,
+│   │                                   numeração, CodeLists, setup; ZCL_PC_VIACEP em duas versões:
+│   │                                   ZCL_PC_VIACEP/ (BTP) e ZCL_PC_VIACEP_T2/ (On-Premise, SM59)
+│   ├── ZAVBS_PC_CLIENTES               BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
+│   ├── ZAVBS_PC_ESTOQUE                BO Item, value help de item, serviço ZUI_PC_ESTOQUE
+│   ├── ZAVBS_PC_PEDIDOS                BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
+│   │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
+│   │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
+│   └── ZAVBS_PC_REEMBOLSOS             BO Reembolso, serviço ZUI_PC_REEMBOLSOS
+│   (analítico: cubos ZI_PC_*_CUBE e consultas ZC_PC_*_ANALISE em cada pacote de domínio;
+│    serviço ZUI_PC_ANALITICO em ZAVBS_PC_COMMON)
 │
 ├── ui5/                                front-end Fiori Elements (gerado com SAP Fiori tools)
 │   ├── gestao-clientes/                app Gestão de Clientes (projeto isolado)
@@ -303,11 +301,12 @@ verde e erros em vermelho.
 │   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as oito apps
 │   └── README.md                       guia do front-end
 │
+├── assets/                             capturas de tela e imagens dos diagramas
+├── diagramas/                          pedidos-de-compras.drawio: um arquivo, uma página por diagrama
+│
 ├── docs/
-│   ├── assets/                         capturas de tela e imagens dos diagramas
-│   ├── diagramas/                      pedidos-de-compras.drawio: um arquivo, uma página por diagrama
+│   ├── apresentacoes/                  slides das cinco etapas (modelagem → apps Fiori), BTP e On-Premise
 │   ├── modelos-importacao/             planilhas modelo (CSV/XLSX)
-│   ├── tutorial_*.md                   tutoriais On-Premise (autorização, ViaCEP) e DCL
 │   ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md        especificação técnica v2.3 (Markdown)
 │   └── Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx   especificação v2.2 (Word, histórico)
 │
@@ -354,7 +353,7 @@ Um arquivo por objeto ADT:
 > As instruções de instalação abaixo são do cenário principal (SAP BTP, ABAP environment). Para o
 > **SAP S/4HANA 2025 FPS01 On-Premise**, siga a
 > [Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)
-> e o [`abap/on-premise/README.md`](abap/on-premise/README.md).
+> e o [`abap/README.md`](abap/README.md#4-roteiro-no-sap-on-premise).
 
 ---
 
@@ -890,17 +889,16 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
   dos tiles.
 - [Diagramas](diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
   fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `assets/` e links para editar.
-- [Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](docs/tutorial_autorizacao_btp_para_onpremise.md) —
-  objetos `SU21`, valores `SU24`, roles `PFCG`, `S_START`, DCL e diagnóstico com `SU53`/`STAUTHTRACE`.
-- [Tutorial: controle de leitura nas CDS Views (DCL)](docs/tutorial_controle_leitura_cds_dcl.md) — implementação
-  opcional que exige a atividade 03 (Exibir) de `ZPC_ADMIN`/`ZPC_PEDIDO` para ler os dados, com as regras de
-  acesso de todas as views expostas.
-- [Tutorial: migração da consulta ViaCEP para o On-Premise](docs/tutorial_migracao_viacep_btp_para_onpremise.md)
-  — `CL_HTTP_CLIENT`, destination `SM59` e certificados `STRUST`.
+- [Backend: ABAP Cloud e On-Premise](abap/README.md) — o que muda entre os cenários e:
+  - [consulta de CEP (ViaCEP)](abap/README.md#5-consulta-de-cep-viacep-nos-dois-cenários) — `create_by_url` no
+    BTP; `CL_HTTP_CLIENT`, destination `SM59` e certificados `STRUST` no On-Premise;
+  - [autorização (AUTHORITY-CHECK)](abap/README.md#6-autorização-authority-check-nos-dois-cenários) — IAM Apps e
+    Business Roles no BTP; `SU21`, `SU24`, `PFCG`, `S_START` e `SU53`/`STAUTHTRACE` no On-Premise;
+  - [controle de leitura (DCL)](abap/README.md#7-controle-de-leitura-nas-cds-views-com-access-control-dcl) —
+    implementação opcional que exige a atividade 03 (Exibir) de `ZPC_ADMIN`/`ZPC_PEDIDO` para ler os dados.
 - [Especificação técnica v2.3](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md) (Markdown), com a
   [implementação On-Premise no SAP S/4HANA 2025 FPS01](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01);
   a versão anterior (v2.2) continua em [.docx](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx).
-- [Backend: cenários BTP e On-Premise](abap/README.md) — o que fica em `abap/abap-environment` e em `abap/on-premise`.
 - Projeto relacionado: [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep).
 
 ---
