@@ -29,7 +29,13 @@ cenário**: as poucas diferenças estão explicadas neste README.
 5. [Consulta de CEP (ViaCEP) nos dois cenários](#5-consulta-de-cep-viacep-nos-dois-cenários)
 6. [Autorização (AUTHORITY-CHECK) nos dois cenários](#6-autorização-authority-check-nos-dois-cenários)
 7. [Controle de leitura nas CDS Views com Access Control (DCL)](#7-controle-de-leitura-nas-cds-views-com-access-control-dcl)
-8. [Referências](#8-referências)
+8. [Instalação: objetos manuais e ordem de ativação](#8-instalação-objetos-manuais-e-ordem-de-ativação)
+9. [Regras implementadas no backend](#9-regras-implementadas-no-backend)
+10. [Camada analítica](#10-camada-analítica)
+11. [Testes](#11-testes)
+12. [Limitações conhecidas e observações sobre o Trial](#12-limitações-conhecidas-e-observações-sobre-o-trial)
+13. [Histórico de correções do backend](#13-histórico-de-correções-do-backend)
+14. [Referências](#14-referências)
 
 ---
 
@@ -54,12 +60,42 @@ abap/
 - `ZCL_PC_VIACEP/` e `ZCL_PC_VIACEP_T2/` contêm **a mesma classe** (`ZCL_PC_VIACEP`), com a mesma interface
   pública: crie no sistema **apenas uma**, conforme o ambiente. O sufixo `_T2` (*tier 2*, Standard ABAP)
   existe só para as duas versões conviverem no repositório.
-- A convenção de arquivos (um arquivo por objeto ADT) e a ordem de criação e ativação estão no
-  [README principal](../README.md#convenção-de-arquivos). Elas são as mesmas nos dois cenários.
+- A ordem de criação e ativação está na [seção 8](#8-instalação-objetos-manuais-e-ordem-de-ativação) e
+  é a mesma nos dois cenários.
 - A arquitetura de cada cenário está nas páginas 1 (BTP) e 7 (On-Premise) de
   [`docs/pedidos-de-compras.drawio`](../docs/pedidos-de-compras.drawio)
   ([`arquitetura.png`](../assets/arquitetura.png) e
   [`arquitetura-onpremise.png`](../assets/arquitetura-onpremise.png)).
+- O serviço analítico (`ZUI_PC_ANALITICO`) fica em `ZAVBS_PC_COMMON`; os cubos `ZI_PC_*_CUBE` e as consultas
+  `ZC_PC_*_ANALISE` ficam no pacote de cada domínio.
+
+> [!NOTE]
+> O backend não usa domínios, elementos de dados nem estruturas próprios: as tabelas usam tipos técnicos
+> embutidos do ABAP (`abap.char`, `abap.cuki`, `xfeld` etc.). A única exceção é o domínio `ZPC_NR_NUMC10`,
+> exigido pelo objeto de numeração.
+
+### 1.1. Convenção de arquivos
+
+Um arquivo por objeto ADT:
+
+| Extensão | Objeto no ADT |
+| --- | --- |
+| `*.abap` (em `Dictionary/`) | Database Table (editor de código-fonte) |
+| `*.ddls.asddls` | Data Definition (CDS view entity / projection / abstract entity) |
+| `*.ddlx.asddlxs` | Metadata Extension |
+| `*.bdef.asbdef` | Behavior Definition |
+| `*.srvd.srvdsrv` | Service Definition |
+| `*.srvb.xml` | Service Binding (OData V4) |
+| `*.clas.abap` | Classe global (aba *Global Class*) |
+| `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
+| `*.clas.testclasses.abap` | Aba *Test Classes* da mesma classe (ABAP Unit) |
+| `*.intf.abap` | Interface |
+| `*.doma.xml` | Domain (só o Number Length Domain `ZPC_NR_NUMC10`) |
+| `*.susob.xml` | Authorization Object (BTP) |
+| `ZPC_MSG.msagn.xml` | Message Class |
+
+O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
+cada fonte. Para automatizar, converta para abapGit ou gCTS.
 
 ---
 
@@ -84,6 +120,10 @@ abap/
 | Launchpad | SAP Build Work Zone (tiles URL no Trial) | SAP Fiori launchpad embarcado (`/UI2/FLPAM`, `/UI2/FLPCM_CUST`) |
 | Deploy das apps (`npm run deploy`) | BSP + IAM App `<BSP>_UI5R` | Só a BSP, com ordem de transporte |
 | Diagnóstico de autorização | *Display Authorization Trace* | `SU53`, `STAUTHTRACE`, `SUIM` |
+| Usuários e login | SAP ID service / Identity Authentication | Usuários `SU01`, SSO por SAML 2.0 ou Kerberos via Web Dispatcher |
+| Dados de demonstração | `ZCL_PC_SETUP` a qualquer momento; `ZCL_PC_RESET` liberado | `ZCL_PC_SETUP` só em DEV/QAS; `ZCL_PC_RESET` bloqueado (modo trial desligado) |
+| Monitoramento | ADT e apps de monitoramento do BTP | ADT + SAP GUI: `ST22`, `SM21`, `SAT`, `/IWFND/ERROR_LOG`, `/IWBEP/ERROR_LOG`, `SMICM` |
+| Operação e infraestrutura | Gerenciadas pela SAP (atualizações trimestrais, HANA Cloud, rede, certificados) | Responsabilidade da empresa (ou da SAP na Private Edition): upgrades, sizing, backup, alta disponibilidade, Web Dispatcher, certificados, firewall |
 
 ### 2.2. Objetos do repositório que só existem no BTP
 
@@ -107,8 +147,8 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 1. Criar o pacote principal `ZAVBS_PEDIDOS_COMPRAS` e os subpacotes no software component `ZLOCAL`
    (versão de linguagem *ABAP for Cloud Development*).
 2. Criar os objetos manuais (Message Class `ZPC_MSG`, domínio `ZPC_NR_NUMC10`, objeto de numeração `ZPC_NR`,
-   objetos de autorização `ZPC_ADMIN`/`ZPC_PEDIDO`) e importar os fontes deste diretório na ordem do
-   [README principal](../README.md#ordem-de-criação-e-ativação), usando a pasta `ZCL_PC_VIACEP/`.
+   objetos de autorização `ZPC_ADMIN`/`ZPC_PEDIDO`) e importar os fontes deste diretório na
+   [ordem de ativação](#82-ordem-de-criação-e-ativação), usando a pasta `ZCL_PC_VIACEP/`.
 3. Publicar os service bindings no ADT.
 4. Criar as IAM Apps, os Business Catalogs e as Business Roles
    ([seção 6.3](#63-configuração-no-sap-btp-abap-environment)). No Trial compartilhado, sem acesso a
@@ -127,8 +167,8 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 3. Criar os objetos manuais: Message Class `ZPC_MSG` (ADT ou `SE91`), domínio `ZPC_NR_NUMC10` (ADT ou
    `SE11`), objeto de numeração `ZPC_NR` (`SNRO`, buffer em memória com 10 números) e a classe `ZPC` com os
    objetos `ZPC_ADMIN`/`ZPC_PEDIDO` (`SU21`).
-4. Importar os fontes deste diretório na ordem do
-   [README principal](../README.md#ordem-de-criação-e-ativação), com duas trocas:
+4. Importar os fontes deste diretório na [ordem de ativação](#82-ordem-de-criação-e-ativação), com duas
+   trocas:
    - `ZIF_PC_CONSTANTS`: definir `c_modo_trial` como `abap_false`:
 
      ```abap
@@ -150,8 +190,9 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 8. Front-end: `npm run deploy` apontando para o sistema On-Premise (com ordem de transporte) e conteúdo do
    Fiori launchpad (catálogos, espaços e páginas) nas roles.
 
-O roteiro completo, com componentes, transporte, limitações e checklist, está na
-[Especificação Técnica, seção 26](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01).
+Componentes de referência, pré-requisitos, transporte, limitações e checklist estão nas subseções
+[4.1](#41-componentes-de-referência) a [4.5](#45-checklist-on-premise). O conteúdo do SAP Fiori launchpad está
+no [`ui5/README.md`](../ui5/README.md#conteúdo-do-sap-fiori-launchpad-on-premise).
 
 > [!TIP]
 > **E se eu quiser manter os pacotes em *ABAP for Cloud Development* no On-Premise?** É possível (modelo de
@@ -159,6 +200,82 @@ O roteiro completo, com componentes, transporte, limitações e checklist, está
 > coloque só `ZCL_PC_VIACEP` (versão `_T2`) num subpacote *Standard ABAP* e libere a classe no ADT (*API
 > State* → *Add Release Contract* → **Use System-Internally (C1)**, com *Use in Cloud Development*) antes
 > de ativar `ZBP_R_PC_CLIENTE`. Para estudar o RAP, o caminho mais simples é tudo em Standard ABAP.
+
+### 4.1. Componentes de referência
+
+| Componente | Referência (S/4HANA 2025 FPS01) | Observação |
+| --- | --- | --- |
+| ABAP Platform | ABAP Platform 2025 (`SAP_BASIS` 816) | RAP managed com draft, `strict ( 2 )`, EML e CDS view entities. Confira em *Sistema → Status* (`CVERS`). |
+| SAP Gateway | `SAP_GWFND` embarcado | OData V4 publicado em `/IWFND/V4_ADMIN`; alias de sistema `LOCAL`. |
+| SAP Fiori front-end server | FES 2025 embarcado (`SAP_UI`), SAPUI5 1.136 | Atende ao requisito das apps (SAPUI5 ≥ 1.136). |
+| Banco de dados | SAP HANA 2.0 | Mesmo papel do SAP HANA do ABAP environment. |
+| Acesso | SAP Web Dispatcher | Recomendado; em laboratório, o acesso direto ao ICM também funciona. |
+| Ferramentas | Eclipse + ADT, SAP GUI 8.00+, Node.js 20+, VS Code ou BAS com SAP Fiori tools | SAP GUI para as transações de Basis e segurança. |
+
+O roteiro vale também para o SAP S/4HANA Cloud Private Edition 2025, em que a infraestrutura é operada pela SAP.
+
+### 4.2. Pré-requisitos no sistema
+
+- Cliente de desenvolvimento aberto para objetos de repositório (`SCC4`), landscape de transporte (`STMS`:
+  DEV → QAS → PRD) e chave de desenvolvedor, se exigida.
+- SAP Gateway embarcado ativo e serviços ICF ativos em `SICF`: `/sap/bc/adt`, `/sap/bc/ui5_ui5`,
+  `/sap/bc/ui2/flp`, `/sap/opu/odata4` e `/sap/opu/odata/ui5/abap_repository_srv` (deploy das BSPs).
+- ATC com a variante padrão da empresa (opcionalmente `ABAP_CLOUD_DEVELOPMENT_DEFAULT`).
+- Usuário de desenvolvimento com `S_ADT_RES`, `S_DEVELOP` e `S_RFC` e, para Basis/segurança, acesso a `SM59`,
+  `STRUST`, `SNRO`, `SU21`, `SU24`, `PFCG`, `SU01`, `/IWFND/V4_ADMIN`, `/UI2/FLPAM`, `/UI2/FLPCM_CUST`, `SU53` e
+  `STAUTHTRACE` (ou apoio das equipes responsáveis).
+- Saída para a internet dos servidores de aplicação até `viacep.com.br:443`, direta ou por proxy.
+
+### 4.3. Transporte entre DEV, QAS e PRD
+
+| Objeto | Transporte | Observação |
+| --- | --- | --- |
+| Fontes ABAP, tabelas, CDS, BDEF, serviços | Workbench | Liberar a ordem após ATC sem erros |
+| BSPs (deploy do front-end) | Workbench | Ordem informada no `ui5-deploy.yaml` |
+| Objetos `SU21`, valores `SU24` | Workbench | — |
+| Roles `PFCG` | Workbench ou Customizing | Gerar o perfil e fazer a comparação de usuários no destino |
+| Catálogos/espaços do launchpad | Customizing (`/UI2/FLPCM_CUST`) ou Workbench (`/UI2/FLPAM`) | Conforme o modo de manutenção |
+| Publicação dos grupos de serviços | Customizing ou manual em cada sistema | `/IWFND/V4_ADMIN` |
+| `SM59`, `STRUST`, proxy/firewall | **Manual em cada sistema** | Basis/infraestrutura |
+| Intervalos de `ZPC_NR` e CodeLists | Manual (`SNRO`) ou setup em DEV/QAS | Em PRD, criar os intervalos `01` e `02` e transportar o conteúdo de `ZTA_PC_CODELIST` (`R3TR TABU`) |
+| Usuários e atribuição de roles | **Não transportado** | Em cada sistema ou via CUA/IdM |
+
+### 4.4. Limitações e cuidados
+
+1. **API clássica no ViaCEP.** A versão On-Premise de `ZCL_PC_VIACEP` usa `CL_HTTP_CLIENT`; em cada upgrade,
+   rode o ATC e revise as exceções de `CREATE_BY_DESTINATION`/`SEND`/`RECEIVE`. Esse código não é
+   *cloud-ready*: para o BTP ou o S/4HANA Cloud Public Edition, use a versão de `ZCL_PC_VIACEP/`.
+2. **`create_by_url` não usado.** No sistema On-Premise testado, `CL_HTTP_DESTINATION_PROVIDER` não estava
+   disponível. A alternativa ABAP Cloud (*Communication Scenario* + *Arrangement*) não foi testada.
+3. **Dependência da internet.** ViaCEP indisponível bloqueia o cadastro de endereço. No On-Premise há mais
+   pontos de falha (proxy, firewall, certificados no `STRUST`), todos mantidos pela empresa.
+4. **Release mínimo.** O código usa `strict ( 2 )`, `Activate` com implementação adicional, `hidden: #(Campo)`
+   em facets, action estática com parâmetro `deep` e `@Semantics.largeObject`; em releases anteriores ao
+   2025 (2022 ou 2023) parte da sintaxe pode não ativar e não foi verificada.
+5. **Versão do SAPUI5.** As apps exigem SAPUI5 ≥ 1.136; em *hub deployment* com front-end server mais antigo
+   elas não abrem até o FES ser atualizado.
+6. **Itens não transportados.** Usuários, roles atribuídas, `SM59`, `STRUST`, regras de rede e intervalos de
+   numeração são mantidos em cada sistema — a causa mais comum de "funciona em DEV e não em QAS".
+7. **Dados de demonstração.** `ZCL_PC_SETUP` grava 300 registros fictícios: não execute em PRD.
+8. **Acesso externo.** Publicar as apps na internet ou no SAP Build Work Zone exige Web Dispatcher na DMZ ou
+   SAP Cloud Connector com *principal propagation*.
+9. **Ambiente de estudo.** Não há *trial* gratuito do S/4HANA On-Premise; a alternativa é a appliance do SAP
+   Cloud Appliance Library, com custo de infraestrutura no hyperscaler.
+
+### 4.5. Checklist On-Premise
+
+- [ ] Release confirmado em `CVERS` (S/4HANA 2025 FPS01, ABAP Platform 2025, SAPUI5 1.136).
+- [ ] Pacotes criados com a versão de linguagem *Standard ABAP*.
+- [ ] `ZPC_MSG`, `ZPC_NR_NUMC10`, `ZPC_NR` na `SNRO` (buffer 10), `ZPC_ADMIN`/`ZPC_PEDIDO` na `SU21` (com 16).
+- [ ] Fontes importados, com `c_modo_trial = abap_false` e `ZCL_PC_VIACEP` de `ZCL_PC_VIACEP_T2/`.
+- [ ] Objetos exclusivos do BTP não importados ([seção 2.2](#22-objetos-do-repositório-que-só-existem-no-btp)).
+- [ ] `SM59 Z_VIACEP`, `STRUST`, proxy/firewall; `ZPC_TESTE_VIACEP` com HTTP 200.
+- [ ] Cinco grupos de serviços OData V4 publicados.
+- [ ] `SU24`, roles `Z_PC_ADMIN`/`Z_PC_COMUM` geradas e atribuídas.
+- [ ] Intervalos e CodeLists em cada sistema (setup só em DEV/QAS).
+- [ ] Oito BSPs implantadas com ordem de transporte; conteúdo do launchpad nas roles.
+- [ ] ABAP Unit e ATC sem erros; cenários de teste aprovados com os dois perfis.
+- [ ] Ordens liberadas e importadas em QAS e PRD; configurações manuais repetidas em cada sistema.
 
 ---
 
@@ -857,7 +974,387 @@ e volte as views para `#NOT_REQUIRED`.
 
 ---
 
-## 8. Referências
+## 8. Instalação: objetos manuais e ordem de ativação
+
+### 8.1. Objetos criados manualmente
+
+Estes objetos não têm código-fonte editável no repositório, ou exigem um passo manual:
+
+1. **Message Class `ZPC_MSG`** (ADT; On-Premise também `SE91`) — cadastrar as mensagens de
+   `ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml` (até 73 caracteres por texto; `&1`/`&2` são parâmetros).
+2. **Domínio `ZPC_NR_NUMC10`** — NUMC, tamanho 10 (usado como *Number Length Domain*).
+3. **Number Range Object `ZPC_NR`** (BTP: editor do ADT; On-Premise: `SNRO`) — domínio `ZPC_NR_NUMC10`, sem
+   subobjeto, com **Main Memory Buffering** e *Number of Numbers in Buffer* maior que zero (p. ex. 10). Sem
+   buffer (ou com 0 números, que o runtime trata como "sem buffer"), `GET NUMBER` faz `UPDATE` síncrono na
+   `NRIV`, proibido numa transação RAP, e o cadastro de pedido/item termina em dump
+   `BEHAVIOR_ILLEGAL_STATEMENT`. Os intervalos 01 (pedido) e 02 (SKU) são criados por `ZCL_PC_SETUP`.
+4. **Authorization Objects** (campo `ACTVT`; BTP: ADT, classe `CPAE`; On-Premise: `SU21`, classe `ZPC`):
+   `ZPC_ADMIN` (01, 02, 03, 06) e `ZPC_PEDIDO` (01, 02, 03, 06 e 16 — executar, exigida pelas actions do
+   pedido e pelo reembolso).
+5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
+   `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4` e `ZUI_PC_ANALITICO_O4` → **Publish** (On-Premise: ADT
+   ou `/IWFND/V4_ADMIN`).
+6. **Segurança** — BTP: IAM Apps, Business Catalogs e Business Roles
+   ([seção 6.3](#63-configuração-no-sap-btp-abap-environment)); On-Premise: `SU24` e roles `PFCG`
+   ([seção 6.4](#64-passo-a-passo-no-sap-on-premise)).
+7. **Índices secundários** (a validation sozinha não protege contra duas ativações simultâneas):
+
+   | Tabela | Campos | Único |
+   | --- | --- | :---: |
+   | `ZTA_PC_CLIENTE` | `CPF` | sim |
+   | `ZTA_PC_ITEM` | `SKU` | sim |
+   | `ZTA_PC_ITEM_PED` | `ITEM_UUID` | não |
+   | `ZTA_PC_PEDIDO` | `CLIENTE_UUID` | não |
+   | `ZTA_PC_ENDERECO` | `CLIENTE_UUID`, `CEP` | chave |
+
+   `ZTA_PC_ENDERECO` declara `CEP` como campo adicional da chave primária (`not null`), o que garante no
+   próprio banco que a combinação cliente + CEP seja única. No ADT: abrir a tabela → *Add Index*.
+
+### 8.2. Ordem de criação e ativação
+
+1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
+2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
+   `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
+   `ZCL_PC_NUMERACAO`.
+3. **Todas** as tabelas ativas (pastas `Dictionary/`, inclusive `ZTA_PC_CODELIST`).
+4. CDS base: `ZR_PC_CODELIST` e as value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
+   (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo `ZR_PC_REEMBOLSO` (BO próprio,
+   root), que precisa estar ativa, com sua BDEF, antes da behavior pool do Pedido.
+5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VH` (inclusive `ZC_PC_CEP_VH`).
+6. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o nome
+   declarado em `draft table` de cada BDEF `ZR_*` ([seção 8.3](#83-tabelas-draft)).
+7. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
+8. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (*Global Class* + *Local Types*) → BDEF de
+   projeção `ZC_*`.
+9. `ZCL_PC_VE_CLIENTE`, `ZCL_PC_PAGAMENTO_SIM`, `ZCL_PC_PLANILHA`, `ZCL_PC_IMPORTACAO`, `ZCL_PC_SETUP`.
+10. Cubos `ZI_PC_*_CUBE` e consultas `ZC_PC_*_ANALISE` (com as metadata extensions).
+11. Service Definitions → Service Bindings (publicar).
+12. Executar `ZCL_PC_SETUP` (**F9**): intervalos de numeração, CodeLists e dados de demonstração. Sem os
+    intervalos, o Save de pedido e de item falha com "Erro ao obter numeração".
+13. Front-end: [`ui5/README.md`](../ui5/README.md).
+
+> [!IMPORTANT]
+> Há dependências cruzadas intencionais (ex.: o BO Cliente consulta pedidos para bloquear a exclusão). Por
+> isso ative primeiro **todas** as tabelas e CDS e só depois os behavior pools.
+
+### 8.3. Tabelas draft
+
+Tabelas draft seguem o nome da tabela ativa com o sufixo `_d`. O ABAP Dictionary limita nomes de tabela a 16
+caracteres, então algumas usam o nome da ativa abreviado — e, nesse caso, o nome de coluna dentro da tabela
+draft precisa ser o nome **completo** do elemento CDS:
+
+| Tabela ativa | Tabela draft | Entidade |
+| --- | --- | --- |
+| `ZTA_PC_CLIENTE` | `ZTA_PC_CLIENTE_D` | `ZR_PC_CLIENTE` |
+| `ZTA_PC_ENDERECO` | `ZTA_PC_ENDEREC_D` | `ZR_PC_ENDERECO` |
+| `ZTA_PC_ITEM` | `ZTA_PC_ITEM_D` | `ZR_PC_ITEM` |
+| `ZTA_PC_PEDIDO` | `ZTA_PC_PEDIDO_D` | `ZR_PC_PEDIDO` |
+| `ZTA_PC_ITEM_PED` | `ZTA_PC_ITPED_D` | `ZR_PC_ITEM_PEDIDO` |
+| `ZTA_PC_PAGAMENTO` | `ZTA_PC_PAGTO_D` | `ZR_PC_PAGAMENTO` |
+| `ZTA_PC_REEMBOLSO` | — (BO sem draft; `ZTA_PC_REEMB_D` é resíduo e pode ser excluída) | `ZR_PC_REEMBOLSO` |
+| `ZTA_PC_SNAP_CLI` | `ZTA_PC_SNPCLI_D` | `ZR_PC_PED_CLI_SNAP` |
+| `ZTA_PC_SNAP_ITM` | `ZTA_PC_SNPITM_D` | `ZR_PC_PED_ITEM_SNAP` |
+
+As tabelas draft dos snapshots são apenas técnicas e ficam vazias: os snapshots só são criados por
+`internal create` sobre a instância ativa.
+
+---
+
+## 9. Regras implementadas no backend
+
+### 9.1. Clientes, estoque e pedidos
+
+- **Cliente**: CRUD com draft, endereços como composição, ação *Definir endereço principal* e exclusão
+  bloqueada para cliente com pedido (`delete ( features : instance, precheck )`). O score é somente leitura,
+  sorteado na criação, com criticidade vermelha (até 40), amarela (40 a 70) e verde (a partir de 70).
+- **Fotos** de clientes e itens: JPEG, PNG ou WEBP; `ZCL_PC_UTIL` valida MIME, extensão e assinatura binária.
+- **Estoque**: SKU gerado no Save (determination `GerarSku`, também no Prepare) com as 3 primeiras letras da
+  categoria (`SKU-ELE-0000000001`), sequencial do intervalo 02 de `ZPC_NR`; quantidade disponível persistida
+  (para filtrar e ordenar) e status de estoque recalculado a cada movimentação.
+- **Precheck de estoque zerado**: ao incluir um item no pedido, o precheck da associação `_Itens` bloqueia a
+  linha se o item não tiver quantidade disponível, antes de qualquer determination.
+- **Registro do pedido no Save**: não há ação de confirmação. `ValidarRegistro` (no Prepare) exige endereço
+  principal, ao menos um item e disponibilidade; `ReservarEstoqueRegistro` reserva o estoque ao ativar o
+  rascunho (`Activate` não otimizado para que a determination dispare).
+- **Edição do pedido `ABERTO`**: só os itens mudam (`ClienteUUID` é `mandatory : create` e `readonly : update`).
+  A reserva é ajustada pela diferença; a remoção de item é tratada na implementação adicional de `Activate`,
+  porque remover não dispara determination. O estado aplicado é registrado antes de qualquer `MODIFY`, para
+  evitar o dump "stack of on-modify determinations being too deep".
+- **Object Page dinâmica**: a determination `AtualizarFlagsStatus` mantém as colunas `xfeld`
+  `PedidoEncerrado`, `PedidoAtivoSemHistorico`, `PedidoNaoFinalizado` e `PedidoNaoCancelado`, usadas em
+  `hidden: #(Campo)` na `@UI.facet` do DDLX.
+- **Concorrência**: reserva, liberação e baixa são actions internas do BO Item (`ReservarEstoque`,
+  `LiberarReserva`, `BaixarEstoque`, `authorization : none`) executadas por EML; o framework bloqueia o item
+  (lock master) e o saldo é relido sob o lock. Item em edição no Estoque impede o registro do pedido
+  (`ITEM_ESTOQUE_CONCORRENTE`). Em falha parcial, as reservas já feitas são compensadas.
+- **Pagamento simulado** (`ZCL_PC_PAGAMENTO_SIM`): grava só bandeira, últimos 4 dígitos e máscara; número,
+  validade e CVV ficam apenas em memória.
+- **Textos e navegação**: os campos de cliente, endereço e item mostram o texto (`@UI.textArrangement:
+  #TEXT_ONLY`); `CpfCliente` é mapeado para `Cpf` com `@Consumption.semanticObjectMapping`.
+
+Fluxograma do pedido (página 2 do draw.io):
+
+<p align="center">
+  <a href="../assets/fluxo-pedido.png"><img src="../assets/fluxo-pedido.png" alt="Fluxograma do pedido: criação em rascunho, precheck de estoque, Salvar com reserva, pagamento, aprovação com baixa do estoque ou cancelamento com liberação da reserva ou abertura de reembolso" width="100%"></a>
+</p>
+
+### 9.2. Endereço do cliente: consulta de CEP
+
+A consulta do CEP é feita inteiramente no backend; na app, o CEP é um campo padrão do Fiori Elements.
+
+<p align="center">
+  <a href="../assets/fluxo-endereco-viacep.png"><img src="../assets/fluxo-endereco-viacep.png" alt="Fluxograma do endereço: informar o CEP, determination PreencherEnderecoViaCep, reaproveitar CEP cadastrado ou consultar o ViaCEP, side effects, Salvar e validações ValidarCep e ValidarCepUnico" width="100%"></a>
+</p>
+
+1. O value help `ZC_PC_CEP_VH` sugere os CEPs já validados (um por CEP, sem CEP geral).
+2. A determination `PreencherEnderecoViaCep` (on modify, campo `Cep`) reaproveita os dados de um CEP já
+   cadastrado e só chama o ViaCEP ([seção 5](#5-consulta-de-cep-viacep-nos-dois-cenários)) para CEPs
+   desconhecidos. A chamada fica fora da fase de save: a determination grava `CepStatus` e a validation só o
+   avalia.
+3. O bloco `side effects` do Endereço (`field Cep affects field Logradouro, field Bairro, field Cidade,
+   field Uf, field Estado, field CepGeral, field CepStatus`) faz o Fiori Elements recarregar esses campos.
+4. Ao salvar, `ValidarCep` bloqueia CEP inválido ou geral de município sem logradouro/bairro, e
+   `ValidarCepUnico` impede CEP repetido no mesmo cliente.
+
+**Cadastro automático e CEP único.** Um CEP ainda não cadastrado é gravado pelo próprio fluxo de criação do
+endereço e passa a ser sugerido pelo value help. `ZTA_PC_ENDERECO` tem `cep` como campo adicional da chave
+primária (`abap.char(8) not null`), mas a CDS `ZR_PC_ENDERECO` expõe só `EnderecoUUID` como chave. A
+unicidade é **por cliente**: `ValidarCepUnico` lê os irmãos por `READ ENTITIES ... BY \_Endereco` (vê também
+os rascunhos da sessão) e reporta a mensagem 047 (`CEP_DUPLICADO_CLIENTE`); clientes diferentes podem
+compartilhar um CEP. Como o CEP é chave da tabela, ele fica somente leitura depois de gravado
+(`field ( features : instance ) Cep`).
+
+### 9.3. Reembolso de pedidos
+
+O Reembolso é um BO próprio (`ZR_PC_REEMBOLSO`, root sem draft), exposto no serviço `ZUI_PC_REEMBOLSOS`.
+
+<p align="center">
+  <a href="../assets/fluxo-reembolso.png"><img src="../assets/fluxo-reembolso.png" alt="Fluxograma do reembolso: cancelar pedido com pagamento aprovado, criar solicitação PENDENTE, pedido em PROCESSANDO_REEMBOLSO, aprovar (CancelarPorReembolso) ou rejeitar (RetomarPedido)" width="100%"></a>
+</p>
+
+1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que cria a
+   solicitação no BO Reembolso por EML (status `PENDENTE`, guardando `StatusPedidoAnterior`) e move o Pedido
+   para `PROCESSANDO_REEMBOLSO`, mantendo a reserva de estoque.
+2. **AprovarReembolso** executa `CancelarPorReembolso` no BO Pedido (libera a reserva, monta os snapshots,
+   Pedido `CANCELADO` e pagamento `DEVOLVIDO`) e marca o Reembolso como `APROVADO`, na mesma transação.
+3. **RejeitarReembolso** (exige `MotivoDecisao`) executa `RetomarPedido` (o Pedido volta ao
+   `StatusPedidoAnterior` e o `MotivoCancelamento` é limpo) e marca o Reembolso como `REJEITADO`.
+
+As duas ações só ficam disponíveis com o Reembolso `PENDENTE`. `CancelarPorReembolso` e `RetomarPedido` são
+internas (`authorization : none`, não expostas na projeção).
+
+### 9.4. Importação em massa por planilha
+
+As apps Gestão de Clientes, Gestão de Estoque e Pedidos de Compras têm o botão **Importar planilha** na
+lista. Modelos prontos estão em [`docs/modelos-importacao/`](../docs/modelos-importacao).
+
+<p align="center">
+  <a href="../assets/fluxo-importacao.png"><img src="../assets/fluxo-importacao.png" alt="Fluxograma da importação: escolher o arquivo, action ImportarPlanilha, leitura, normalização, validação de todas as linhas e criação por EML, tudo ou nada" width="100%"></a>
+</p>
+
+| App | Linha da planilha | Colunas (obrigatórias em **negrito**) |
+| --- | --- | --- |
+| Clientes | um cliente com o endereço principal | **CPF**, **Nome**, **E-mail**, **Telefone**, Gênero, **Data de nascimento**, **CEP**, **Número**, Complemento |
+| Estoque | um item | **Nome**, Descrição, **Categoria**, **Quantidade em estoque**, **Preço unitário**, Moeda (padrão `BRL`) |
+| Pedidos | um item de um pedido | **Pedido** (referência que agrupa as linhas), **CPF**, **SKU**, **Quantidade**, Observação |
+
+**Leitura do arquivo**
+
+- A primeira linha não vazia é o cabeçalho; os nomes ignoram maiúsculas, acentos, espaços e pontuação, a
+  ordem é livre e colunas extras são ignoradas.
+- CSV: separador `;`, `,` ou tabulação (detectado), UTF-8 com ou sem BOM; se não for UTF-8 válido, assume
+  ISO-8859-1. XLSX: primeira aba, até a coluna T.
+- Datas `AAAA-MM-DD`, `DD/MM/AAAA` ou data do Excel; números com ponto ou vírgula decimal; CPF e CEP sem os
+  zeros à esquerda são completados.
+- Gênero e Categoria aceitam o código (`NAO_BINARIO`) ou o texto (`Não binário`) da CodeList.
+- Máximo de **500 linhas** por arquivo.
+
+**Regras**
+
+- **Tudo ou nada**: todas as linhas são validadas antes de gravar; com qualquer erro nada é gravado e a
+  janela lista o motivo por linha (até 15 erros exibidos).
+- A importação cria instâncias ativas por EML, então valem as determinations e validations do BO (CPF
+  único, e-mail, telefone, ViaCEP, numeração, reserva de estoque).
+- **Clientes**: CPF já cadastrado ou repetido é erro; CEP inexistente (ou ViaCEP fora do ar) cancela a
+  importação.
+- **Estoque**: SKU gerado na hora; nome de item já cadastrado ou repetido é erro.
+- **Pedidos**: nascem `ABERTO`, com o endereço principal do cliente e o estoque reservado; todas as linhas de
+  um pedido têm o mesmo CPF; o estoque precisa cobrir a soma pedida em toda a planilha. A coluna **Pedido** é
+  gravada como `ReferenciaImportacao` (somente leitura, até 40 caracteres) e funciona como chave de
+  idempotência: a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela.
+- Permissões: Clientes e Estoque exigem a atividade 01 de `ZPC_ADMIN`; Pedidos, a atividade 01 de
+  `ZPC_PEDIDO`. A action revalida a autorização na implementação, porque grava em massa.
+
+**Implementação**
+
+- Action estática `ImportarPlanilha` com parâmetro `deep` (`ZPC_A_UPLOAD_INPUT` → `ZPC_A_FILE_STREAM`,
+  `@Semantics.largeObject`) nos BDEFs `ZR_PC_CLIENTE`, `ZR_PC_ITEM` e `ZR_PC_PEDIDO`, exposta nas projeções e
+  como botão (`#FOR_ACTION`) nos metadata extensions.
+- `ZCL_PC_PLANILHA` lê XLSX (XCO) e CSV; `ZCL_PC_IMPORTACAO` reúne a normalização de CPF/CEP, a conversão de
+  CodeList e o resumo de erros. As mensagens longas usam `ZCX_PC_MSG=>TEXTO` (mensagem 049, `&1&2&3&4`),
+  porque cada variável de mensagem T100 comporta só 50 caracteres.
+
+**Limitações**: o leitor XLSX da XCO recusa o XLSX salvo pelo LibreOffice e não enxerga textos *inline*
+(openpyxl); nesses casos a app pede `.csv`. Arquivos `.xls` não são aceitos, e a importação só cria
+registros (não atualiza).
+
+---
+
+## 10. Camada analítica
+
+Camada **somente leitura**, independente dos apps de gestão: cubos `ZI_PC_*_CUBE` e consultas
+`ZC_PC_*_ANALISE` com `@Aggregation.default` nas medidas e `@OData.applySupportedForAggregation: #FULL`
+(aceita `$apply=groupby/aggregate`), e metadata extensions com `UI.Chart`/`UI.PresentationVariant` por
+cenário. Tudo é publicado no serviço `ZUI_PC_ANALITICO` (binding `ZUI_PC_ANALITICO_O4`, pacote
+`ZAVBS_PC_COMMON`):
+
+| Domínio | Cubo / consulta | Pacote |
+| --- | --- | --- |
+| Pedidos | `ZI_PC_PEDIDO_CUBE` → `ZC_PC_PEDIDO_ANALISE` | `ZAVBS_PC_PEDIDOS` |
+| Clientes | `ZI_PC_CLIENTE_CUBE` → `ZC_PC_CLIENTE_ANALISE` | `ZAVBS_PC_CLIENTES` |
+| Estoque | `ZI_PC_ITEM_CUBE` → `ZC_PC_ITEM_ANALISE` | `ZAVBS_PC_ESTOQUE` |
+| Reembolsos | `ZI_PC_REEMB_CUBE` → `ZC_PC_REEMB_ANALISE` | `ZAVBS_PC_REEMBOLSOS` |
+
+Os apps freestyle que consomem o serviço estão no
+[`ui5/README.md`](../ui5/README.md#apps-de-análise-freestyle). Para ter dados nos gráficos, carregue os dados
+de demonstração (`ZCL_PC_SETUP`).
+
+---
+
+## 11. Testes
+
+### 11.1. ABAP Unit
+
+**As classes de teste são permanentes**: ficam no SAP e neste repositório e são ajustadas quando a
+funcionalidade que cobrem muda. Execute com `Ctrl+Shift+F10` no ADT.
+
+| Classe | Testes |
+| --- | --- |
+| `ZCL_PC_UTIL` | 50 (integração dos BOs e utilitários; tabela abaixo) |
+| `ZCL_PC_PAGAMENTO_SIM` | 14 |
+| `ZCL_PC_IMPORTACAO` | 17 (as três actions `ImportarPlanilha` via EML) |
+| `ZCL_PC_PLANILHA` | 17 (leitor XLSX/CSV) |
+
+| Classe de teste (local) de `ZCL_PC_UTIL` | Cobre |
+| --- | --- |
+| `ltcl_digitos_cpf` | CPF e telefone |
+| `ltcl_email_imagem` | e-mail, JPEG/PNG/WEBP (MIME, extensão e assinatura binária) |
+| `ltcl_estoque_endereco` | status de estoque e endereço formatado |
+| `ltcl_edicao_pedido` | alterar, incluir e remover item com reserva incremental; só pedido `ABERTO` é editável |
+| `ltcl_registro_pedido` | Save cria o pedido `ABERTO`, número, reserva; nunca reserva acima do estoque |
+| `ltcl_ciclo_pedido` | pagamento aprovado/recusado, aprovar (baixa de estoque), cancelar (com e sem pagamento) |
+| `ltcl_reembolso` | aprovar (cancela, devolve, libera), rejeitar (motivo obrigatório, retoma o pedido) |
+| `ltcl_sku_item` | SKU com prefixo da categoria e sequencial único |
+| `ltcl_persistencia_endereco` | save real (`COMMIT ENTITIES`) de endereços; CEP gravado é somente leitura |
+
+- Os testes de integração semeiam os próprios dados por `INSERT` (o ABAP Unit desfaz a gravação) e usam um
+  `Edit` por teste, porque um rascunho sobrevive ao `Activate` na mesma LUW.
+- Os de persistência usam `cl_cds_test_environment` (entidades `ZR_*`) e `cl_osql_test_environment`
+  (tabelas de rascunho), o que permite `COMMIT ENTITIES`. `ltcl_importacao_referencia` dubla `ZR_PC_PEDIDO`
+  para testar a reimportação sem gravar no banco.
+- Os testes exigem o objeto `ZPC_NR` configurado ([seção 8.1](#81-objetos-criados-manualmente)). Depois de
+  editar um include de testes, ative também o include `testclasses`, senão o ABAP Unit roda a versão antiga.
+- Testes de autorização com `CL_AUNIT_AUTHORITY_CHECK`: [seção 6.5](#65-testes-unitários-de-autorização).
+
+### 11.2. Cenários de teste manuais
+
+Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
+
+| Cenário | Como testar |
+| --- | --- |
+| Pagamento aprovado | Cartão `4111 1111 1111 1111` (VISA), validade futura `12/30`, CVV `123` |
+| Pagamento recusado | Mesmo cartão com CVV `000` (pedido permanece `ABERTO`; pagamento `RECUSADO`) |
+| Mastercard | Cartão iniciado por `5` (ex.: `5555 5555 5555 4444`) |
+| Estoque insuficiente | Precheck bloqueia ao incluir um item com quantidade disponível zerada |
+| Concorrência | Deixar o item em edição (draft) na app de Estoque e salvar um pedido com ele → `ITEM_ESTOQUE_CONCORRENTE` |
+| Exclusão de cliente | Excluir cliente com pedido → bloqueado (`CLIENTE_COM_PEDIDO`) |
+| CEP duplicado | Dois endereços com o mesmo CEP para o **mesmo** cliente → bloqueado (mensagem 047) |
+| Reserva no Save | Salvar um rascunho válido → pedido `ABERTO` e `QtdeReservada` do item aumenta; sem estoque → bloqueado |
+| Edição de itens | Pedido `ABERTO`: *Editar* → alterar, incluir ou remover item → *Salvar* ajusta a reserva só pela diferença |
+| Reembolso | Cancelar pedido pago → `PROCESSANDO_REEMBOLSO`; aprovar (pedido `CANCELADO`, pagamento `DEVOLVIDO`) ou rejeitar (motivo obrigatório; pedido volta ao status anterior) |
+| CEP de endereço gravado | Em endereço salvo o CEP é somente leitura; para trocar, exclua e cadastre outro |
+| Perfis | Usuários `PC_ADMIN` e `PC_COMUM` ([seção 6.6](#66-teste-do-cenário)) |
+
+---
+
+## 12. Limitações conhecidas e observações sobre o Trial
+
+### 12.1. Limitações do release
+
+- **Ícone/imagem no List Report.** Nenhum valor de enum para imagem via `@UI.lineItem` (`#FOR_IMAGE`,
+  `#IMAGE`) foi aceito pelo ADT para `FotoItem` e `FotoCliente`; as fotos aparecem só na Object Page.
+- **Ocultar seções da Object Page por status.** Funciona apenas com a **expressão de anotação**
+  `hidden: #(Campo)` sobre um campo persistido da própria entidade (a forma `hidden: 'Campo'` é rejeitada).
+  Por isso os indicadores do pedido são colunas `xfeld`, e `ZCL_PC_SETUP` os recalcula nos pedidos existentes.
+- **CEP não muda depois de gravado.** Como `cep` é chave da tabela mas não da entidade, um `UPDATE` que
+  alterasse o CEP procurava a linha com o CEP novo e gerava `RAISE_SHORTDUMP` (`CX_CSP_ACT_INTERNAL`,
+  "UPDATE returned unexpected sy-subrc 4"). Mudar a chave exigiria recriar a tabela, pois o ABAP Cloud não
+  ativa uma tabela implantada com a chave alterada.
+
+### 12.2. Observações sobre o Trial
+
+> [!WARNING]
+> `ZIF_PC_CONSTANTS=>c_modo_trial` está como **`abap_true`** no BTP Trial compartilhado, onde não é possível
+> manter Business Roles: qualquer usuário com acesso ao serviço age como administrador. Em sistemas com
+> Business Roles configuráveis (e sempre no On-Premise), use `abap_false`.
+
+- ViaCEP: `create_by_url` usa a URL pública. Em produção no BTP, use *Communication Scenario/Arrangement*
+  (`create_by_comm_arrangement`); no On-Premise, a versão de `ZCL_PC_VIACEP_T2/`.
+- O *preview* do Service Binding testa o backend isoladamente, mas não tem launchpad nem navegação entre apps;
+  use o launchpad local (`ui5/launchpad`) para o teste completo.
+- Os dados do cartão aparecem sem máscara no diálogo da action (parâmetros de action não têm máscara no Fiori
+  Elements); eles **não** são persistidos nem logados.
+- `ZCL_PC_RESET` só apaga dados com `c_modo_trial = abap_true`.
+
+---
+
+## 13. Histórico de correções do backend
+
+<details>
+<summary><b>v1.5 — Ajustes de UX, integridade de dados e reembolso</b></summary>
+
+| Ajuste | Objetos |
+| --- | --- |
+| `ScoreCliente` somente leitura, valor aleatório na criação, exibido como Process Indicator | `ZBP_R_PC_CLIENTE`, `ZR_PC_CLIENTE`, `ZC_PC_CLIENTE_APP` (MDE) |
+| Precheck de item sem estoque disponível ao incluir item no pedido | `ZR_PC_PEDIDO` (association `_Itens`), `ZBP_R_PC_PEDIDO` (`lhc_pedido`) |
+| Remoção de Peso/Altura/Largura/Profundidade do item e do snapshot de item | `ZR_PC_ITEM`, `ZR_PC_PED_ITEM_SNAP`, tabelas e projeções correspondentes |
+| Cadastro automático de endereço ao consultar CEP novo; CEP como chave `not null`, único por cliente | `ZTA_PC_ENDERECO`, `ZR_PC_CLIENTE` (validation `ValidarCepUnico`), `ZBP_R_PC_CLIENTE` |
+| Campos de status calculados (`PedidoEncerrado`, `PedidoAtivoSemHistorico`) para a Object Page | `ZTA_PC_PEDIDO`, `ZR_PC_PEDIDO`, `ZBP_R_PC_PEDIDO` |
+| UUID oculto em favor do texto descritivo em Cliente, Endereço e Item do Pedido | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` (MDE, `@UI.textArrangement`) |
+| Correção do value help `ZC_PC_CEP_VH` (aggregate `MAX()` com `@Search.defaultSearchElement`) | `ZC_PC_CEP_VH` |
+| Fluxo de reembolso (`Reembolso`, `AprovarReembolso`, `RejeitarReembolso`) | `ZR_PC_REEMBOLSO`, `ZBP_R_PC_PEDIDO`, `ZC_PC_REEMBOLSO_APP`, `ZC_PC_STATUSREEMB_VH` |
+
+</details>
+
+<details>
+<summary><b>v1.2 — Ajustes no backend feitos para o front-end</b></summary>
+
+| Ajuste | Objetos |
+| --- | --- |
+| Semantic objects para navegação entre apps: `ZPCCliente` em `ClienteUUID`/`NomeCliente` e `ZPCItemEstoque` em `ItemUUID`/`Sku` | `ZC_PC_PEDIDO_APP`, `ZC_PC_ITEM_PEDIDO_APP` |
+| Seções *Pagamento* e *Histórico - cliente* passam de `#LINEITEM_REFERENCE` para `#IDENTIFICATION_REFERENCE`: as composições são `[0..1]`, e o Fiori Elements V4 só monta tabela para navegações de cardinalidade N | `ZC_PC_PEDIDO_APP` (MDE) |
+
+</details>
+
+<details>
+<summary><b>v1.1 — Correções do code review</b></summary>
+
+| # | Correção | Objetos |
+| --- | --- | --- |
+| B1 | `/UI2/CL_JSON` (API não liberada) substituída por extração via PCRE; alternativa XCO documentada no cabeçalho | `ZCL_PC_VIACEP` |
+| B2 | Chamada ao ViaCEP sai da fase de save: a determination grava `CepStatus` (V/I/X) e a validation apenas o avalia | `ZBP_R_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZR_PC_ENDERECO`, `ZC_PC_ENDERECO_APP` |
+| B3 | Toda chamada EML avalia `FAILED`/`REPORTED`; compensação de reserva e snapshots propagam erro | 3 behavior pools |
+| B4 | Índices únicos de `CPF` e `SKU` documentados como objeto manual | README |
+| B5 | `c_modo_trial` passa a `abap_false`; verificação por atividade (01/02/06/16) | `ZIF_PC_CONSTANTS`, `ZCL_PC_AUTH`, 3 behavior pools |
+| R4 | Cliente HTTP fechado também em caminho de erro | `ZCL_PC_VIACEP` |
+| R6 | `CATCH cx_root` eliminado | `ZCL_PC_VIACEP` |
+| R7 | Cache do ViaCEP limitado a 100 entradas | `ZCL_PC_VIACEP` |
+
+</details>
+
+---
+
+## 14. Referências
 
 - SAP Help — *ABAP RESTful Application Programming Model*: *Authorization Control* e
   *Implementing Global Authorization* (`get_global_authorizations`).

@@ -53,6 +53,31 @@ tabelas, tile) e a configuração das ferramentas.
 - O **CEP** do endereço é um campo padrão: o value help `ZC_PC_CEP_VH` sugere CEPs já cadastrados e
   a determination `PreencherEnderecoViaCep`, com side effects, preenche o restante do endereço.
 
+### Recursos da interface
+
+- **Object Page dinâmica do pedido**: seções *Dados do Cliente*, *Dados do Pedido* (com os campos
+  administrativos), *Itens*, *Pagamento* e, conforme o status, *Finalização* ou *Cancelamento* (ocultas por
+  `hidden: #(Campo)` na `@UI.facet`). Em pedidos `FINALIZADO` ou `CANCELADO`, cliente e itens vêm dos
+  **snapshots**; nos demais status, das tabelas principais.
+- **Pedido `ABERTO`**: *Editar* abre o rascunho só com os itens editáveis (o cliente fica somente leitura); o
+  pedido não oferece *Excluir*.
+- **Ações do pedido** agrupadas no menu "Ações" (`#FOR_ACTION_GROUP`, aparece também no preview do ADT), com
+  diálogos para *Efetuar Pagamento* e *Cancelar pedido* (motivo obrigatório).
+- **Score do cliente** em %, como *Process Indicator*: vermelho até 40, amarelo de 40 a 70 e verde a partir de 70.
+- **Fotos** de clientes e itens (JPEG, PNG ou WEBP) na Object Page; cliente sem foto mostra um avatar.
+- **Códigos de CodeList** (gênero, categoria, status, método de pagamento) aparecem só como texto, e cliente,
+  endereço e item do pedido mostram o texto descritivo, sem o UUID (`@UI.textArrangement: #TEXT_ONLY`).
+- **Importar planilha**: botão na lista de Clientes, Estoque e Pedidos, que abre a janela de upload da action
+  estática `ImportarPlanilha` (regras no [`abap/README.md`](../abap/README.md#94-importação-em-massa-por-planilha)).
+- **Limitações**: nenhum valor de `@UI.lineItem` para imagem foi aceito pelo ADT, então as fotos não aparecem
+  no List Report; os dados do cartão aparecem sem máscara no diálogo da action (não são gravados).
+
+| Tela | Captura |
+| --- | --- |
+| Rascunho do pedido com itens *inline* | <img src="../assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="440"> |
+| Pedido finalizado (snapshot do cliente) | <img src="../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> |
+| Decisão de reembolso | <img src="../assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="440"> |
+
 ### Navegação entre apps
 
 Os campos abaixo são marcados no backend com `@Consumption.semanticObject` e viram links (smart
@@ -84,6 +109,10 @@ Eles substituem o app único `analise-compras` (que, por sua vez, substituiu os 
 `ZUI_PC_ANALITICO_O4`), cujas views CDS analíticas (`ZI_PC_*_CUBE` → `ZC_PC_*_ANALISE`) têm
 `@Aggregation.default` nas medidas e `@OData.applySupportedForAggregation: #FULL`, o que permite
 `$apply=groupby/aggregate` no servidor. Cada app usa só o entity set do seu domínio.
+
+<p align="center">
+  <a href="../assets/fluxo-analises.png"><img src="../assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, moldagem das linhas, painel e ações de filtrar, abrir detalhe ou abrir gestão" width="100%"></a>
+</p>
 
 | App | Pasta | `sap.app.id` | Entity set | Tile (inbound) | BSP / pacote | Abrir gestão |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -210,7 +239,17 @@ launchpad/
 npm run lint       # ESLint (@sap-ux/eslint-plugin-fiori-tools)
 npm run build      # ui5 build (dist/)
 npm run int-test   # testes OPA5 gerados, com mock server (apps Fiori Elements)
+npm run unit-test  # suíte QUnit (apps de análise)
 ```
+
+| Tipo | Onde | Como rodar |
+| --- | --- | --- |
+| OPA5 (gerados pelo Fiori tools) | `<app>/webapp/test/integration/` | `npm run int-test` (mock) |
+| QUnit | `analise-*/webapp/test/unit/` (catálogo, consultas `$apply`, moldagem das linhas) | `npm run unit-test` |
+
+As apps Clientes, Estoque e Pedidos passam no `ui5 build`, no ESLint e no UI5 linter (sem achados); os apps
+de análise passam no ESLint, no `ui5 build` e na suíte QUnit. Todos foram testados contra o backend real pelo
+proxy do Fiori tools e no launchpad local.
 
 ## Deploy no SAP BTP ABAP Environment
 
@@ -305,7 +344,30 @@ chamada. `ui5-deploy.yaml`:
   role `PFCG` (catálogo e espaço do launchpad).
 - Se o certificado do sistema for de uma CA interna, instale-a na máquina de desenvolvimento em vez de usar
   `ignoreCertErrors: true`.
-- Os tiles são criados em `/UI2/FLPAM` (catálogo técnico com tile + *target mapping* por app, com os mesmos
-  intents dos manifests) e `/UI2/FLPCM_CUST` (catálogos de negócio, espaço e página), como na
-  [Especificação Técnica, seção 26, passo 9](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#passo-9--conteúdo-do-sap-fiori-launchpad).
-  Com o launchpad do sistema, a navegação entre apps funciona como no launchpad local.
+- Depois do deploy, cada app abre em `https://<Web Dispatcher ou ICM>/sap/bc/ui5_ui5/sap/<bsp em
+  minúsculas>/index.html` e pelos tiles do launchpad (abaixo).
+
+### Conteúdo do SAP Fiori launchpad (On-Premise)
+
+1. Em `/UI2/FLPAM` (*Launchpad App Manager*), crie um catálogo técnico (ex.: `ZPC_TC_PEDIDOS_COMPRAS`) com um
+   *app descriptor* por aplicação: tile + *target mapping* com o semantic object e a ação dos manifests.
+
+   | App | Intent | BSP (ID SAPUI5) |
+   | --- | --- | --- |
+   | Gestão de Clientes | `ZPCCliente-manage` | `ZPC_CLIENTES` |
+   | Gestão de Estoque | `ZPCItemEstoque-manage` | `ZPC_ESTOQUE` |
+   | Pedidos de Compras | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` |
+   | Gestão de Reembolsos | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` |
+   | Análise de Pedidos de Compras | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` |
+   | Análise de Clientes | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` |
+   | Análise de Itens do Estoque | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` |
+   | Análise de Pedidos de Reembolsos | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` |
+
+2. Em `/UI2/FLPCM_CUST` (*Launchpad Content Manager*), crie os catálogos de negócio (equivalentes aos
+   `ZPC_BC_*` do BTP) referenciando o catálogo técnico, e o espaço/página **Pedidos de Compras** com as seções
+   *Gestão* e *Análises*.
+3. Inclua catálogos e espaço no menu das roles `Z_PC_ADMIN` (oito tiles) e `Z_PC_COMUM` (Pedidos, Reembolsos e
+   as análises que fizerem sentido) — roles descritas no
+   [`abap/README.md`](../abap/README.md#64-passo-a-passo-no-sap-on-premise).
+4. Limpe o cache (`/UI2/INVALIDATE_GLOBAL_CACHES`) e teste a navegação: os intents são os mesmos do launchpad
+   local, então Pedido → Cliente/Item e *Abrir gestão* funcionam sem alteração.
