@@ -6,11 +6,11 @@
 | --- | --- |
 | Cenário principal | SAP BTP, ABAP environment (Trial, software component `ZLOCAL`) — código em [`abap/abap-environment/`](../abap/abap-environment) |
 | Cenário alternativo | SAP S/4HANA 2025 FPS01 On-Premise (ABAP Platform 2025) — diferenças em [`abap/on-premise/`](../abap/on-premise) e na [seção 26](#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01) |
-| Diagramas | [`docs/diagramas/pedidos-de-compras.drawio`](diagramas/README.md): um arquivo, uma página por diagrama (arquitetura, fluxos e arquitetura On-Premise) |
+| Diagramas | [`diagramas/pedidos-de-compras.drawio`](../diagramas/README.md): um arquivo, uma página por diagrama (arquitetura, fluxos e arquitetura On-Premise) |
 | Versão anterior | [`Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx`](Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (v2.2, Word) |
 
 <p align="center">
-  <a href="assets/arquitetura.png"><img src="assets/arquitetura.png" alt="Arquitetura no SAP BTP, ABAP environment: usuários, ferramentas de desenvolvimento, apps (BSP), serviços OData V4, BOs RAP, camada analítica, SAP HANA e a API ViaCEP" width="80%"></a>
+  <a href="../assets/arquitetura.png"><img src="../assets/arquitetura.png" alt="Arquitetura no SAP BTP, ABAP environment: usuários, ferramentas de desenvolvimento, apps (BSP), serviços OData V4, BOs RAP, camada analítica, SAP HANA e a API ViaCEP" width="80%"></a>
 </p>
 
 ## Sumário
@@ -1069,7 +1069,7 @@ Versão 2.3 — especificação em Markdown, diagramas num único arquivo, camad
 | 2 | 2.1, 20, 24 | Camada analítica com 20 ALPs e o Painel de Compras (OVP). | Quatro aplicações SAPUI5 freestyle, uma por domínio (5 análises cada), sobre o mesmo serviço ZUI_PC_ANALITICO, como já implementado no repositório (v2.5 do README). |
 | 3 | 19 | Fontes ABAP numa única pasta. | abap/abap-environment (cenário principal, fonte completa) e abap/on-premise (somente as diferenças). |
 | 4 | 26 (nova) | Sem cenário On-Premise na especificação (apenas tutoriais avulsos). | Implementação no SAP S/4HANA 2025 FPS01: arquitetura, pré-requisitos, passo a passo, limitações e diferenças em relação ao SAP BTP, ABAP environment. |
-| 5 | capa, 26.1 | Seis arquivos draw.io separados. | Um único arquivo (docs/diagramas/pedidos-de-compras.drawio) com uma página por diagrama, incluindo a nova arquitetura On-Premise (página 7). |
+| 5 | capa, 26.1 | Seis arquivos draw.io separados. | Um único arquivo (diagramas/pedidos-de-compras.drawio) com uma página por diagrama, incluindo a nova arquitetura On-Premise (página 7). |
 
 # 24. Camada Analítica
 
@@ -1118,10 +1118,10 @@ launchpad, ciclo de vida do sistema e transporte.
 ## 26.1 Arquitetura de implementação
 
 <p align="center">
-  <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy de saída, firewall e API ViaCEP" width="100%"></a>
+  <a href="../assets/arquitetura-onpremise.png"><img src="../assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy de saída, firewall e API ViaCEP" width="100%"></a>
 </p>
 
-Fonte editável: página 7 de [`docs/diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
+Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagramas/pedidos-de-compras.drawio).
 
 1. O usuário acessa pelo navegador o **SAP Web Dispatcher** (HTTPS), ponto único de entrada da intranet,
    com SSO por SAML 2.0 ou Kerberos/SPNego.

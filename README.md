@@ -98,24 +98,24 @@ dados reais do sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`); as 
 de demonstração do `npm run start-mock`.
 
 <p align="center">
-  <img src="docs/assets/launchpad.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
+  <img src="assets/launchpad.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
 </p>
 
 | Pedidos de Compras | Object Page do pedido |
 | :----------------: | :-------------------: |
-| <img src="docs/assets/pedidos.png" alt="Lista de pedidos" width="440"> | <img src="docs/assets/pedido-object-page.png" alt="Object Page de um pedido finalizado" width="440"> |
+| <img src="assets/pedidos.png" alt="Lista de pedidos" width="440"> | <img src="assets/pedido-object-page.png" alt="Object Page de um pedido finalizado" width="440"> |
 
 | Gestão de Clientes | Gestão de Estoque |
 | :----------------: | :---------------: |
-| <img src="docs/assets/clientes.png" alt="Lista de clientes" width="440"> | <img src="docs/assets/estoque.png" alt="Lista de itens de estoque" width="440"> |
+| <img src="assets/clientes.png" alt="Lista de clientes" width="440"> | <img src="assets/estoque.png" alt="Lista de itens de estoque" width="440"> |
 
 | Gestão de Reembolsos | Análise de Itens do Estoque |
 | :------------------: | :-------------------------: |
-| <img src="docs/assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="docs/assets/analise-estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> |
+| <img src="assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="assets/analise-estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> |
 
 | Análise de Pedidos de Reembolsos | Detalhe de uma análise |
 | :------------------------------: | :--------------------: |
-| <img src="docs/assets/analise-reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> | <img src="docs/assets/analise-detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="440"> |
+| <img src="assets/analise-reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> | <img src="assets/analise-detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="440"> |
 
 ---
 
@@ -189,11 +189,11 @@ de demonstração do `npm run start-mock`.
 ## Arquitetura
 
 Desenhada no draw.io com os ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do
-draw.io). É a página 1 de [`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio)
+draw.io). É a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio)
 (ver [Diagramas](#diagramas)).
 
 <p align="center">
-  <a href="docs/assets/arquitetura.png"><img src="docs/assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%"></a>
+  <a href="assets/arquitetura.png"><img src="assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%"></a>
 </p>
 
 - **Apps (BSP)** → **Service Bindings OData V4** → **BOs RAP / CDS**, uma linha por domínio; as quatro
@@ -227,7 +227,7 @@ stateDiagram-v2
 O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Item e BO Reembolso):
 
 <p align="center">
-  <a href="docs/assets/fluxo-pedido.png"><img src="docs/assets/fluxo-pedido.png" alt="Fluxograma do pedido: criação em rascunho, precheck de estoque, Salvar com reserva, pagamento, aprovação com baixa do estoque ou cancelamento com liberação da reserva ou abertura de reembolso" width="100%"></a>
+  <a href="assets/fluxo-pedido.png"><img src="assets/fluxo-pedido.png" alt="Fluxograma do pedido: criação em rascunho, precheck de estoque, Salvar com reserva, pagamento, aprovação com baixa do estoque ou cancelamento com liberação da reserva ou abertura de reembolso" width="100%"></a>
 </p>
 
 ### Arquitetura On-Premise
@@ -235,10 +235,10 @@ O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Ite
 Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP roda em
 ABAP Cloud (tier 1) no próprio sistema, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta ao
 ViaCEP passa por um *wrapper* em Standard ABAP (tier 2) com `SM59`/`STRUST`, e a segurança usa `SU21`,
-`SU24` e `PFCG`. Fonte: página 7 de [`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio).
+`SU24` e `PFCG`. Fonte: página 7 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
 
 <p align="center">
-  <a href="docs/assets/arquitetura-onpremise.png"><img src="docs/assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
+  <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em ABAP Cloud, wrapper ZCL_PC_VIACEP em Standard ABAP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
 </p>
 
 Passo a passo, limitações e diferenças em relação ao BTP:
@@ -250,19 +250,19 @@ Passo a passo, limitações e diferenças em relação ao BTP:
 
 Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
 Solution Diagram*) e a paleta SAP Horizon. Todos ficam num **único arquivo**,
-[`docs/diagramas/pedidos-de-compras.drawio`](docs/diagramas/pedidos-de-compras.drawio), com **uma página por
-diagrama**; cada página é exportada como imagem em [`docs/assets/`](docs/assets). Os links para abrir cada
-página no editor do draw.io estão em [`docs/diagramas/`](docs/diagramas/README.md).
+[`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio), com **uma página por
+diagrama**; cada página é exportada como imagem em [`assets/`](assets). Os links para abrir cada
+página no editor do draw.io estão em [`diagramas/`](diagramas/README.md).
 
 | Página | Diagrama | Imagem |
 | --- | --- | --- |
-| 1 | Arquitetura (SAP BTP, ABAP environment) | [`arquitetura.png`](docs/assets/arquitetura.png) |
-| 2 | Fluxo do pedido de compra | [`fluxo-pedido.png`](docs/assets/fluxo-pedido.png) |
-| 3 | Fluxo de reembolso | [`fluxo-reembolso.png`](docs/assets/fluxo-reembolso.png) |
-| 4 | Endereço e consulta de CEP (ViaCEP) | [`fluxo-endereco-viacep.png`](docs/assets/fluxo-endereco-viacep.png) |
-| 5 | Importação em massa por planilha | [`fluxo-importacao.png`](docs/assets/fluxo-importacao.png) |
-| 6 | Apps de análise | [`fluxo-analises.png`](docs/assets/fluxo-analises.png) |
-| 7 | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](docs/assets/arquitetura-onpremise.png) |
+| 1 | Arquitetura (SAP BTP, ABAP environment) | [`arquitetura.png`](assets/arquitetura.png) |
+| 2 | Fluxo do pedido de compra | [`fluxo-pedido.png`](assets/fluxo-pedido.png) |
+| 3 | Fluxo de reembolso | [`fluxo-reembolso.png`](assets/fluxo-reembolso.png) |
+| 4 | Endereço e consulta de CEP (ViaCEP) | [`fluxo-endereco-viacep.png`](assets/fluxo-endereco-viacep.png) |
+| 5 | Importação em massa por planilha | [`fluxo-importacao.png`](assets/fluxo-importacao.png) |
+| 6 | Apps de análise | [`fluxo-analises.png`](assets/fluxo-analises.png) |
+| 7 | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](assets/arquitetura-onpremise.png) |
 
 Os fluxogramas usam raias por responsável (usuário, app, BO, serviço externo) e a mesma legenda:
 início em azul, etapas com borda azul, decisões em laranja, status do pedido em azul claro, fim em
@@ -365,7 +365,7 @@ Um arquivo por objeto ADT:
 Estes objetos não têm código-fonte editável diretamente no repositório (ou exigem um passo manual
 no ADT):
 
-1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `abap/abap-environment/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
+1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `abap/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
    (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
 3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
@@ -556,7 +556,7 @@ A consulta do CEP é feita inteiramente no backend. Na app, o **CEP** é um camp
 Elements, sem extensão SAPUI5.
 
 <p align="center">
-  <a href="docs/assets/fluxo-endereco-viacep.png"><img src="docs/assets/fluxo-endereco-viacep.png" alt="Fluxograma do endereço: informar o CEP, determination PreencherEnderecoViaCep, reaproveitar CEP cadastrado ou consultar o ViaCEP, side effects, Salvar e validações ValidarCep e ValidarCepUnico" width="100%"></a>
+  <a href="assets/fluxo-endereco-viacep.png"><img src="assets/fluxo-endereco-viacep.png" alt="Fluxograma do endereço: informar o CEP, determination PreencherEnderecoViaCep, reaproveitar CEP cadastrado ou consultar o ViaCEP, side effects, Salvar e validações ValidarCep e ValidarCepUnico" width="100%"></a>
 </p>
 
 ```mermaid
@@ -622,7 +622,7 @@ O Reembolso é um BO próprio (`ZR_PC_REEMBOLSO`, root sem draft) com app dedica
 Reembolsos** (`ZUI_PC_REEMBOLSOS`). Não é mais filho do Pedido.
 
 <p align="center">
-  <a href="docs/assets/fluxo-reembolso.png"><img src="docs/assets/fluxo-reembolso.png" alt="Fluxograma do reembolso: cancelar pedido com pagamento aprovado, criar solicitação PENDENTE, pedido em PROCESSANDO_REEMBOLSO, aprovar (CancelarPorReembolso) ou rejeitar (RetomarPedido)" width="100%"></a>
+  <a href="assets/fluxo-reembolso.png"><img src="assets/fluxo-reembolso.png" alt="Fluxograma do reembolso: cancelar pedido com pagamento aprovado, criar solicitação PENDENTE, pedido em PROCESSANDO_REEMBOLSO, aprovar (CancelarPorReembolso) ou rejeitar (RetomarPedido)" width="100%"></a>
 </p>
 
 1. `CancelarPedido` detecta `StatusPagamento = APROVADO` e chama `iniciar_processo_reembolso`, que
@@ -648,7 +648,7 @@ ou `.csv` e cria os registros de uma vez. Modelos prontos estão em
 [`docs/modelos-importacao/`](docs/modelos-importacao).
 
 <p align="center">
-  <a href="docs/assets/fluxo-importacao.png"><img src="docs/assets/fluxo-importacao.png" alt="Fluxograma da importação: escolher o arquivo, action ImportarPlanilha, leitura, normalização, validação de todas as linhas e criação por EML, tudo ou nada" width="100%"></a>
+  <a href="assets/fluxo-importacao.png"><img src="assets/fluxo-importacao.png" alt="Fluxograma da importação: escolher o arquivo, action ImportarPlanilha, leitura, normalização, validação de todas as linhas e criação por EML, tudo ou nada" width="100%"></a>
 </p>
 
 | App | Linha da planilha | Colunas (obrigatórias em **negrito**) |
@@ -779,7 +779,7 @@ total): painel com filtros, indicadores e gráficos, e uma página de detalhe po
 de gráfico e tabela de valores).
 
 <p align="center">
-  <a href="docs/assets/fluxo-analises.png"><img src="docs/assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, moldagem das linhas, painel e ações de filtrar, abrir detalhe ou abrir gestão" width="100%"></a>
+  <a href="assets/fluxo-analises.png"><img src="assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, moldagem das linhas, painel e ações de filtrar, abrir detalhe ou abrir gestão" width="100%"></a>
 </p>
 
 | App | Pasta | Entity set | Tile | BSP / pacote |
@@ -825,9 +825,9 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| v2.8   | Diagramas reunidos num único arquivo `docs/diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
+| v2.8   | Diagramas reunidos num único arquivo `diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
 | v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
-| v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `docs/assets/` e fontes `.drawio` em `docs/diagramas/`, referenciados no README |
+| v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `assets/` e fontes `.drawio` em `diagramas/`, referenciados no README |
 | v2.5   | App de análises dividido em quatro apps freestyle, um por domínio: Análise de Pedidos de Compras (`analise-pedidos`), Análise de Clientes (`analise-clientes`), Análise de Itens do Estoque (`analise-estoque`) e Análise de Pedidos de Reembolsos (`analise-reembolsos`), com tiles `ZPCAnalise*-display` e BSPs `ZPC_ANL_*` nos pacotes de domínio; launchpad local com oito tiles; remoção do `analise-compras` (BSP `ZPC_ANALISE`) |
 | v2.4   | Importação de pedidos sem duplicidade: a coluna Pedido vira `ReferenciaImportacao` (tabelas `ZTA_PC_PEDIDO`/`_D`, `ZR_PC_PEDIDO`, BDEF, projeção e MDE) e a mesma referência para o mesmo cliente é recusada enquanto houver pedido não cancelado com ela; Pedido do reembolso abre direto a Object Page do pedido (`#WITH_INTENT_BASED_NAVIGATION`); testes em `ZCL_PC_IMPORTACAO` |
 | v2.3   | Navegação entre apps ampliada: CPF do cliente e nome do item como links no pedido e nos snapshots; no reembolso, links do Pedido (`ZPCPedidoCompra`) e do Cliente/CPF (`ZPCCliente`), com o CPF do cliente como novo campo; `CpfCliente` mapeado para `Cpf` (`@Consumption.semanticObjectMapping`) no backend |
@@ -888,8 +888,8 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
 
 - [Guia do front-end](ui5/README.md) — estrutura das apps, páginas, navegação, deploy e publicação
   dos tiles.
-- [Diagramas](docs/diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
-  fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `docs/assets/` e links para editar.
+- [Diagramas](diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
+  fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `assets/` e links para editar.
 - [Tutorial: autorização (AUTHORITY-CHECK) no On-Premise](docs/tutorial_autorizacao_btp_para_onpremise.md) —
   objetos `SU21`, valores `SU24`, roles `PFCG`, `S_START`, DCL e diagnóstico com `SU53`/`STAUTHTRACE`.
 - [Tutorial: controle de leitura nas CDS Views (DCL)](docs/tutorial_controle_leitura_cds_dcl.md) — implementação

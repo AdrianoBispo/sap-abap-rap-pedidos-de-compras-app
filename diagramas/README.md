@@ -18,18 +18,18 @@ com **uma página por diagrama**. Foram desenhados com as formas oficiais da SAP
 - *Abrir no draw.io*: link com a página embutida; abre direto no editor, sem precisar de acesso ao
   repositório.
 - As páginas 1 a 6 descrevem o cenário principal (SAP BTP, ABAP environment); a página 7, a implementação
-  On-Premise ([Especificação Técnica, seção 26](../Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)).
+  On-Premise ([Especificação Técnica, seção 26](../docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)).
 
 ## Regerar as imagens
 
-Cada página é exportada para `docs/assets/` com o nome da tabela acima. No draw.io: *Arquivo → Exportar
+Cada página é exportada para `assets/` com o nome da tabela acima. No draw.io: *Arquivo → Exportar
 como → PNG*, escolhendo a página (escala 2, borda 20). Com o draw.io desktop, pela linha de comando
 (`--page-index` começa em 1):
 
 ```bash
 i=1
 for n in arquitetura fluxo-pedido fluxo-reembolso fluxo-endereco-viacep fluxo-importacao fluxo-analises arquitetura-onpremise; do
-  drawio -x -f png -s 2 -b 20 -p $i -o docs/assets/$n.png docs/diagramas/pedidos-de-compras.drawio
+  drawio -x -f png -s 2 -b 20 -p $i -o assets/$n.png diagramas/pedidos-de-compras.drawio
   i=$((i+1))
 done
 ```
