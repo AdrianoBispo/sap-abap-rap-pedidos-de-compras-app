@@ -43,19 +43,39 @@ cenário**: as poucas diferenças estão explicadas neste README.
 
 ```text
 abap/
-├── ZAVBS_PC_COMMON              constantes, mensagens, utilitários, autorização, numeração,
-│   │                            CodeLists, setup, serviço analítico ZUI_PC_ANALITICO
-│   └── Source Code Library/
-│       ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
-│       ├── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
-│       └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
-├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps, serviço ZUI_PC_CLIENTES
-├── ZAVBS_PC_ESTOQUE             BO Item, value help de item, serviço ZUI_PC_ESTOQUE
-├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens), serviço ZUI_PC_PEDIDOS_COMPRAS
-│   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
-│   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
-└── ZAVBS_PC_REEMBOLSOS          BO Reembolso, serviço ZUI_PC_REEMBOLSOS
+└── ZAVBS_PEDIDOS_COMPRAS            pacote principal (só estrutura, sem objetos)
+    ├── ZAVBS_PC_COMMON              constantes, mensagens, utilitários, autorização, numeração,
+    │   │                            CodeLists, setup, consultas do serviço analítico ZUI_PC_ANALITICO
+    │   └── Source Code Library/
+    │       ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
+    │       ├── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
+    │       └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
+    ├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps (serviço ZUI_PC_CLIENTES)
+    ├── ZAVBS_PC_ESTOQUE             BO Item, value help de item (serviço ZUI_PC_ESTOQUE)
+    ├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens) (serviço ZUI_PC_PEDIDOS_COMPRAS)
+    │   ├── ZAVBS_PC_PEDIDOS_PAGAMENTOS   pagamento simulado (BO filho, ZCL_PC_PAGAMENTO_SIM)
+    │   └── ZAVBS_PC_PEDIDOS_SNAPSHOTS    snapshots de cliente e itens
+    └── ZAVBS_PC_REEMBOLSOS          BO Reembolso (serviço ZUI_PC_REEMBOLSOS)
 ```
+
+Dentro de cada pacote, as pastas seguem a árvore do *Project Explorer* do ADT:
+
+```text
+ZAVBS_PC_<domínio>/
+├── Core Data Services/          Data Definitions (*.ddls.asddls)
+│   ├── Behavior Definitions/    *.bdef.asbdef
+│   └── Metadata Extensions/     *.ddlx.asddlxs
+├── Dictionary/
+│   └── Database Tables/         *.abap
+└── Source Code Library/         uma pasta por classe, interface ou programa
+```
+
+- Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
+  `Number Range Management/` e `Texts/`.
+- Service Definitions, Service Bindings, objetos de autorização, IAM Apps e o domínio `ZPC_NR_NUMC10`
+  **não são versionados** aqui: são
+  criados no ADT (ou na SAP GUI, no On-Premise) seguindo as seções [6](#6-autorização-authority-check-nos-dois-cenários),
+  [7.4](#74-mapa-das-regras) (entidades expostas por serviço) e [8](#8-instalação-objetos-manuais-e-ordem-de-ativação).
 
 - `ZCL_PC_VIACEP/` e `ZCL_PC_VIACEP_T2/` contêm **a mesma classe** (`ZCL_PC_VIACEP`), com a mesma interface
   pública: crie no sistema **apenas uma**, conforme o ambiente. O sufixo `_T2` (*tier 2*, Standard ABAP)
@@ -72,7 +92,7 @@ abap/
 > [!NOTE]
 > O backend não usa domínios, elementos de dados nem estruturas próprios: as tabelas usam tipos técnicos
 > embutidos do ABAP (`abap.char`, `abap.cuki`, `xfeld` etc.). A única exceção é o domínio `ZPC_NR_NUMC10`,
-> exigido pelo objeto de numeração.
+> exigido pelo objeto de numeração e criado manualmente ([seção 8.1](#81-objetos-criados-manualmente)).
 
 ### 1.1. Convenção de arquivos
 
@@ -80,18 +100,14 @@ Um arquivo por objeto ADT:
 
 | Extensão | Objeto no ADT |
 | --- | --- |
-| `*.abap` (em `Dictionary/`) | Database Table (editor de código-fonte) |
+| `*.abap` (em `Dictionary/Database Tables/`) | Database Table (editor de código-fonte) |
 | `*.ddls.asddls` | Data Definition (CDS view entity / projection / abstract entity) |
-| `*.ddlx.asddlxs` | Metadata Extension |
-| `*.bdef.asbdef` | Behavior Definition |
-| `*.srvd.srvdsrv` | Service Definition |
-| `*.srvb.xml` | Service Binding (OData V4) |
+| `*.ddlx.asddlxs` (em `Metadata Extensions/`) | Metadata Extension |
+| `*.bdef.asbdef` (em `Behavior Definitions/`) | Behavior Definition |
 | `*.clas.abap` | Classe global (aba *Global Class*) |
 | `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
 | `*.clas.testclasses.abap` | Aba *Test Classes* da mesma classe (ABAP Unit) |
 | `*.intf.abap` | Interface |
-| `*.doma.xml` | Domain (só o Number Length Domain `ZPC_NR_NUMC10`) |
-| `*.susob.xml` | Authorization Object (BTP) |
 | `ZPC_MSG.msagn.xml` | Message Class |
 
 O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
@@ -156,12 +172,8 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 
 | Objeto | Motivo | Substituto On-Premise |
 | --- | --- | --- |
-| `ZAVBS_PC_COMMON/Source Code Library/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
-| `*/Identity and Access Management/*.sia6.xml` e `*.txt` | IAM Apps não existem no On-Premise | `SU24` + roles `PFCG` ([seção 6.4](#64-passo-a-passo-no-sap-on-premise)) |
-| `ZAVBS_PC_REEMBOLSOS/Cloud Communication Management/*_G4BA.abap` | Serviço de entrada gerado pela publicação no BTP | Gerado ao publicar o binding (`/IWFND/V4_ADMIN`) |
-| `ZAVBS_PC_REEMBOLSOS/Authorizations/*.sush.xml` | Valores propostos gerados no BTP | `SU24` para o grupo de serviços |
-| `ZAVBS_PC_COMMON/Authorizations/*.susob.xml` (classe `CPAE`) | Classe de objetos do BTP | `ZPC_ADMIN` e `ZPC_PEDIDO` em `SU21`, classe `ZPC` (atividades 01, 02, 03, 06 e 16) |
-| `ZAVBS_PC_COMMON/Number Range Management/ZPC_NR.abap` | Editor do BTP | `ZPC_NR` na `SNRO` (domínio `ZPC_NR_NUMC10`, buffer em memória com 10 números) |
+| `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source Code Library/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
+| `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Number Range Management/ZPC_NR.abap` | Editor do BTP | `ZPC_NR` na `SNRO` (domínio `ZPC_NR_NUMC10`, buffer em memória com 10 números) |
 | Tabela draft `ZTA_PC_REEMB_D` | Resíduo (o BO Reembolso não tem draft) | Não criar |
 
 ---
@@ -420,7 +432,7 @@ A correção foi incluir na PSE anônima a raiz e, se necessário, o R46 *cross-
 ### 5.5. A classe On-Premise
 
 O código completo está em
-[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PC_COMMON/Source%20Code%20Library/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
+[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
 A interface pública (`ty_endereco`, `ty_resultado`, `consultar`) é um superconjunto da versão BTP
 (acrescenta `status_http` e `mensagem_erro`), por isso o behavior pool `ZBP_R_PC_CLIENTE` não muda. A
 diferença está em `chamar_servico`:
@@ -461,7 +473,7 @@ mantenha só as disponíveis (ou use apenas `OTHERS = 1`).
 
 ### 5.6. Report de teste
 
-[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PC_COMMON/Source%20Code%20Library/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
+[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
 chama `ZCL_PC_VIACEP=>consultar` e mostra o status HTTP e o endereço. Execute-o (F8) em cada sistema depois
 de configurar `SM59` e `STRUST`, antes de testar o cadastro de endereço na app Gestão de Clientes. Para um CEP
 válido (ex.: `01310-100`), ele deve retornar HTTP 200 e o endereço.
@@ -600,7 +612,7 @@ que as roles possam ser mantidas (BTP não trial ou On-Premise), use `abap_false
 ### 6.3. Configuração no SAP BTP, ABAP environment
 
 1. **Objetos de autorização** (ADT, *Authorization Object*, classe `CPAE`): `ZPC_ADMIN` (`ACTVT` 01, 02, 03,
-   06) e `ZPC_PEDIDO` (`ACTVT` 01, 02, 03, 06, **16**), já no repositório como `*.susob.xml`.
+   06) e `ZPC_PEDIDO` (`ACTVT` 01, 02, 03, 06, **16**), criados no ADT (não versionados no repositório).
 2. **Publicar** os service bindings no ADT.
 3. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT
    acrescenta `_EXT`): aba *Services* com o serviço do app; aba *Authorizations* com `ZPC_ADMIN` ou
@@ -1007,8 +1019,27 @@ e volte as views para `#NOT_REQUIRED`.
 Estes objetos não têm código-fonte editável no repositório, ou exigem um passo manual:
 
 1. **Message Class `ZPC_MSG`** (ADT; On-Premise também `SE91`) — cadastrar as mensagens de
-   `ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml` (até 73 caracteres por texto; `&1`/`&2` são parâmetros).
-2. **Domínio `ZPC_NR_NUMC10`** — NUMC, tamanho 10 (usado como *Number Length Domain*).
+   `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml` (até 73 caracteres por texto; `&1`/`&2` são parâmetros).
+2. **Domínio `ZPC_NR_NUMC10`** (pacote `ZAVBS_PC_COMMON`) — *Number Length Domain* do objeto de numeração
+   `ZPC_NR`; precisa estar ativo antes dele.
+
+   | Propriedade | Valor |
+   | --- | --- |
+   | Nome | `ZPC_NR_NUMC10` |
+   | Descrição | `Number Length Domain` |
+   | Tipo de dado | `NUMC` |
+   | Tamanho | 10 (0 casas decimais) |
+   | Tamanho de saída | 10 |
+   | Rotina de conversão, valores fixos e tabela de valores | nenhum |
+
+   - **ADT (plugin no Eclipse)** — BTP e On-Premise: botão direito no pacote `ZAVBS_PC_COMMON` → *New* →
+     *Other ABAP Repository Object* → *Dictionary* → *Domain*; informe nome e descrição, selecione a request
+     de transporte e clique em *Finish*. No editor do domínio, em *Format*, escolha *Data Type* `NUMC` e
+     *Length* `10` (o *Output Length* assume 10); salve (**Ctrl+S**) e ative (**Ctrl+F3**).
+   - **SAP GUI (transação `SE11`)** — só On-Premise: marque *Domínio*, informe `ZPC_NR_NUMC10` e clique em
+     *Criar*; preencha a descrição breve e, na aba *Definição*, informe *Tipo de dados* `NUMC` e
+     *Nº de posições* `10` (o comprimento de saída assume 10); salve, atribuindo o pacote `ZAVBS_PC_COMMON`
+     e a request, e ative (**Ctrl+F3**).
 3. **Number Range Object `ZPC_NR`** (BTP: editor do ADT; On-Premise: `SNRO`) — domínio `ZPC_NR_NUMC10`, sem
    subobjeto, com **Main Memory Buffering** e *Number of Numbers in Buffer* maior que zero (p. ex. 10). Sem
    buffer (ou com 0 números, que o runtime trata como "sem buffer"), `GET NUMBER` faz `UPDATE` síncrono na
@@ -1042,7 +1073,7 @@ Estes objetos não têm código-fonte editável no repositório, ou exigem um pa
 2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
    `ZCL_PC_NUMERACAO`.
-3. **Todas** as tabelas ativas (pastas `Dictionary/`, inclusive `ZTA_PC_CODELIST`).
+3. **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo `ZR_PC_REEMBOLSO` (BO próprio,
    root), que precisa estar ativa, com sua BDEF, antes da behavior pool do Pedido.

@@ -228,7 +228,7 @@ stateDiagram-v2
 
 ```text
 .
-├── abap/            backend RAP, o mesmo para ABAP Cloud e On-Premise (um pacote ZAVBS_PC_* por domínio)
+├── abap/            backend RAP, o mesmo para ABAP Cloud e On-Premise (pacote ZAVBS_PEDIDOS_COMPRAS com um ZAVBS_PC_* por domínio)
 ├── ui5/             quatro apps Fiori Elements, quatro apps de análise e o launchpad local
 ├── assets/          imagens dos diagramas e capturas de tela (assets/telas/)
 └── docs/
