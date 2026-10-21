@@ -20,7 +20,7 @@ tabelas, tile) e a configuração das ferramentas.
 | Gestão de Clientes | [`gestao-clientes/`](gestao-clientes/) | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
 | Gestão de Estoque  | [`gestao-estoque/`](gestao-estoque/) | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
 | Pedidos de Compras | [`pedidos-compras/`](pedidos-compras/) | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
-| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
+| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_REEMBOLSOS` |
 
 ## Estrutura de cada app
 
