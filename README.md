@@ -180,7 +180,7 @@ no [`ui5/README.md`](ui5/README.md).
 | Serviços | Cinco serviços OData V4 (um por app de gestão e um analítico) |
 | Integração | API pública ViaCEP |
 | Front-end | SAP Fiori Elements V4 (List Report + Object Page) e SAPUI5 freestyle (`sap.viz`) nas análises |
-| Ferramentas | ADT (Eclipse), SAP GUI (On-Premise), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint |
+| Ferramentas | ADT (Eclipse ou VS Code), SAP GUI (On-Premise), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint |
 | Testes | ABAP Unit, OPA5 e QUnit |
 
 ---
@@ -250,7 +250,8 @@ stateDiagram-v2
 ## Como começar
 
 **Pré-requisitos:** um SAP BTP, ABAP environment (Trial serve) ou um SAP S/4HANA On-Premise com RAP;
-Eclipse com ADT; Node.js 20+; VS Code com SAP Fiori tools ou SAP Business Application Studio.
+ADT no Eclipse ou no VS Code (extensão *ABAP Development Tools*); Node.js 20+; VS Code com SAP Fiori tools ou
+SAP Business Application Studio.
 
 1. **Backend** — siga o [`abap/README.md`](abap/README.md): objetos criados à mão, ordem de ativação,
    roteiro de cada ambiente (BTP ou On-Premise), ViaCEP e autorização.
