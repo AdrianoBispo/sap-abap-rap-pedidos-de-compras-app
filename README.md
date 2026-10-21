@@ -223,6 +223,12 @@ stateDiagram-v2
     └── modelos-importacao/                               planilhas modelo (CSV/XLSX)
 ```
 
+> [!TIP]
+> **Prefixo dos pacotes.** `ZAVBS` (em `ZAVBS_PEDIDOS_COMPRAS` e `ZAVBS_PC_*`) é uma escolha pessoal do autor,
+> com as iniciais do seu nome completo, e é opcional. No seu projeto, use os prefixos que preferir; como
+> sugestão genérica, `ZPK` (`ZPK_PEDIDOS_COMPRAS`, `ZPK_PC_COMMON`, `ZPK_PC_PEDIDOS`…). O código não depende do
+> nome dos pacotes; detalhes em [`abap/README.md`](abap/README.md#12-prefixo-dos-pacotes).
+
 ---
 
 ## Como começar
@@ -283,6 +289,7 @@ Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 
 
 | Versão | Mudanças |
 | ------ | -------- |
+| v2.11  | README próprio para cada app Fiori e para o launchpad local; prefixo `ZAVBS` dos pacotes documentado como opcional (escolha pessoal do autor), com a sugestão genérica `ZPK` na documentação, na Especificação Técnica v3.1 e nas apresentações |
 | v2.10  | README principal só com a visão geral; detalhes do backend em [`abap/README.md`](abap/README.md) e do front-end em [`ui5/README.md`](ui5/README.md); Especificação Técnica v3.0 escrita como requisitos técnicos para os dois ambientes, com diagramas e telas, em Markdown e Word |
 | v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise): `abap/` sem diretório por cenário, tutoriais de ViaCEP, autorização e DCL no `abap/README.md`, pacotes *Standard ABAP* no On-Premise e apresentações para os dois ambientes |
 | v2.8   | Diagramas num único arquivo draw.io, com a arquitetura On-Premise; Especificação Técnica em Markdown |

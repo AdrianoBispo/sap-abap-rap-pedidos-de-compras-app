@@ -97,6 +97,30 @@ Um arquivo por objeto ADT:
 O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
 cada fonte. Para automatizar, converta para abapGit ou gCTS.
 
+### 1.2. Prefixo dos pacotes
+
+O prefixo `ZAVBS` dos pacotes é **opcional**: é uma escolha pessoal do autor, com as iniciais do seu nome
+completo. Quem criar o próprio projeto pode usar os prefixos que quiser. Como sugestão genérica, use `ZPK`:
+
+| Pacote neste repositório | Sugestão genérica |
+| --- | --- |
+| `ZAVBS_PEDIDOS_COMPRAS` (principal) | `ZPK_PEDIDOS_COMPRAS` |
+| `ZAVBS_PC_COMMON` | `ZPK_PC_COMMON` |
+| `ZAVBS_PC_CLIENTES` | `ZPK_PC_CLIENTES` |
+| `ZAVBS_PC_ESTOQUE` | `ZPK_PC_ESTOQUE` |
+| `ZAVBS_PC_PEDIDOS` | `ZPK_PC_PEDIDOS` |
+| `ZAVBS_PC_PEDIDOS_PAGAMENTOS` | `ZPK_PC_PEDIDOS_PAGAMENTOS` |
+| `ZAVBS_PC_PEDIDOS_SNAPSHOTS` | `ZPK_PC_PEDIDOS_SNAPSHOTS` |
+| `ZAVBS_PC_REEMBOLSOS` | `ZPK_PC_REEMBOLSOS` |
+
+- O código ABAP não referencia o nome dos pacotes: tabelas, CDS, behaviors, classes e serviços ativam iguais
+  em qualquer pacote. As pastas `ZAVBS_PC_*` deste diretório só organizam os fontes.
+- No front-end, o nome do pacote aparece no `package:` de cada `ui5/<app>/ui5-deploy.yaml`: ajuste-o para o
+  pacote escolhido antes do `npm run deploy`.
+- Os prefixos dos objetos (`ZPC_`, `ZTA_PC_`, `ZR_PC_`, `ZC_PC_`, `ZUI_PC_`, `ZCL_PC_` etc.) também podem ser
+  trocados. Mantenha o namespace do cliente (`Z` ou `Y`) e o tamanho máximo de cada tipo de objeto (pacote:
+  30 caracteres; tabela: 16), e troque o nome em todos os fontes que o referenciam.
+
 ---
 
 ## 2. O que muda entre os cenários
@@ -145,7 +169,8 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 ## 3. Roteiro no SAP BTP, ABAP environment
 
 1. Criar o pacote principal `ZAVBS_PEDIDOS_COMPRAS` e os subpacotes no software component `ZLOCAL`
-   (versão de linguagem *ABAP for Cloud Development*).
+   (versão de linguagem *ABAP for Cloud Development*). O prefixo `ZAVBS` é opcional; no seu projeto, use o
+   que preferir, por exemplo `ZPK_PEDIDOS_COMPRAS` ([seção 1.2](#12-prefixo-dos-pacotes)).
 2. Criar os objetos manuais (Message Class `ZPC_MSG`, domínio `ZPC_NR_NUMC10`, objeto de numeração `ZPC_NR`,
    objetos de autorização `ZPC_ADMIN`/`ZPC_PEDIDO`) e importar os fontes deste diretório na
    [ordem de ativação](#82-ordem-de-criação-e-ativação), usando a pasta `ZCL_PC_VIACEP/`.
@@ -163,7 +188,8 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
    (`strict ( 2 )`, `hidden: #(Campo)` em facets, action estática com parâmetro `deep`); em releases mais
    antigos parte da sintaxe pode não ativar.
 2. Criar o pacote `ZAVBS_PEDIDOS_COMPRAS` e os subpacotes com a versão de linguagem **Standard ABAP**, numa
-   camada de transporte do landscape (`DEV → QAS → PRD`).
+   camada de transporte do landscape (`DEV → QAS → PRD`). O prefixo `ZAVBS` é opcional; no seu projeto, use o
+   que preferir, por exemplo `ZPK_PEDIDOS_COMPRAS` ([seção 1.2](#12-prefixo-dos-pacotes)).
 3. Criar os objetos manuais: Message Class `ZPC_MSG` (ADT ou `SE91`), domínio `ZPC_NR_NUMC10` (ADT ou
    `SE11`), objeto de numeração `ZPC_NR` (`SNRO`, buffer em memória com 10 números) e a classe `ZPC` com os
    objetos `ZPC_ADMIN`/`ZPC_PEDIDO` (`SU21`).

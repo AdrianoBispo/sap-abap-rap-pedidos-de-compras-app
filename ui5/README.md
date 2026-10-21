@@ -265,6 +265,11 @@ npm run deploy        # cria/atualiza a BSP ZPC_* e o IAM App ZPC_*_UI5R no paco
 No trial, os pacotes do software component `ZLOCAL` não usam transporte. Em sistemas com
 transporte, preencha `transport:` em `ui5-deploy.yaml`.
 
+O `package:` de cada `ui5-deploy.yaml` usa os pacotes deste repositório (`ZAVBS_PC_*`). O prefixo `ZAVBS` é
+uma escolha pessoal do autor, com as iniciais do seu nome completo, e é opcional: no seu projeto, informe os
+pacotes que você criou, com o prefixo que preferir (sugestão genérica: `ZPK_PC_*`; veja
+[`abap/README.md`](../abap/README.md#12-prefixo-dos-pacotes)).
+
 Depois do deploy, cada app abre direto no ABAP (login pelo SAP ID):
 
 | App | URL |
@@ -338,7 +343,7 @@ chamada. `ui5-deploy.yaml`:
         app:
           name: ZPC_PEDIDOS
           description: Pedidos de Compras
-          package: ZAVBS_PC_PEDIDOS
+          package: ZAVBS_PC_PEDIDOS                    # ou o seu pacote, ex.: ZPK_PC_PEDIDOS
           transport: S4DK900123                        # ordem Workbench (obrigatória fora do $TMP)
 ```
 

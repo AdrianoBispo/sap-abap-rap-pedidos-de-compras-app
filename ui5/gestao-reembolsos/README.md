@@ -114,6 +114,9 @@ npm run undeploy      # remove a BSP
 | URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_reembolsos/index.html` |
 
 A BSP fica no pacote `ZAVBS_PC_PEDIDOS` (o BO Reembolso está em `ZAVBS_PC_REEMBOLSOS`).
+O prefixo `ZAVBS` do pacote `ZAVBS_PC_PEDIDOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
+projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
+`ZPK_PC_PEDIDOS`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
 Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_PEDIDO`, atividade 16 (aprovar e rejeitar), em
 [`abap/README.md`](../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).

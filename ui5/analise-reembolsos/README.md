@@ -124,5 +124,8 @@ npm run undeploy      # remove a BSP
 | Acesso | Tile pelo business catalog (ou tile URL no SAP Build Work Zone) | Catálogo `/UI2/FLPAM` e role `PFCG` |
 | URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_reemb/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_anl_reemb/index.html` |
 
+O prefixo `ZAVBS` do pacote `ZAVBS_PC_REEMBOLSOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
+projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
+`ZPK_PC_REEMBOLSOS`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
 Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
 Camada analítica no backend: [`abap/README.md`](../../abap/README.md#10-camada-analítica).
