@@ -1,6 +1,6 @@
 # Pedidos de Compras — Especificação Técnica
 
-**SAP RAP · ABAP Cloud · SAP Fiori Elements** — versão **2.3** (Markdown)
+**SAP RAP · ABAP Cloud e On-Premise · SAP Fiori Elements** — versão **2.4** (Markdown)
 
 | Item | Valor |
 | --- | --- |
@@ -46,15 +46,15 @@
 
 # 1. Objetivo
 
-Construir uma solução educacional de pedidos de compras utilizando SAP RAP, ABAP Cloud e SAP Fiori Elements, organizada em quatro aplicações desacopladas: Gestão de Clientes, Gestão de Estoque, Pedidos de Compras e Gestão de Reembolsos.
+Construir uma solução educacional de pedidos de compras utilizando o SAP RAP (ABAP RESTful Application Programming Model) e o SAP Fiori Elements, implementável tanto no SAP BTP, ABAP environment (ABAP Cloud) quanto num SAP S/4HANA On-Premise, organizada em quatro aplicações desacopladas: Gestão de Clientes, Gestão de Estoque, Pedidos de Compras e Gestão de Reembolsos.
 
 A solução deverá preservar o escopo funcional da especificação original, contemplando cadastro de clientes, endereços, itens de estoque, criação de pedidos em draft, registro do pedido com reserva de estoque, pagamento simulado, aprovação/finalização, cancelamento (com solicitação e decisão de reembolso quando o pagamento já foi aprovado), liberação de reserva, baixa de estoque e snapshots históricos imutáveis.
 
-O projeto será desenvolvido no SAP BTP ABAP Environment Trial, utilizando CDS View Entities, Behavior Definitions, Behavior Implementations, Service Definitions, Service Bindings OData V4 UI, IAM Apps, Business Catalogs e Business Roles.
+O projeto foi desenvolvido primeiro no SAP BTP ABAP Environment Trial e pode ser reproduzido num SAP S/4HANA On-Premise com o mesmo código (seção 26). Nos dois ambientes ele utiliza CDS View Entities, Behavior Definitions, Behavior Implementations, Service Definitions e Service Bindings OData V4 UI; a configuração de acesso usa IAM Apps, Business Catalogs e Business Roles no BTP e objetos SU21, valores SU24 e roles PFCG no On-Premise.
 
 Fora do objetivo principal permanecem gestão logística, envio, frete real, rastreamento de entrega, integração real com gateway de pagamento, auditoria produtiva avançada e uso por clientes reais.
 
-Esta é a versão 2.3 da especificação: a revisão técnica 2.0 para ABAP Cloud (strict mode 2), alinhada ao código-fonte, acrescida das alterações das seções 23 a 26 (v2.1: Reembolso como aplicação própria, registro do pedido com reserva automática de estoque, SKU gerado no Save; v2.2: novo modelo de status do pedido, edição dos itens do pedido aberto com reserva incremental, Object Page dinâmica, camada analítica e suíte permanente de testes; v2.3: documento em Markdown, camada analítica com os quatro apps freestyle e o cenário de implementação On-Premise no SAP S/4HANA 2025 FPS01).
+Esta é a versão 2.3 da especificação: a revisão técnica 2.0 para ABAP Cloud (strict mode 2), alinhada ao código-fonte, acrescida das alterações das seções 23 a 26 (v2.1: Reembolso como aplicação própria, registro do pedido com reserva automática de estoque, SKU gerado no Save; v2.2: novo modelo de status do pedido, edição dos itens do pedido aberto com reserva incremental, Object Page dinâmica, camada analítica e suíte permanente de testes; v2.3: documento em Markdown, camada analítica com os quatro apps freestyle e o cenário de implementação On-Premise no SAP S/4HANA 2025 FPS01; v2.4: projeto orientado aos dois ambientes, com pacotes Standard ABAP no On-Premise).
 
 # 2. Escopo do Projeto
 
@@ -76,7 +76,7 @@ Esta é a versão 2.3 da especificação: a revisão técnica 2.0 para ABAP Clou
 - Cancelamento de pedido com motivo obrigatório, liberação de reserva e geração de snapshots; quando o pagamento já foi aprovado, o cancelamento abre uma solicitação de reembolso (status PROCESSANDO_REEMBOLSO) que é decidida na aplicação Gestão de Reembolsos.
 - Aplicação independente de Gestão de Reembolsos (List Report próprio) com as actions Aprovar reembolso (cancela o pedido) e Rejeitar reembolso (o pedido retoma o status anterior; motivo obrigatório).
 - Separação de serviços, bindings, catálogos e tiles para as quatro aplicações Fiori Elements.
-- Controle de acesso por perfil comum e administrador via IAM, Business Roles e authorization control RAP.
+- Controle de acesso por perfil comum e administrador via authorization control RAP, configurado com IAM Apps e Business Roles (BTP) ou roles PFCG (On-Premise).
 - Controle de concorrência nas operações críticas de estoque.
 - Camada analítica somente leitura: cubos ZI_PC_\*_CUBE, consultas ZC_PC_\*_ANALISE, serviço ZUI_PC_ANALITICO e quatro aplicações SAPUI5 freestyle de análise (Pedidos de Compras, Clientes, Itens do Estoque e Pedidos de Reembolsos), com 5 análises cada.
 
@@ -95,13 +95,13 @@ Esta é a versão 2.3 da especificação: a revisão técnica 2.0 para ABAP Clou
 
 | Camada | Tecnologia/Serviço | Observações |
 |:---|:---|:---|
-| Backend | SAP RAP / ABAP Cloud | Business Objects RAP, Behavior Definitions, Behavior Implementations, validations, determinations, actions e EML. |
-| Ambiente | SAP BTP ABAP Environment Trial | Ambiente cloud para desenvolvimento educacional em ABAP Cloud. |
+| Backend | SAP RAP (ABAP Cloud no BTP; Standard ABAP no On-Premise) | Business Objects RAP, Behavior Definitions, Behavior Implementations, validations, determinations, actions e EML. |
+| Ambiente | SAP BTP ABAP Environment Trial ou SAP S/4HANA On-Premise | Mesmo código RAP nos dois ambientes; as diferenças estão na seção 26 e em abap/README.md. |
 | Persistência | SAP HANA / ABAP Dictionary Tables | Tabelas ativas ZTA_\* e tabelas draft ZTA_\*_D para todas as entidades de BOs com draft (nomes de tabela com no máximo 16 caracteres). |
 | Serviço OData | OData V4 via Service Definition/Service Binding | Exposição das projections transacionais para Fiori Elements. |
 | Frontend | SAP Fiori Elements | Quatro aplicações List Report/Object Page independentes. |
-| Segurança | IAM, Business Roles e Authorization Control RAP | Serviço/catálogo por aplicação, perfil via global authorization e disponibilidade por status via feature control. |
-| Portal | SAP Build Work Zone / Fiori Launchpad | Exposição das quatro aplicações como tiles independentes. |
+| Segurança | Authorization Control RAP + IAM/Business Roles (BTP) ou SU21/SU24/PFCG (On-Premise) | Serviço/catálogo por aplicação, perfil via global authorization e disponibilidade por status via feature control. |
+| Portal | SAP Build Work Zone (BTP) ou SAP Fiori launchpad embarcado (On-Premise) | Exposição das quatro aplicações como tiles independentes. |
 
 ## 3.1 Arquitetura Desacoplada em Quatro Aplicações
 
@@ -120,10 +120,10 @@ A solução será composta por quatro aplicações Fiori Elements independentes,
 |:---|:---|:---|
 | schema.cds | Tabelas ZTA_\* / ZTA_\*_D + Root CDS ZR_\* | Modelo persistente e transacional migrado para ABAP Dictionary e CDS View Entities. |
 | services.cds | Projection Views ZC_\* + Service Definitions | Cada aplicação possui seu próprio serviço OData V4 UI. |
-| handlers.js | Behavior Implementation Classes ZBP_R_\* | Regras de negócio implementadas em ABAP Cloud. |
+| handlers.js | Behavior Implementation Classes ZBP_R_\* | Regras de negócio implementadas em ABAP (RAP, EML). |
 | actions CAP | RAP Actions | Actions declaradas no Behavior Definition e implementadas na behavior pool. |
 | before/on handlers | Validations, determinations e action methods | Validações, cálculos e transições no ciclo transacional RAP. |
-| @restrict / XSUAA | IAM Apps, Business Catalogs, Business Roles e Authorization Control RAP | Permissões segregadas por aplicação e perfil. |
+| @restrict / XSUAA | Authorization Control RAP + IAM Apps, Business Catalogs e Business Roles (BTP) ou roles PFCG (On-Premise) | Permissões segregadas por aplicação e perfil. |
 
 # 4. Padrão de Nomenclatura RAP
 
@@ -189,7 +189,7 @@ Limites técnicos: tabelas do ABAP Dictionary têm no máximo 16 caracteres (por
 
 # 6. Autenticação e Autorização
 
-A autenticação será delegada ao SAP BTP ABAP Environment. A autorização será baseada em IAM Apps, Business Catalogs, Business Roles, Access Control em CDS quando aplicável e métodos de authorization control no RAP.
+A autenticação é delegada à plataforma: SAP ID service ou Identity Authentication no SAP BTP, ABAP environment; usuários SU01 com SSO (SAML 2.0 ou Kerberos) no On-Premise. A autorização usa o mesmo código RAP nos dois ambientes — métodos de authorization control e, quando aplicável, Access Control em CDS — e muda só a configuração: IAM Apps, Business Catalogs e Business Roles no BTP; objetos SU21, valores propostos SU24 e roles PFCG no On-Premise (seção 26 e abap/README.md, seção 6).
 
 ## 6.1 Objetos de IAM Recomendados
 
@@ -205,6 +205,8 @@ Gestão de Reembolsos: IAM App ZPC_IAM_REEMBOLSOS e Business Catalog ZPC_BC_REEM
 Objetos de autorização (campo ACTVT) atribuídos às IAM Apps: ZPC_ADMIN (manutenção de clientes e estoque) e ZPC_PEDIDO (criação de pedidos, execução das actions e decisão de reembolso). A verificação é centralizada na classe ZCL_PC_AUTH.
 
 No SAP BTP ABAP Environment Trial (sistema compartilhado) normalmente não há acesso de administrador para manter Business Roles. Nesse caso a constante ZIF_PC_CONSTANTS=>C_MODO_TRIAL = abap_true libera as verificações de perfil e os testes são feitos pelo preview dos Service Bindings. Em um sistema real a constante deve ser abap_false.
+
+No On-Premise, os mesmos objetos ZPC_ADMIN e ZPC_PEDIDO são criados em SU21 (classe ZPC), vinculados aos serviços em SU24 e atribuídos pelas roles PFCG Z_PC_ADMIN e Z_PC_COMUM, sempre com C_MODO_TRIAL = abap_false; o acesso a cada serviço OData V4 é verificado pelo objeto S_START.
 
 ## 6.2 Estratégia RAP
 
@@ -964,7 +966,7 @@ On-Premise); no On-Premise, `ZIF_PC_CONSTANTS` recebe `c_modo_trial = abap_false
 # 20. Deploy e Operação
 
 - Desenvolvimento via ABAP Development Tools (ADT).
-- Persistência em SAP HANA do ambiente ABAP Cloud Trial.
+- Persistência no SAP HANA do ambiente (ABAP environment ou S/4HANA).
 - Ativação na ordem: tabelas ZTA_\* → CDS base ZR_\* e CodeLists → value helps e abstract entities → tabelas draft ZTA_\*_D → projections e metadata extensions → behavior definitions → behavior pools → service definitions. O BO Reembolso (ZR_PC_REEMBOLSO) depende do Pedido apenas por EML; o Pedido referencia o BO Reembolso pelo create, então ZR_PC_REEMBOLSO e sua BDEF precisam estar ativos antes da behavior pool do Pedido.
 - Criação manual (sem código-fonte): Message Class ZPC_MSG, domínio ZPC_NR_NUMC10, Number Range Object ZPC_NR e objetos de autorização ZPC_ADMIN / ZPC_PEDIDO.
 - Execução da classe ZCL_PC_SETUP (F9) para criar os intervalos de numeração 01 (pedido) e 02 (SKU), carregar as CodeLists e os dados de demonstração. É pré-requisito para salvar o primeiro pedido ou item: sem os intervalos o Save falha com "Erro ao obter numeração". Também migra pedidos do modelo antigo de status (CRIADO/AGUARDANDO_PAGAMENTO/PROCESSANDO_REEMBOLSO) para o atual e recalcula os indicadores de status.
@@ -972,13 +974,13 @@ On-Premise); no On-Premise, `ZIF_PC_CONSTANTS` recebe `c_modo_trial = abap_false
 - Quatro aplicações Fiori Elements List Report/Object Page (pasta ui5/), publicadas no ABAP Repository com npm run deploy em cada app (BSP ZPC_CLIENTES, ZPC_ESTOQUE, ZPC_PEDIDOS e ZPC_REEMBOLSOS).
 - Camada analítica: quatro aplicações SAPUI5 freestyle (ui5/analise-pedidos, analise-clientes, analise-estoque e analise-reembolsos), publicadas como BSPs ZPC_ANL_PEDIDOS, ZPC_ANL_CLIENTE, ZPC_ANL_ESTOQUE e ZPC_ANL_REEMB.
 - Cenário On-Premise (SAP S/4HANA 2025 FPS01): ver seção 26.
-- Configuração de IAM Apps, Business Catalogs e Business Roles.
+- Configuração de IAM Apps, Business Catalogs e Business Roles (BTP) ou SU24 e roles PFCG (On-Premise).
 - Exposição via Fiori Launchpad ou SAP Build Work Zone.
 - Logs avançados e auditoria produtiva permanecem fora do escopo inicial.
 
 # 21. Considerações de Segurança
 
-- Controle de acesso por Business Roles, IAM e authorization control RAP.
+- Controle de acesso por authorization control RAP, com Business Roles e IAM (BTP) ou roles PFCG (On-Premise).
 - Validações críticas sempre no backend ABAP.
 - Dados sensíveis de cartão nunca persistidos.
 - CVV nunca salvo ou exibido.
@@ -1070,6 +1072,15 @@ Versão 2.3 — especificação em Markdown, diagramas num único arquivo, camad
 | 3 | 19 | Fontes ABAP numa única pasta. | abap/abap-environment (cenário principal, fonte completa) e abap/on-premise (somente as diferenças). |
 | 4 | 26 (nova) | Sem cenário On-Premise na especificação (apenas tutoriais avulsos). | Implementação no SAP S/4HANA 2025 FPS01: arquitetura, pré-requisitos, passo a passo, limitações e diferenças em relação ao SAP BTP, ABAP environment. |
 | 5 | capa, 26.1 | Seis arquivos draw.io separados. | Um único arquivo (diagramas/pedidos-de-compras.drawio) com uma página por diagrama, incluindo a nova arquitetura On-Premise (página 7). |
+
+Versão 2.4 — projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP.
+
+| # | Seção | Situação na versão 2.3 | Alteração na versão 2.4 |
+|:---|:---|:---|:---|
+| 1 | 1, 3, 6, 20, 21 | Texto centrado no SAP BTP ABAP Environment Trial. | Os dois ambientes descritos lado a lado; segurança com IAM/Business Roles (BTP) ou SU21/SU24/PFCG (On-Premise). |
+| 2 | 19, 26 | Código On-Premise em abap/on-premise, com pacotes ABAP for Cloud Development, subpacote tier 2 ZAVBS_PC_COMMON_T2 e contrato C1 para ZCL_PC_VIACEP. | Um único diretório abap/; no On-Premise os pacotes são Standard ABAP e todos os objetos RAP ativam sem erros; ZCL_PC_VIACEP tem a versão On-Premise em ZCL_PC_VIACEP_T2/. Tier 1 + C1 ficam como opção. |
+| 3 | 26 | Tutoriais de ViaCEP, autorização e DCL em docs/. | Reunidos em abap/README.md (seções 5 a 7), para os dois cenários. |
+
 
 # 24. Camada Analítica
 

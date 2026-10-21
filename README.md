@@ -1,15 +1,17 @@
-<h1 align="center">Pedidos de Compras – SAP RAP / ABAP Cloud</h1>
+<h1 align="center">Pedidos de Compras – SAP RAP (ABAP Cloud e On-Premise)</h1>
 
 <p align="center">
   Quatro aplicações SAP Fiori Elements desacopladas — <b>Gestão de Clientes</b>, <b>Gestão de Estoque</b>,
   <b>Pedidos de Compras</b> e <b>Gestão de Reembolsos</b> — e quatro apps de análise (<b>Pedidos de Compras</b>,
-  <b>Clientes</b>, <b>Itens do Estoque</b> e <b>Pedidos de Reembolsos</b>), com backend RAP em ABAP Cloud no
-  SAP BTP ABAP Environment, reunidos num launchpad local.
+  <b>Clientes</b>, <b>Itens do Estoque</b> e <b>Pedidos de Reembolsos</b>), com backend RAP que roda no
+  <b>SAP BTP, ABAP environment</b> (ABAP Cloud) e no <b>SAP S/4HANA On-Premise</b> com o mesmo código,
+  reunidos num launchpad local.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/SAP%20BTP-ABAP%20Environment-0FAAFF?style=for-the-badge&logo=sap&logoColor=white" alt="SAP BTP ABAP Environment">
-  <img src="https://img.shields.io/badge/ABAP-Cloud%20(strict%202)-1872C6?style=for-the-badge&logo=sap&logoColor=white" alt="ABAP Cloud strict 2">
+  <img src="https://img.shields.io/badge/SAP%20S%2F4HANA-On--Premise-0A6ED1?style=for-the-badge&logo=sap&logoColor=white" alt="SAP S/4HANA On-Premise">
+  <img src="https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard-1872C6?style=for-the-badge&logo=sap&logoColor=white" alt="ABAP Cloud ou Standard ABAP">
   <img src="https://img.shields.io/badge/RAP-Managed%20%2B%20Draft-0070F2?style=for-the-badge" alt="RAP Managed com Draft">
   <img src="https://img.shields.io/badge/OData-V4-E9540D?style=for-the-badge" alt="OData V4">
   <br>
@@ -63,8 +65,15 @@
 ## Sobre o projeto
 
 Código-fonte de quatro aplicações **Fiori Elements (OData V4)** e quatro apps de análise **SAPUI5
-freestyle** para o **SAP BTP ABAP Environment (Trial)**: backend **RAP** em [`abap/`](abap/) e
-front-end em [`ui5/`](ui5/).
+freestyle**: backend **RAP** em [`abap/`](abap/) e front-end em [`ui5/`](ui5/). O foco do projeto é o
+**framework RAP** — modelagem com CDS, behavior definitions com draft, determinations, validations,
+actions, EML entre BOs, serviços OData V4 e apps Fiori — e você pode reproduzi-lo no ambiente SAP de
+estudo que tiver: **ABAP Cloud** ou **On-Premise**.
+
+| Cenário | Ambiente | Pacotes | Segurança | Launchpad |
+| --- | --- | --- | --- | --- |
+| ABAP Cloud (onde o projeto foi construído) | SAP BTP, ABAP environment (Trial ou pago) | *ABAP for Cloud Development* | IAM Apps, Business Catalogs e Business Roles | SAP Build Work Zone |
+| On-Premise | SAP S/4HANA (referência: 2025 FPS01) ou Private Edition | *Standard ABAP* | `SU21`, `SU24`, `PFCG` | SAP Fiori launchpad embarcado |
 
 O backend tem dois cenários de implementação, com o mesmo código RAP em [`abap/`](abap/): o
 **SAP BTP, ABAP environment** (ABAP Cloud, cenário principal) e o **SAP S/4HANA On-Premise** (pacotes
@@ -84,10 +93,10 @@ On-Premise completo, com limitações e checklist, está na
 | Análise de Pedidos de Reembolsos | Valores e quantidades das solicitações de reembolso por status, mês, UF e motivo (somente leitura) |
 
 > [!NOTE]
-> Os fontes foram escritos para ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com
-> *abaplint* (linguagem **Cloud**: parser ABAP/CDS e checagem de sintaxe). A ativação final depende
-> do sistema (release do BTP ABAP). Se o ADT apontar algum ajuste de sintaxe específico do release,
-> use o *quick fix* sugerido.
+> Os fontes foram escritos em ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com *abaplint*
+> (linguagem **Cloud**). Por isso ativam no SAP BTP, ABAP environment e também, sem erros, em pacotes
+> *Standard ABAP* do On-Premise. A ativação final depende do release do sistema; se o ADT apontar algum
+> ajuste de sintaxe específico do release, use o *quick fix* sugerido.
 
 ---
 
@@ -176,20 +185,21 @@ de demonstração do `npm run start-mock`.
 
 | Camada          | Tecnologia                                                                         |
 | --------------- | ---------------------------------------------------------------------------------- |
-| Plataforma      | SAP BTP ABAP Environment (Trial, software component `ZLOCAL`)                      |
-| Backend         | ABAP Cloud (`strict ( 2 )`), RAP Managed com Draft, CDS View Entities, EML         |
+| Plataforma      | SAP BTP, ABAP environment (Trial, software component `ZLOCAL`) **ou** SAP S/4HANA On-Premise (ABAP Platform 2025) |
+| Backend         | RAP Managed com Draft (`strict ( 2 )`), CDS View Entities, EML — ABAP Cloud no BTP, Standard ABAP no On-Premise |
 | Serviços        | OData V4: `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`, `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4`, `ZUI_PC_ANALITICO_O4` |
-| Integração      | `cl_http_destination_provider` → API ViaCEP                                        |
+| Integração      | API ViaCEP: `cl_http_destination_provider` (BTP) ou `CL_HTTP_CLIENT` + destination `SM59` (On-Premise) |
 | Front-end       | SAP Fiori Elements V4 (List Report + Object Page), gerado com SAP Fiori tools, descriptor v2; apps de análise SAPUI5 freestyle (`sap.viz`, `$apply`) |
-| Ferramentas     | ADT (Eclipse), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint                      |
+| Ferramentas     | ADT (Eclipse), SAP GUI (On-Premise), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint |
 | Testes          | ABAP Unit, OPA5 (testes de integração gerados pelo Fiori tools), QUnit (apps de análise) |
 
 ---
 
 ## Arquitetura
 
-Desenhada no draw.io com os ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do
-draw.io). É a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio)
+O mesmo backend RAP tem duas arquiteturas de implantação: no **SAP BTP, ABAP environment** (abaixo) e no
+[**SAP S/4HANA On-Premise**](#arquitetura-on-premise). Os diagramas foram desenhados no draw.io com os
+ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do draw.io). Esta é a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio)
 (ver [Diagramas](#diagramas)).
 
 <p align="center">
@@ -200,8 +210,9 @@ draw.io). É a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pe
   análises usam o mesmo serviço `ZUI_PC_ANALITICO_O4`.
 - O BO Pedido reserva estoque no BO Item, grava os snapshots do cliente e dos itens e abre a
   solicitação no BO Reembolso (EML); o BO Cliente consulta a API ViaCEP.
-- Acesso: no trial, pelo SAP Build Work Zone (tiles do tipo URL) com login do SAP ID; em
-  desenvolvimento, pelo launchpad local, que serve as apps de `ui5/` e encaminha `/sap` ao BTP.
+- Acesso: no trial, pelo SAP Build Work Zone (tiles do tipo URL) com login do SAP ID; no On-Premise,
+  pelo SAP Fiori launchpad embarcado; em desenvolvimento, pelo launchpad local, que serve as apps de
+  `ui5/` e encaminha `/sap` ao sistema ABAP (BTP ou On-Premise).
 
 ### Fluxo do pedido
 
@@ -343,15 +354,18 @@ Um arquivo por objeto ADT:
 
 ## Pré-requisitos
 
-- Conta **SAP BTP Trial** com o **ABAP Environment** provisionado.
+- Um sistema ABAP com RAP, conforme o cenário:
+  - **ABAP Cloud:** conta **SAP BTP Trial** (ou paga) com o **ABAP Environment** provisionado;
+  - **On-Premise:** **SAP S/4HANA On-Premise** (referência: 2025 FPS01, ABAP Platform 2025) com SAP
+    Gateway e SAP Fiori front-end server embarcados, e **SAP GUI** para as transações de Basis e segurança.
 - **Eclipse** com **ABAP Development Tools (ADT)**.
 - **Node.js 20** ou superior.
 - **VS Code** com *SAP Fiori tools* ou **SAP Business Application Studio**.
 - Launchpad do sistema com **SAPUI5 1.136 ou superior** (o `manifest.json` usa descriptor v2).
 
 > [!TIP]
-> As instruções de instalação abaixo são do cenário principal (SAP BTP, ABAP environment). Para o
-> **SAP S/4HANA 2025 FPS01 On-Premise**, siga a
+> As instruções abaixo valem para os dois cenários; onde o passo muda, ele aparece marcado como **BTP** ou
+> **On-Premise**. Para o roteiro On-Premise completo (Basis, transporte e launchpad), siga a
 > [Especificação Técnica, seção 26](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01)
 > e o [`abap/README.md`](abap/README.md#4-roteiro-no-sap-on-premise).
 
@@ -367,24 +381,27 @@ no ADT):
 1. **Message Class `ZPC_MSG`** – cadastrar as mensagens de `abap/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml`
    (limite de 73 caracteres por texto; `&1`/`&2` são parâmetros).
 2. **Domínio `ZPC_NR_NUMC10`** – NUMC, tamanho 10 (usado como *Number Length Domain*).
-3. **Number Range Object `ZPC_NR`** – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
+3. **Number Range Object `ZPC_NR`** (BTP: editor do ADT; On-Premise: `SNRO`) – domínio `ZPC_NR_NUMC10`, sem subobjeto, com **Main Memory
    Buffering** habilitado **e com *Number of Numbers in Buffer* maior que zero**, p. ex. 10
    (obrigatório: sem buffer — ou com 0 números no buffer, que o runtime trata como "sem buffer" —
    `GET NUMBER` dispara `UPDATE` síncrono em `NRIV`, proibido dentro de uma transação RAP, e o
    cadastro de pedido/item termina em dump `BEHAVIOR_ILLEGAL_STATEMENT`). Os intervalos 01 (pedido) e 02 (SKU) são criados
    pela classe `ZCL_PC_SETUP`.
-4. **Authorization Objects** (campo `ACTVT`): `ZPC_ADMIN` (01, 02, 03, 06) e `ZPC_PEDIDO` (01, 02, 03, 06 e
-   16 – executar, exigida pelas actions do pedido e pelo reembolso).
+4. **Authorization Objects** (campo `ACTVT`; BTP: ADT, classe `CPAE`; On-Premise: `SU21`, classe `ZPC`):
+   `ZPC_ADMIN` (01, 02, 03, 06) e `ZPC_PEDIDO` (01, 02, 03, 06 e 16 – executar, exigida pelas actions do
+   pedido e pelo reembolso).
 5. **Service Bindings** (OData V4 – UI): `ZUI_PC_CLIENTES_O4`, `ZUI_PC_ESTOQUE_O4`,
-   `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4` → **Publish**.
-6. **IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT acrescenta o sufixo
+   `ZUI_PC_PEDIDOS_COMPRAS_O4`, `ZUI_PC_REEMBOLSOS_O4` → **Publish** (On-Premise: ADT ou `/IWFND/V4_ADMIN`).
+6. **BTP — IAM Apps** `ZPC_IAM_CLIENTES`, `ZPC_IAM_ESTOQUE`, `ZPC_IAM_PEDIDOS`, `ZPC_IAM_REEMBOLSOS` (o ADT acrescenta o sufixo
    `_EXT`), com o serviço correspondente e os objetos de autorização.
-7. **Business Catalogs** `ZPC_BC_CLIENTES`, `ZPC_BC_ESTOQUE`, `ZPC_BC_PEDIDOS`, `ZPC_BC_REEMBOLSOS` (um por IAM App).
+7. **BTP — Business Catalogs** `ZPC_BC_CLIENTES`, `ZPC_BC_ESTOQUE`, `ZPC_BC_PEDIDOS`, `ZPC_BC_REEMBOLSOS` (um por IAM App).
    Depois do deploy do front-end, cada catálogo recebe também o IAM App do tile
    (`ZPC_CLIENTES_UI5R`, `ZPC_ESTOQUE_UI5R`, `ZPC_PEDIDOS_UI5R`, `ZPC_REEMBOLSOS_UI5R`) – ver [Front-end Fiori](#front-end-fiori).
-8. **Business Roles** `ZPC_BR_ADMIN` (quatro catálogos) e `ZPC_BR_COMUM` (`ZPC_BC_PEDIDOS` e `ZPC_BC_REEMBOLSOS`) –
+8. **BTP — Business Roles** `ZPC_BR_ADMIN` (quatro catálogos) e `ZPC_BR_COMUM` (`ZPC_BC_PEDIDOS` e `ZPC_BC_REEMBOLSOS`) –
    app *Maintain Business Roles* (exige administrador; ver
    [Observações sobre o Trial](#observações-sobre-o-trial)).
+   **On-Premise:** no lugar dos itens 6 a 8, valores propostos na `SU24` e roles `Z_PC_ADMIN`/`Z_PC_COMUM`
+   na `PFCG` ([`abap/README.md`, seção 6.4](abap/README.md#64-passo-a-passo-no-sap-on-premise)).
 9. **Índices secundários** (garantia de unicidade no banco — a validation sozinha não protege
    contra duas ativações simultâneas):
 
@@ -402,8 +419,10 @@ no ADT):
 
 ### Ordem de criação e ativação
 
-1. Pacotes e objetos manuais 1–4.
-2. `ZIF_PC_CONSTANTS`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`, `ZCL_PC_VIACEP`, `ZCL_PC_AUTH`, `ZCL_PC_NUMERACAO`.
+1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
+2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
+   `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
+   `ZCL_PC_NUMERACAO`.
 3. **Todas** as tabelas ativas (pasta `Dictionary/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as 6 value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/
    `ZR_PC_ENDERECO` (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo
@@ -453,15 +472,20 @@ Além delas, quatro apps **SAPUI5 freestyle** de análise, todos sobre o serviç
 ```bash
 cd ui5/pedidos-compras      # ou ui5/gestao-*, ui5/analise-*
 npm install
-npm start                   # launchpad local (sandbox) com dados reais; login BTP no navegador
+npm start                   # launchpad local (sandbox) com dados reais do sistema ABAP do ui5.yaml
 npm run start-mock          # dados de mock (sem backend)
 npm run lint && npm run build
-npm run deploy              # BSP + IAM App <BSP>_UI5R no pacote ZAVBS_PC_* correspondente
+npm run deploy              # BSP no pacote ZAVBS_PC_* (no BTP, também a IAM App <BSP>_UI5R)
 ```
 
-**Depois do deploy:** cada app abre direto no ABAP em
-`https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/<bsp em minúsculas>/index.html`
-(ex.: `zpc_clientes`, `zpc_anl_estoque`).
+Para usar um sistema **On-Premise**, troque a URL do backend em `ui5.yaml` (proxy do `npm start`) e o
+`target` em `ui5-deploy.yaml` (com o mandante e a ordem de transporte); o sistema precisa de **SAPUI5
+1.136 ou superior**. Detalhes em [`ui5/README.md`](ui5/README.md#sistema-on-premise).
+
+**Depois do deploy:** cada app abre direto no ABAP em `/sap/bc/ui5_ui5/sap/<bsp em minúsculas>/index.html`
+(ex.: `zpc_clientes`, `zpc_anl_estoque`) — no BTP, em `https://<id>.abap-web.<região>.hana.ondemand.com`;
+no On-Premise, no host do Web Dispatcher ou do ICM, e pelos tiles do SAP Fiori launchpad configurados
+nas roles `PFCG` ([Especificação, seção 26, passo 9](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#passo-9--conteúdo-do-sap-fiori-launchpad)).
 No trial, sem acesso a *Maintain Business Roles* / *Manage Launchpad Spaces*, o ponto de entrada é
 o **SAP Build Work Zone, standard edition**, com tiles do tipo URL para essas oito apps. A publicação
 no Cloud Foundry (HTML5 repo) foi testada e descartada: o ABAP trial não aceita o usuário que o
@@ -482,7 +506,7 @@ apps de Clientes e Estoque, e o botão *Abrir gestão* de cada análise abre a a
 ```bash
 cd ui5/launchpad
 npm install
-npm start                   # dados reais do BTP ABAP; login no navegador na primeira chamada
+npm start                   # dados reais do sistema ABAP (BTP ou On-Premise) configurado no ui5.yaml
 npm run start-mock          # sem backend: mock server com o metadata atual e dados gerados
 ```
 
@@ -808,7 +832,8 @@ execução no sistema.
 - `ZCL_PC_AUTH` verifica a atividade correspondente a cada operação: `01` criar, `02` alterar,
   `06` excluir, `16` executar (actions do pedido).
 - ViaCEP: `ZCL_PC_VIACEP` usa `cl_http_destination_provider=>create_by_url` (URL pública). Em
-  produção, substitua por *Communication Scenario/Arrangement* (`create_by_comm_arrangement`).
+  produção no BTP, substitua por *Communication Scenario/Arrangement* (`create_by_comm_arrangement`); no
+  On-Premise, use a versão de `ZCL_PC_VIACEP_T2/` com a destination `SM59`.
 - O *preview* do Service Binding continua útil para testar o backend isoladamente, mas não tem
   launchpad nem navegação entre apps.
 - No trial, o deploy das apps funciona, mas os tiles só aparecem para quem tiver as roles. Use o
@@ -824,6 +849,7 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP: `abap/` sem diretório por cenário (as variantes On-Premise de `ZCL_PC_VIACEP` e `ZPC_TESTE_VIACEP` em pastas `_T2`); tutoriais de ViaCEP, autorização e DCL reunidos no [`abap/README.md`](abap/README.md); no On-Premise, pacotes *Standard ABAP* (sem subpacote tier 2 nem contrato C1); `assets/` e `diagramas/` na raiz; apresentações para os dois ambientes; Especificação Técnica v2.4 |
 | v2.8   | Diagramas reunidos num único arquivo `diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
 | v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
 | v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `assets/` e fontes `.drawio` em `diagramas/`, referenciados no README |
@@ -896,7 +922,9 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
     Business Roles no BTP; `SU21`, `SU24`, `PFCG`, `S_START` e `SU53`/`STAUTHTRACE` no On-Premise;
   - [controle de leitura (DCL)](abap/README.md#7-controle-de-leitura-nas-cds-views-com-access-control-dcl) —
     implementação opcional que exige a atividade 03 (Exibir) de `ZPC_ADMIN`/`ZPC_PEDIDO` para ler os dados.
-- [Especificação técnica v2.3](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md) (Markdown), com a
+- [Apresentações](docs/apresentacoes/) — cinco decks, um por etapa (modelagem de dados, CDS, comportamento RAP,
+  serviços OData e apps Fiori), para reproduzir a aplicação no SAP BTP, ABAP environment ou no On-Premise.
+- [Especificação técnica v2.4](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md) (Markdown), com a
   [implementação On-Premise no SAP S/4HANA 2025 FPS01](docs/Pedidos_de_Compras_-_Especificacao_Tecnica.md#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01);
   a versão anterior (v2.2) continua em [.docx](docs/Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx).
 - Projeto relacionado: [sap-abap-enderecos-viacep](https://github.com/AdrianoBispo/sap-abap-enderecos-viacep).
