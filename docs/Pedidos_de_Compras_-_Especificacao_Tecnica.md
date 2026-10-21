@@ -6,7 +6,7 @@
 | --- | --- |
 | Cenário principal | SAP BTP, ABAP environment (ABAP Cloud; Trial, software component `ZLOCAL`) — código em [`abap/`](../abap) |
 | Cenário alternativo | SAP S/4HANA 2025 FPS01 On-Premise (ABAP Platform 2025, pacotes *Standard ABAP*) — mesmo código; diferenças em [`abap/README.md`](../abap/README.md) e na [seção 26](#26-implementação-no-cenário-on-premise-sap-s4hana-2025-fps01) |
-| Diagramas | [`diagramas/pedidos-de-compras.drawio`](../diagramas/README.md): um arquivo, uma página por diagrama (arquitetura, fluxos e arquitetura On-Premise) |
+| Diagramas | [`docs/pedidos-de-compras.drawio`](pedidos-de-compras.drawio): um arquivo, uma página por diagrama (arquitetura, fluxos e arquitetura On-Premise) |
 | Versão anterior | [`Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx`](Pedidos_de_Compras_-_Especificacao_Tecnica_v2.docx) (v2.2, Word) |
 
 <p align="center">
@@ -1133,7 +1133,7 @@ launchpad, ciclo de vida do sistema e transporte.
   <a href="../assets/arquitetura-onpremise.png"><img src="../assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy de saída, firewall e API ViaCEP" width="100%"></a>
 </p>
 
-Fonte editável: página 7 de [`diagramas/pedidos-de-compras.drawio`](../diagramas/pedidos-de-compras.drawio).
+Fonte editável: página 7 de [`docs/pedidos-de-compras.drawio`](pedidos-de-compras.drawio).
 
 1. O usuário acessa pelo navegador o **SAP Web Dispatcher** (HTTPS), ponto único de entrada da intranet,
    com SSO por SAML 2.0 ou Kerberos/SPNego.

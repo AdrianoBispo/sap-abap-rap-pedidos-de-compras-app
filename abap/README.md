@@ -57,7 +57,7 @@ abap/
 - A convenção de arquivos (um arquivo por objeto ADT) e a ordem de criação e ativação estão no
   [README principal](../README.md#convenção-de-arquivos). Elas são as mesmas nos dois cenários.
 - A arquitetura de cada cenário está nas páginas 1 (BTP) e 7 (On-Premise) de
-  [`diagramas/pedidos-de-compras.drawio`](../diagramas/pedidos-de-compras.drawio)
+  [`docs/pedidos-de-compras.drawio`](../docs/pedidos-de-compras.drawio)
   ([`arquitetura.png`](../assets/arquitetura.png) e
   [`arquitetura-onpremise.png`](../assets/arquitetura-onpremise.png)).
 

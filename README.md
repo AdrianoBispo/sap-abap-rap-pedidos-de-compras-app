@@ -228,7 +228,7 @@ ABAP environment** (dados de demonstração do `ZCL_PC_SETUP`), executando os fl
 
 O mesmo backend RAP tem duas arquiteturas de implantação: no **SAP BTP, ABAP environment** (abaixo) e no
 [**SAP S/4HANA On-Premise**](#arquitetura-on-premise). Os diagramas foram desenhados no draw.io com os
-ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do draw.io). Esta é a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio)
+ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do draw.io). Esta é a página 1 de [`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)
 (ver [Diagramas](#diagramas)).
 
 <p align="center">
@@ -275,7 +275,7 @@ O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Ite
 Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP é criado
 em pacotes *Standard ABAP* e ativa sem erros, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta
 ao ViaCEP usa a versão On-Premise de `ZCL_PC_VIACEP` (`CL_HTTP_CLIENT` com `SM59`/`STRUST`), e a segurança
-usa `SU21`, `SU24` e `PFCG`. Fonte: página 7 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
+usa `SU21`, `SU24` e `PFCG`. Fonte: página 7 de [`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio).
 
 <p align="center">
   <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
@@ -290,9 +290,9 @@ Passo a passo, limitações e diferenças em relação ao BTP:
 
 Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
 Solution Diagram*) e a paleta SAP Horizon. Todos ficam num **único arquivo**,
-[`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio), com **uma página por
-diagrama**; cada página é exportada como imagem em [`assets/`](assets). Os links para abrir cada
-página no editor do draw.io estão em [`diagramas/`](diagramas/README.md).
+[`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio), com **uma página por
+diagrama**; cada página é exportada como imagem em [`assets/`](assets). Para editar, abra o arquivo no
+draw.io (desktop ou [app.diagrams.net](https://app.diagrams.net), *Arquivo → Abrir de → Dispositivo*).
 
 | Página | Diagrama | Imagem |
 | --- | --- | --- |
@@ -306,7 +306,20 @@ página no editor do draw.io estão em [`diagramas/`](diagramas/README.md).
 
 Os fluxogramas usam raias por responsável (usuário, app, BO, serviço externo) e a mesma legenda:
 início em azul, etapas com borda azul, decisões em laranja, status do pedido em azul claro, fim em
-verde e erros em vermelho.
+verde e erros em vermelho. Na arquitetura On-Premise, linha cheia é requisição síncrona, tracejada é
+uso/configuração, a barra cinza grossa é o firewall e as bordas roxas marcam o que é específico do
+On-Premise (`ZCL_PC_VIACEP` versão `_T2` e a destination `SM59`).
+
+**Regerar as imagens.** No draw.io: *Arquivo → Exportar como → PNG*, escolhendo a página (escala 2,
+borda 20). Com o draw.io desktop, pela linha de comando (`-p` começa em 1):
+
+```bash
+i=1
+for n in arquitetura fluxo-pedido fluxo-reembolso fluxo-endereco-viacep fluxo-importacao fluxo-analises arquitetura-onpremise; do
+  drawio -x -f png -s 2 -b 20 -p $i -o assets/$n.png docs/pedidos-de-compras.drawio
+  i=$((i+1))
+done
+```
 
 ---
 
@@ -344,9 +357,9 @@ verde e erros em vermelho.
 ├── assets/                             imagens dos diagramas (arquitetura-*.png, fluxo-*.png)
 │   └── telas/                          capturas das apps: launchpad, clientes, estoque, pedidos,
 │                                       reembolsos e analises (uma pasta por app)
-├── diagramas/                          pedidos-de-compras.drawio: um arquivo, uma página por diagrama
 │
 ├── docs/
+│   ├── pedidos-de-compras.drawio       diagramas: um arquivo, uma página por diagrama
 │   ├── apresentacoes/                  slides das cinco etapas (modelagem → apps Fiori), BTP e On-Premise
 │   ├── modelos-importacao/             planilhas modelo (CSV/XLSX)
 │   ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md        especificação técnica v2.3 (Markdown)
@@ -880,7 +893,7 @@ foram verificados no launchpad local com o mock server e com os dados reais do S
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP: `abap/` sem diretório por cenário (as variantes On-Premise de `ZCL_PC_VIACEP` e `ZPC_TESTE_VIACEP` em pastas `_T2`); tutoriais de ViaCEP, autorização e DCL reunidos no [`abap/README.md`](abap/README.md); no On-Premise, pacotes *Standard ABAP* (sem subpacote tier 2 nem contrato C1); `assets/` e `diagramas/` na raiz; apresentações para os dois ambientes; Especificação Técnica v2.4 |
+| v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP: `abap/` sem diretório por cenário (as variantes On-Premise de `ZCL_PC_VIACEP` e `ZPC_TESTE_VIACEP` em pastas `_T2`); tutoriais de ViaCEP, autorização e DCL reunidos no [`abap/README.md`](abap/README.md); no On-Premise, pacotes *Standard ABAP* (sem subpacote tier 2 nem contrato C1); `assets/` na raiz (capturas em `assets/telas/`) e o diagrama em `docs/pedidos-de-compras.drawio`; apresentações para os dois ambientes; Especificação Técnica v2.4 |
 | v2.8   | Diagramas reunidos num único arquivo `diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
 | v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
 | v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `assets/` e fontes `.drawio` em `diagramas/`, referenciados no README |
@@ -944,7 +957,7 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
 
 - [Guia do front-end](ui5/README.md) — estrutura das apps, páginas, navegação, deploy e publicação
   dos tiles.
-- [Diagramas](diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
+- [Diagramas](#diagramas) — arquivo draw.io único (`docs/pedidos-de-compras.drawio`) com uma página por diagrama (arquitetura,
   fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `assets/` e links para editar.
 - [Backend: ABAP Cloud e On-Premise](abap/README.md) — o que muda entre os cenários e:
   - [consulta de CEP (ViaCEP)](abap/README.md#5-consulta-de-cep-viacep-nos-dois-cenários) — `create_by_url` no
