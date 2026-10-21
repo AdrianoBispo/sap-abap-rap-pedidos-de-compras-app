@@ -1,24 +1,26 @@
 # Front-end Fiori – Pedidos de Compras
 
-Quatro aplicações **SAP Fiori Elements (OData V4, List Report + Object Page)** geradas com o
+Quatro apps **SAP Fiori Elements (OData V4, List Report + Object Page)** geradas com o
 **SAP Fiori tools** (Application Generator, template `@sap/generator-fiori:lrop`), uma para cada
-serviço RAP do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
+serviço RAP de gestão do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **projeto isolado**: tem o próprio
 `package.json`, `node_modules`, `ui5*.yaml` e é instalada, executada e publicada separadamente.
 Além delas, há quatro apps freestyle de análise, um por domínio (`analise-pedidos/`,
 `analise-clientes/`, `analise-estoque/` e `analise-reembolsos/`; veja
 [Apps de análise](#apps-de-análise-freestyle)), e `launchpad/` é um launchpad local que reúne as
 oito apps (veja [Launchpad local](#launchpad-local)).
 
+Cada pasta tem o próprio README, com telas, comportamento, comandos e deploy da app.
+
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
-Extensions (`*.ddlx.cds`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
+Extensions (`*.ddlx`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
 tabelas, tile) e a configuração das ferramentas.
 
 | App                | Pasta              | `sap.app.id`     | Serviço (binding OData V4)  | Tile (inbound)           | BSP / pacote                         |
 | ------------------ | ------------------ | ---------------- | --------------------------- | ------------------------ | ------------------------------------ |
-| Gestão de Clientes | `gestao-clientes/` | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
-| Gestão de Estoque  | `gestao-estoque/`  | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
-| Pedidos de Compras | `pedidos-compras/` | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
-| Gestão de Reembolsos | `gestao-reembolsos/` | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
+| Gestão de Clientes | [`gestao-clientes/`](gestao-clientes/) | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
+| Gestão de Estoque  | [`gestao-estoque/`](gestao-estoque/) | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
+| Pedidos de Compras | [`pedidos-compras/`](pedidos-compras/) | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
+| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_PEDIDOS` |
 
 ## Estrutura de cada app
 
@@ -32,7 +34,7 @@ tabelas, tile) e a configuração das ferramentas.
 └── webapp/
     ├── manifest.json     descriptor v2: serviço, rotas LR → OP → sub-OP, tabelas, inbound do tile
     ├── Component.js      sap/fe/core/AppComponent
-    ├── annotations/      anotações locais (só pedidos usa: mapeamento CpfCliente → Cpf)
+    ├── annotations/      anotações locais (só a de pedidos tem conteúdo: mapeamento CpfCliente → Cpf)
     ├── i18n/             textos pt-BR (idioma padrão)
     ├── localService/     metadata do serviço, para o mock
     └── test/integration/ testes OPA5 gerados
@@ -116,10 +118,10 @@ Eles substituem o app único `analise-compras` (que, por sua vez, substituiu os 
 
 | App | Pasta | `sap.app.id` | Entity set | Tile (inbound) | BSP / pacote | Abrir gestão |
 | --- | --- | --- | --- | --- | --- | --- |
-| Análise de Pedidos de Compras | `analise-pedidos/` | `analisepedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` | `ZPCPedidoCompra-manage` |
-| Análise de Clientes | `analise-clientes/` | `analiseclientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` | `ZPCCliente-manage` |
-| Análise de Itens do Estoque | `analise-estoque/` | `analiseestoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` | `ZPCItemEstoque-manage` |
-| Análise de Pedidos de Reembolsos | `analise-reembolsos/` | `analisereembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` | `ZPCReembolso-manage` |
+| Análise de Pedidos de Compras | [`analise-pedidos/`](analise-pedidos/) | `analisepedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` | `ZPCPedidoCompra-manage` |
+| Análise de Clientes | [`analise-clientes/`](analise-clientes/) | `analiseclientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` | `ZPCCliente-manage` |
+| Análise de Itens do Estoque | [`analise-estoque/`](analise-estoque/) | `analiseestoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` | `ZPCItemEstoque-manage` |
+| Análise de Pedidos de Reembolsos | [`analise-reembolsos/`](analise-reembolsos/) | `analisereembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` | `ZPCReembolso-manage` |
 
 - **Painel** (`#/`): barra de filtros, indicadores (KPIs) e os 5 gráficos do domínio.
 - **Detalhe** (`#/analise/<cenário>`, clicando no título do card): gráfico grande com troca do tipo
@@ -193,7 +195,7 @@ sistema On-Premise, troque o backend como em [Sistema On-Premise](#sistema-on-pr
 
 ## Launchpad local
 
-`launchpad/` é um projeto UI5 só para desenvolvimento (não tem build nem deploy) que simula o SAP
+[`launchpad/`](launchpad/) é um projeto UI5 só para desenvolvimento (não tem build nem deploy) que simula o SAP
 Fiori launchpad com o sandbox do `sap.ushell`. A página inicial tem os grupos **Gestão** (Clientes,
 Estoque, Pedidos e Reembolsos) e **Análises** (Pedidos de Compras, Clientes, Itens do Estoque e
 Pedidos de Reembolsos), e cada tile abre a app vizinha pelo mesmo intent do
