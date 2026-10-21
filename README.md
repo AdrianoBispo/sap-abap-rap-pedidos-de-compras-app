@@ -102,29 +102,63 @@ On-Premise completo, com limitações e checklist, está na
 
 ## Demonstração
 
-Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`). As apps de gestão usam os
-dados reais do sistema BTP ABAP (dados de demonstração do `ZCL_PC_SETUP`); as de análise, os dados
-de demonstração do `npm run start-mock`.
+Telas capturadas no [launchpad local](#launchpad-local) (`ui5/launchpad`) com os **dados reais do SAP BTP,
+ABAP environment** (dados de demonstração do `ZCL_PC_SETUP`), executando os fluxos completos das apps.
 
 <p align="center">
-  <img src="assets/launchpad.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
+  <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="900">
 </p>
 
-| Pedidos de Compras | Object Page do pedido |
-| :----------------: | :-------------------: |
-| <img src="assets/pedidos.png" alt="Lista de pedidos" width="440"> | <img src="assets/pedido-object-page.png" alt="Object Page de um pedido finalizado" width="440"> |
+### Gestão de Clientes: cadastro com consulta ao ViaCEP
 
-| Gestão de Clientes | Gestão de Estoque |
-| :----------------: | :---------------: |
-| <img src="assets/clientes.png" alt="Lista de clientes" width="440"> | <img src="assets/estoque.png" alt="Lista de itens de estoque" width="440"> |
+| Lista de clientes | Endereço preenchido pelo ViaCEP | Cliente cadastrado |
+| :---------------: | :-----------------------------: | :----------------: |
+| <img src="assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="assets/telas/clientes/cliente.png" alt="Object Page da cliente cadastrada" width="290"> |
 
-| Gestão de Reembolsos | Análise de Itens do Estoque |
-| :------------------: | :-------------------------: |
-| <img src="assets/reembolsos.png" alt="Lista de reembolsos" width="440"> | <img src="assets/analise-estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> |
+### Gestão de Estoque
 
-| Análise de Pedidos de Reembolsos | Detalhe de uma análise |
-| :------------------------------: | :--------------------: |
-| <img src="assets/analise-reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> | <img src="assets/analise-detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="440"> |
+| Lista de itens | Item cadastrado (SKU gerado no Save) |
+| :------------: | :----------------------------------: |
+| <img src="assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="assets/telas/estoque/item.png" alt="Object Page do item cadastrado" width="440"> |
+
+### Pedidos de Compras: do rascunho à finalização
+
+| Lista de pedidos | Rascunho com itens inline | Efetuar Pagamento |
+| :--------------: | :-----------------------: | :---------------: |
+| <img src="assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
+
+| Pedido finalizado (snapshot do cliente) | Itens, pagamento e finalização |
+| :-------------------------------------: | :----------------------------: |
+| <img src="assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="440"> |
+
+### Cancelamento com pagamento aprovado e Gestão de Reembolsos
+
+| Cancelar pedido (motivo) | Pedido em processamento de reembolso | Lista de reembolsos |
+| :----------------------: | :----------------------------------: | :-----------------: |
+| <img src="assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="290"> | <img src="assets/telas/pedidos/processando-reembolso.png" alt="Pedido com status Processando reembolso" width="290"> | <img src="assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="290"> |
+
+| Solicitação pendente | Aprovar reembolso (motivo da decisão) | Reembolso aprovado |
+| :------------------: | :-----------------------------------: | :----------------: |
+| <img src="assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="290"> | <img src="assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="290"> | <img src="assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="290"> |
+
+<p align="center">
+  <img src="assets/telas/pedidos/cancelado.png" alt="Pedido cancelado pelo reembolso aprovado, com pagamento devolvido e o snapshot do cliente" width="700"><br>
+  <sub>Pedido aberto pelo link do reembolso (navegação entre apps): cancelado, pagamento devolvido e snapshot do cliente.</sub>
+</p>
+
+### Análises
+
+| Análise de Pedidos de Compras | Análise de Clientes |
+| :---------------------------: | :-----------------: |
+| <img src="assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="440"> | <img src="assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="440"> |
+
+| Análise de Itens do Estoque | Análise de Pedidos de Reembolsos |
+| :-------------------------: | :------------------------------: |
+| <img src="assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> | <img src="assets/telas/analises/reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> |
+
+<p align="center">
+  <img src="assets/telas/analises/detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="700">
+</p>
 
 ---
 
@@ -199,7 +233,7 @@ de demonstração do `npm run start-mock`.
 
 O mesmo backend RAP tem duas arquiteturas de implantação: no **SAP BTP, ABAP environment** (abaixo) e no
 [**SAP S/4HANA On-Premise**](#arquitetura-on-premise). Os diagramas foram desenhados no draw.io com os
-ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do draw.io). Esta é a página 1 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio)
+ícones oficiais do *SAP BTP Solution Diagram* (biblioteca SAP do draw.io). Esta é a página 1 de [`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)
 (ver [Diagramas](#diagramas)).
 
 <p align="center">
@@ -246,7 +280,7 @@ O fluxograma abaixo detalha quem executa cada etapa (usuário, BO Pedido, BO Ite
 Implementação alternativa no **SAP S/4HANA 2025 FPS01** (ABAP Platform 2025): o mesmo código RAP é criado
 em pacotes *Standard ABAP* e ativa sem erros, com SAP Fiori launchpad e SAP Gateway embarcados; a consulta
 ao ViaCEP usa a versão On-Premise de `ZCL_PC_VIACEP` (`CL_HTTP_CLIENT` com `SM59`/`STRUST`), e a segurança
-usa `SU21`, `SU24` e `PFCG`. Fonte: página 7 de [`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio).
+usa `SU21`, `SU24` e `PFCG`. Fonte: página 7 de [`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio).
 
 <p align="center">
   <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
@@ -261,9 +295,9 @@ Passo a passo, limitações e diferenças em relação ao BTP:
 
 Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP (ícones do *SAP BTP
 Solution Diagram*) e a paleta SAP Horizon. Todos ficam num **único arquivo**,
-[`diagramas/pedidos-de-compras.drawio`](diagramas/pedidos-de-compras.drawio), com **uma página por
-diagrama**; cada página é exportada como imagem em [`assets/`](assets). Os links para abrir cada
-página no editor do draw.io estão em [`diagramas/`](diagramas/README.md).
+[`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio), com **uma página por
+diagrama**; cada página é exportada como imagem em [`assets/`](assets). Para editar, abra o arquivo no
+draw.io (desktop ou [app.diagrams.net](https://app.diagrams.net), *Arquivo → Abrir de → Dispositivo*).
 
 | Página | Diagrama | Imagem |
 | --- | --- | --- |
@@ -277,7 +311,20 @@ página no editor do draw.io estão em [`diagramas/`](diagramas/README.md).
 
 Os fluxogramas usam raias por responsável (usuário, app, BO, serviço externo) e a mesma legenda:
 início em azul, etapas com borda azul, decisões em laranja, status do pedido em azul claro, fim em
-verde e erros em vermelho.
+verde e erros em vermelho. Na arquitetura On-Premise, linha cheia é requisição síncrona, tracejada é
+uso/configuração, a barra cinza grossa é o firewall e as bordas roxas marcam o que é específico do
+On-Premise (`ZCL_PC_VIACEP` versão `_T2` e a destination `SM59`).
+
+**Regerar as imagens.** No draw.io: *Arquivo → Exportar como → PNG*, escolhendo a página (escala 2,
+borda 20). Com o draw.io desktop, pela linha de comando (`-p` começa em 1):
+
+```bash
+i=1
+for n in arquitetura fluxo-pedido fluxo-reembolso fluxo-endereco-viacep fluxo-importacao fluxo-analises arquitetura-onpremise; do
+  drawio -x -f png -s 2 -b 20 -p $i -o assets/$n.png docs/pedidos-de-compras.drawio
+  i=$((i+1))
+done
+```
 
 ---
 
@@ -312,10 +359,12 @@ verde e erros em vermelho.
 │   ├── launchpad/                      launchpad local (sandbox do SAP Fiori launchpad) com as oito apps
 │   └── README.md                       guia do front-end
 │
-├── assets/                             capturas de tela e imagens dos diagramas
-├── diagramas/                          pedidos-de-compras.drawio: um arquivo, uma página por diagrama
+├── assets/                             imagens dos diagramas (arquitetura-*.png, fluxo-*.png)
+│   └── telas/                          capturas das apps: launchpad, clientes, estoque, pedidos,
+│                                       reembolsos e analises (uma pasta por app)
 │
 ├── docs/
+│   ├── pedidos-de-compras.drawio       diagramas: um arquivo, uma página por diagrama
 │   ├── apresentacoes/                  slides das cinco etapas (modelagem → apps Fiori), BTP e On-Premise
 │   ├── modelos-importacao/             planilhas modelo (CSV/XLSX)
 │   ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md        especificação técnica v2.3 (Markdown)
@@ -816,8 +865,8 @@ Eles substituem o app único `analise-compras` (BSP `ZPC_ANALISE`, tile `ZPCAnal
 deve ser removido do sistema onde já foi implantado. Os cenários, a estrutura e o deploy estão em
 [`ui5/README.md`](ui5/README.md#apps-de-análise-freestyle). Para ter dados nos gráficos, carregue os
 dados de demonstração (`ZCL_PC_SETUP`). Os apps passam no ESLint, no `ui5 build` e na suíte QUnit, e
-foram testados no launchpad local com o mock server; ainda precisam ser implantados e verificados em
-execução no sistema.
+foram verificados no launchpad local com o mock server e com os dados reais do SAP BTP, ABAP environment
+(ver [Demonstração](#demonstração)).
 
 ---
 
@@ -849,7 +898,7 @@ execução no sistema.
 
 | Versão | Mudanças                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP: `abap/` sem diretório por cenário (as variantes On-Premise de `ZCL_PC_VIACEP` e `ZPC_TESTE_VIACEP` em pastas `_T2`); tutoriais de ViaCEP, autorização e DCL reunidos no [`abap/README.md`](abap/README.md); no On-Premise, pacotes *Standard ABAP* (sem subpacote tier 2 nem contrato C1); `assets/` e `diagramas/` na raiz; apresentações para os dois ambientes; Especificação Técnica v2.4 |
+| v2.9   | Projeto orientado aos dois ambientes (SAP BTP, ABAP environment e SAP S/4HANA On-Premise), com o foco no framework RAP: `abap/` sem diretório por cenário (as variantes On-Premise de `ZCL_PC_VIACEP` e `ZPC_TESTE_VIACEP` em pastas `_T2`); tutoriais de ViaCEP, autorização e DCL reunidos no [`abap/README.md`](abap/README.md); no On-Premise, pacotes *Standard ABAP* (sem subpacote tier 2 nem contrato C1); `assets/` na raiz (capturas em `assets/telas/`) e o diagrama em `docs/pedidos-de-compras.drawio`; apresentações para os dois ambientes; Especificação Técnica v2.4 |
 | v2.8   | Diagramas reunidos num único arquivo `diagramas/pedidos-de-compras.drawio`, com uma página por diagrama (arquitetura, cinco fluxogramas e a nova arquitetura On-Premise do SAP S/4HANA 2025 FPS01) e uma imagem por página; `abap/` dividido em `abap-environment/` (fonte completa) e `on-premise/` (`ZIF_PC_CONSTANTS` sem modo trial e wrapper tier 2 `ZCL_PC_VIACEP` com SM59); Especificação Técnica v2.3 em Markdown, com a seção 26 (implementação On-Premise, limitações e diferenças) e a camada analítica atualizada |
 | v2.7   | Objeto de autorização `ZPC_PEDIDO` com a atividade 16 (Executar), exigida pelas actions do pedido e pelo reembolso; tutoriais de autorização no On-Premise (`docs/tutorial_autorizacao_btp_para_onpremise.md`) e de controle de leitura com CDS Access Control (`docs/tutorial_controle_leitura_cds_dcl.md`) |
 | v2.6   | Diagramas no draw.io com as formas oficiais da SAP: arquitetura e fluxogramas do pedido, do reembolso, do endereço (ViaCEP), da importação por planilha e dos apps de análise; imagens em `assets/` e fontes `.drawio` em `diagramas/`, referenciados no README |
@@ -913,7 +962,7 @@ personalização da Object Page (ver [limitações](#limitações-conhecidas-do-
 
 - [Guia do front-end](ui5/README.md) — estrutura das apps, páginas, navegação, deploy e publicação
   dos tiles.
-- [Diagramas](diagramas/README.md) — arquivo draw.io único com uma página por diagrama (arquitetura,
+- [Diagramas](#diagramas) — arquivo draw.io único (`docs/pedidos-de-compras.drawio`) com uma página por diagrama (arquitetura,
   fluxogramas e arquitetura On-Premise; formas oficiais da SAP), imagens em `assets/` e links para editar.
 - [Backend: ABAP Cloud e On-Premise](abap/README.md) — o que muda entre os cenários e:
   - [consulta de CEP (ViaCEP)](abap/README.md#5-consulta-de-cep-viacep-nos-dois-cenários) — `create_by_url` no
