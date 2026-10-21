@@ -5,7 +5,7 @@
 | Item | Valor |
 | --- | --- |
 | Documento | Especificação técnica — requisitos de construção da solução |
-| Versão | 3.1 (21/10/2026) |
+| Versão | 3.2 (21/10/2026) |
 | Ambientes-alvo | SAP BTP, ABAP environment (ABAP Cloud) e SAP S/4HANA On-Premise 2025 ou superior (Standard ABAP) |
 | Diagramas | `docs/pedidos-de-compras.drawio` (uma página por diagrama), exportados em `assets/` |
 
@@ -106,6 +106,7 @@ configuração da plataforma (segurança, conectividade, launchpad e transporte)
 | Release | Release corrente do ABAP environment (Trial ou pago) | SAP S/4HANA 2025 (ABAP Platform 2025) ou superior; vale também para a Private Edition |
 | Versão de linguagem dos pacotes | ABAP for Cloud Development | Standard ABAP |
 | Código RAP | Igual nos dois ambientes | Igual nos dois ambientes |
+| Ferramenta de desenvolvimento | ADT no Eclipse ou no VS Code (extensão ABAP Development Tools, conexão HTTP) | ADT no Eclipse ou no VS Code (conexão RFC, a partir do S/4HANA 2025) e SAP GUI |
 | Identidade | SAP ID service ou Identity Authentication | Usuários `SU01`, SSO por SAML 2.0 ou Kerberos |
 | Autorização | IAM Apps, Business Catalogs e Business Roles | `SU21`, `SU24` e roles `PFCG` |
 | Conectividade com o ViaCEP | Destination por URL ou Communication Arrangement | Destination HTTP `SM59` com certificados no `STRUST` |
@@ -150,7 +151,8 @@ dois ambientes. A única classe com implementação diferente por ambiente é a 
 4. Os serviços expõem os BOs RAP, que funcionam como no BTP; os dados ficam no SAP HANA do sistema.
 5. A consulta de CEP usa uma destination HTTP (`SM59`) com a confiança TLS do `STRUST`, sai pelo proxy e
    atravessa o firewall até a API ViaCEP.
-6. O desenvolvimento ocorre no ADT (e SAP GUI para Basis) em DEV, e tudo segue por transporte para QAS e PRD.
+6. O desenvolvimento ocorre no ADT, no Eclipse ou no VS Code (e no SAP GUI para Basis), em DEV, e tudo segue
+   por transporte para QAS e PRD.
 
 ### 3.5 Aplicações e serviços
 

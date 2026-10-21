@@ -137,6 +137,34 @@ completo. Quem criar o próprio projeto pode usar os prefixos que quiser. Como s
   trocados. Mantenha o namespace do cliente (`Z` ou `Y`) e o tamanho máximo de cada tipo de objeto (pacote:
   30 caracteres; tabela: 16), e troque o nome em todos os fontes que o referenciam.
 
+### 1.3. Ferramenta de desenvolvimento: ADT no Eclipse ou no VS Code
+
+Os objetos podem ser criados com o ABAP Development Tools (ADT) em qualquer uma das duas IDEs: o plugin
+para o **Eclipse** ou a extensão **ABAP Development Tools** para o **Visual Studio Code**, publicada pela SAP
+no Marketplace (ID `SAPSE.adt-vscode`). As duas usam os mesmos serviços do servidor ABAP: os fontes deste
+diretório são copiados do mesmo jeito e os objetos ficam idênticos, qualquer que seja a IDE.
+
+| Passo | SAP BTP, ABAP environment | SAP On-Premise |
+| --- | --- | --- |
+| Conexão no Eclipse | *New → ABAP Cloud Project* (login pelo navegador) | *New → ABAP Project* a partir de uma entrada do SAP Logon |
+| Conexão no VS Code | *ABAP: New Destination...* → **HTTP**, URL `https://<sistema>.abap.<região>.hana.ondemand.com` → *ABAP: Log On to Destination* (login pelo navegador) | *ABAP: New Destination...* → **RFC**, sistema já cadastrado no SAP Logon, mandante, usuário e idioma; exige SAP S/4HANA 2025 ou superior |
+| Criar objeto no VS Code | *ABAP: Create New ABAP Object...* (**Ctrl+Shift+Alt+N**) | O mesmo comando |
+
+Cobertura dos objetos deste projeto na extensão do VS Code, segundo a lista publicada no Marketplace
+(outubro de 2026):
+
+| Objetos | No VS Code |
+| --- | --- |
+| Pacotes, tabelas, Data Definitions, Metadata Extensions, Access Controls, Behavior Definitions, Service Definitions, Service Bindings, classes, interfaces, programas, Message Class e objeto de numeração | Suportados |
+| Domínio `ZPC_NR_NUMC10`, objetos de autorização e IAM Apps | Fora da lista: use o ADT no Eclipse (no On-Premise, também `SE11` e `SU21` no SAP GUI) |
+
+- A SAP mantém o Eclipse como IDE recomendada para o desenvolvimento ABAP completo até a extensão do VS Code
+  alcançar a paridade de recursos. A extensão ganha tipos de objeto a cada versão: confira a lista no
+  Marketplace antes de escolher a IDE.
+- No On-Premise, as transações de Basis e segurança (`SNRO`, `SM59`, `STRUST`, `SU21`, `SU24`, `PFCG`)
+  continuam no SAP GUI, qualquer que seja a IDE.
+- No VS Code, a mesma IDE atende ao front-end com SAP Fiori tools ([`ui5/README.md`](../ui5/README.md)).
+
 ---
 
 ## 2. O que muda entre os cenários
@@ -147,6 +175,7 @@ completo. Quem criar o próprio projeto pode usar os prefixos que quiser. Como s
 | --- | --- | --- |
 | Versão de linguagem dos pacotes | *ABAP for Cloud Development* | **Standard ABAP** |
 | Código RAP (tabelas, CDS, BDEF, pools, serviços, testes) | Igual | **Igual**, sem alteração |
+| IDE ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)) | ADT no Eclipse ou no VS Code (conexão HTTP) | ADT no Eclipse ou no VS Code (conexão RFC, a partir do S/4HANA 2025), mais o SAP GUI |
 | `ZIF_PC_CONSTANTS=>c_modo_trial` | `abap_true` no Trial compartilhado (sem Business Roles) | **`abap_false`** (o `AUTHORITY-CHECK` passa a valer) |
 | `ZCL_PC_VIACEP` | Pasta `ZCL_PC_VIACEP/`: `cl_http_destination_provider=>create_by_url` | Pasta `ZCL_PC_VIACEP_T2/`: `CL_HTTP_CLIENT` + destination `Z_VIACEP` (`SM59`) + `STRUST` |
 | Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `ZPC_TESTE_VIACEP_T2/` (teste da destination) |
@@ -248,7 +277,7 @@ no [`ui5/README.md`](../ui5/README.md#conteúdo-do-sap-fiori-launchpad-on-premis
 | SAP Fiori front-end server | FES 2025 embarcado (`SAP_UI`), SAPUI5 1.136 | Atende ao requisito das apps (SAPUI5 ≥ 1.136). |
 | Banco de dados | SAP HANA 2.0 | Mesmo papel do SAP HANA do ABAP environment. |
 | Acesso | SAP Web Dispatcher | Recomendado; em laboratório, o acesso direto ao ICM também funciona. |
-| Ferramentas | Eclipse + ADT, SAP GUI 8.00+, Node.js 20+, VS Code ou BAS com SAP Fiori tools | SAP GUI para as transações de Basis e segurança. |
+| Ferramentas | ADT no Eclipse ou no VS Code, SAP GUI 8.00+, Node.js 20+, VS Code ou BAS com SAP Fiori tools | SAP GUI para as transações de Basis e segurança; IDE na [seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code). |
 
 O roteiro vale também para o SAP S/4HANA Cloud Private Edition 2025, em que a infraestrutura é operada pela SAP.
 
@@ -1016,7 +1045,9 @@ e volte as views para `#NOT_REQUIRED`.
 
 ### 8.1. Objetos criados manualmente
 
-Estes objetos não têm código-fonte editável no repositório, ou exigem um passo manual:
+Estes objetos não têm código-fonte editável no repositório, ou exigem um passo manual. Os que têm editor no
+ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS Code ainda não oferece
+([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)):
 
 1. **Message Class `ZPC_MSG`** (ADT; On-Premise também `SE91`) — cadastrar as mensagens de
    `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml` (até 73 caracteres por texto; `&1`/`&2` são parâmetros).
@@ -1032,7 +1063,9 @@ Estes objetos não têm código-fonte editável no repositório, ou exigem um pa
    | Tamanho de saída | 10 |
    | Rotina de conversão, valores fixos e tabela de valores | nenhum |
 
-   - **ADT (plugin no Eclipse)** — BTP e On-Premise: botão direito no pacote `ZAVBS_PC_COMMON` → *New* →
+   - **ADT (plugin no Eclipse)** — BTP e On-Premise. A extensão ADT do VS Code não inclui domínios na lista
+     de objetos suportados ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)):
+     se *ABAP: Create New ABAP Object...* não oferecer *Domain*, crie-o pelo Eclipse ou pela `SE11`. No Eclipse: botão direito no pacote `ZAVBS_PC_COMMON` → *New* →
      *Other ABAP Repository Object* → *Dictionary* → *Domain*; informe nome e descrição, selecione a request
      de transporte e clique em *Finish*. No editor do domínio, em *Format*, escolha *Data Type* `NUMC` e
      *Length* `10` (o *Output Length* assume 10); salve (**Ctrl+S**) e ative (**Ctrl+F3**).
@@ -1426,3 +1459,6 @@ Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 - SAP Help — *Identity and Access Management* do SAP BTP, ABAP environment (IAM Apps, Business Catalogs,
   Business Roles).
 - Sectigo Knowledge Base — *Sectigo Root Certificates*.
+- SAP Developers — tutorial *ABAP Development Tools for Visual Studio Code*
+  (<https://developers.sap.com/tutorials/abap-environment-adt-vscode/>) e página da extensão no Marketplace
+  (<https://marketplace.visualstudio.com/items?itemName=SAPSE.adt-vscode>).
