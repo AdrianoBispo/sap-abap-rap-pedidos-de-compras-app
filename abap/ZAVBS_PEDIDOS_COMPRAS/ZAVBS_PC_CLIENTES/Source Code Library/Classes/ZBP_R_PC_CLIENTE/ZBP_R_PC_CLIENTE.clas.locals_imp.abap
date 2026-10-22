@@ -510,7 +510,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         complemento TYPE string VALUE `Complemento`,
       END OF c_col.
 
-    DATA lt_colunas TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_colunas TYPE zif_pc_planilha=>tt_colunas.
     DATA lt_erros   TYPE string_table.
     DATA lt_cli     TYPE STANDARD TABLE OF ty_cliente WITH EMPTY KEY.
     DATA lt_cpf_arq TYPE SORTED TABLE OF zr_pc_cliente-Cpf WITH UNIQUE KEY table_line.
@@ -914,7 +914,7 @@ CLASS lhc_endereco IMPLEMENTATION.
         CONTINUE.
       ENDIF.
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
-      DATA(ls_dados) = VALUE zcl_pc_viacep=>ty_endereco( ).
+      DATA(ls_dados) = VALUE zif_pc_viacep=>ty_endereco( ).
       DATA(lv_status) = CONV zr_pc_endereco-CepStatus( space ).
       DATA(lv_geral)  = abap_false.
 

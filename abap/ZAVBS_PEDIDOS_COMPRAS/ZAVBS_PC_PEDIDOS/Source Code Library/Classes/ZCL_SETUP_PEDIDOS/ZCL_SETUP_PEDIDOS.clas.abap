@@ -7,18 +7,16 @@
 "!  - pagamento, snapshots (finalizados/cancelados) e estoque (reserva/baixa)
 "!    coerentes com o status.
 "! Não roda de novo se já houver pedidos de demonstração.
+"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_PEDIDOS.
 CLASS zcl_setup_pedidos DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS c_quantidade TYPE i VALUE 100.
-    CONSTANTS c_marcador TYPE string VALUE `Pedido de demonstração`.
+    INTERFACES zif_setup_pedidos.
 
-    METHODS carregar_dados
-      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out
-      RAISING   cx_uuid_error cx_number_ranges.
+    ALIASES carregar_dados FOR zif_setup_pedidos~carregar_dados.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -58,7 +56,7 @@ ENDCLASS.
 
 CLASS zcl_setup_pedidos IMPLEMENTATION.
 
-  METHOD carregar_dados.
+  METHOD zif_setup_pedidos~carregar_dados.
     FIELD-SYMBOLS <ls_item> TYPE ty_item.
 
     DATA lt_pedidos    TYPE tt_pedidos.
@@ -73,7 +71,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
     DATA lv_reembolsos TYPE i.
     DATA lv_total      TYPE zta_pc_pedido-valor_total.
 
-    DATA(lv_padrao_obs) = c_marcador && `%`.
+    DATA(lv_padrao_obs) = zif_setup_pedidos=>c_marcador && `%`.
     SELECT COUNT( * ) FROM zta_pc_pedido
       WHERE observacao LIKE @lv_padrao_obs
       INTO @DATA(lv_qtd_demo).
@@ -144,7 +142,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
       ( `Encontrei preço menor em outra loja` )
       ( `Cobrança não reconhecida` ) ).
 
-    DO c_quantidade TIMES.
+    DO zif_setup_pedidos=>c_quantidade TIMES.
       DATA(lv_i)      = sy-index.
       DATA(lv_status) = lt_padrao[ ( lv_i - 1 ) MOD lines( lt_padrao ) + 1 ].
       DATA(ls_cli)    = lt_clientes[ ( lv_i - 1 ) MOD lines( lt_clientes ) + 1 ].
@@ -176,7 +174,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
       ENDIF.
 
       " ---- Datas: do mais antigo (~90 dias) ao mais recente (~2 dias)
-      DATA(lv_dias)   = 2 + ( c_quantidade - lv_i ) * 88 DIV c_quantidade.
+      DATA(lv_dias)   = 2 + ( zif_setup_pedidos=>c_quantidade - lv_i ) * 88 DIV zif_setup_pedidos=>c_quantidade.
       DATA(lv_criado) = ts_passado( iv_dias = lv_dias iv_horas = lv_i MOD 24 ).
       DATA(lv_evento) = ts_passado( iv_dias = lv_dias - 1 iv_horas = lv_i MOD 24 ).
 
@@ -259,7 +257,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
                                                                 iv_cep         = ls_cli-cep )
         status_pedido         = lv_status
         status_pagamento      = lv_status_pag
-        observacao            = |{ c_marcador } { lv_i }|
+        observacao            = |{ zif_setup_pedidos=>c_marcador } { lv_i }|
         currency              = zif_pc_constants=>c_moeda_padrao
         valor_total           = lv_total
         pedido_encerrado      = xsdbool( lv_fin = abap_true OR lv_canc = abap_true )

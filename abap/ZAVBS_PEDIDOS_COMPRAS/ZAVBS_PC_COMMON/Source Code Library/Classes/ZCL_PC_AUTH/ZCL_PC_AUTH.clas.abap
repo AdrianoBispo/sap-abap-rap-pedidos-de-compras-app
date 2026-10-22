@@ -10,37 +10,22 @@
 "!
 "! Cada operação verifica a atividade correspondente: nunca usar uma única
 "! atividade genérica para criar/alterar/excluir.
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_AUTH.
 CLASS zcl_pc_auth DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS:
-      BEGIN OF c_actvt,
-        criar     TYPE c LENGTH 2 VALUE '01',
-        alterar   TYPE c LENGTH 2 VALUE '02',
-        excluir   TYPE c LENGTH 2 VALUE '06',
-        executar  TYPE c LENGTH 2 VALUE '16',
-      END OF c_actvt.
+    INTERFACES zif_pc_auth.
 
-    "! Administração de clientes e itens de estoque (ZPC_ADMIN).
-    CLASS-METHODS admin_pode_criar
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-    CLASS-METHODS admin_pode_alterar
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-    CLASS-METHODS admin_pode_excluir
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-
-    "! Operação de pedidos (ZPC_PEDIDO).
-    CLASS-METHODS pedido_pode_criar
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-    CLASS-METHODS pedido_pode_alterar
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-    CLASS-METHODS pedido_pode_excluir
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
-    CLASS-METHODS pedido_pode_executar
-      RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
+    ALIASES admin_pode_criar FOR zif_pc_auth~admin_pode_criar.
+    ALIASES admin_pode_alterar FOR zif_pc_auth~admin_pode_alterar.
+    ALIASES admin_pode_excluir FOR zif_pc_auth~admin_pode_excluir.
+    ALIASES pedido_pode_criar FOR zif_pc_auth~pedido_pode_criar.
+    ALIASES pedido_pode_alterar FOR zif_pc_auth~pedido_pode_alterar.
+    ALIASES pedido_pode_excluir FOR zif_pc_auth~pedido_pode_excluir.
+    ALIASES pedido_pode_executar FOR zif_pc_auth~pedido_pode_executar.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -81,32 +66,32 @@ CLASS zcl_pc_auth IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD admin_pode_criar.
-    rv_autorizado = verificar_admin( c_actvt-criar ).
+  METHOD zif_pc_auth~admin_pode_criar.
+    rv_autorizado = verificar_admin( zif_pc_auth=>c_actvt-criar ).
   ENDMETHOD.
 
-  METHOD admin_pode_alterar.
-    rv_autorizado = verificar_admin( c_actvt-alterar ).
+  METHOD zif_pc_auth~admin_pode_alterar.
+    rv_autorizado = verificar_admin( zif_pc_auth=>c_actvt-alterar ).
   ENDMETHOD.
 
-  METHOD admin_pode_excluir.
-    rv_autorizado = verificar_admin( c_actvt-excluir ).
+  METHOD zif_pc_auth~admin_pode_excluir.
+    rv_autorizado = verificar_admin( zif_pc_auth=>c_actvt-excluir ).
   ENDMETHOD.
 
-  METHOD pedido_pode_criar.
-    rv_autorizado = verificar_pedido( c_actvt-criar ).
+  METHOD zif_pc_auth~pedido_pode_criar.
+    rv_autorizado = verificar_pedido( zif_pc_auth=>c_actvt-criar ).
   ENDMETHOD.
 
-  METHOD pedido_pode_alterar.
-    rv_autorizado = verificar_pedido( c_actvt-alterar ).
+  METHOD zif_pc_auth~pedido_pode_alterar.
+    rv_autorizado = verificar_pedido( zif_pc_auth=>c_actvt-alterar ).
   ENDMETHOD.
 
-  METHOD pedido_pode_excluir.
-    rv_autorizado = verificar_pedido( c_actvt-excluir ).
+  METHOD zif_pc_auth~pedido_pode_excluir.
+    rv_autorizado = verificar_pedido( zif_pc_auth=>c_actvt-excluir ).
   ENDMETHOD.
 
-  METHOD pedido_pode_executar.
-    rv_autorizado = verificar_pedido( c_actvt-executar ).
+  METHOD zif_pc_auth~pedido_pode_executar.
+    rv_autorizado = verificar_pedido( zif_pc_auth=>c_actvt-executar ).
   ENDMETHOD.
 
 ENDCLASS.

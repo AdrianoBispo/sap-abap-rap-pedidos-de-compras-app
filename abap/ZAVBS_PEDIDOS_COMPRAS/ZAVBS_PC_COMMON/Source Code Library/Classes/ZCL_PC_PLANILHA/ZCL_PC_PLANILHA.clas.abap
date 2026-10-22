@@ -7,84 +7,22 @@
 "!  - A primeira linha não vazia é o cabeçalho. As colunas são identificadas
 "!    pelo nome, sem diferenciar maiúsculas, acentos, espaços ou pontuação.
 "!  - Não grava nada: devolve registros e a lista de erros de leitura.
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_PLANILHA.
 CLASS zcl_pc_planilha DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS c_max_linhas TYPE i VALUE 500.
+    INTERFACES zif_pc_planilha.
 
-    TYPES:
-      BEGIN OF ty_coluna,
-        campo       TYPE string,
-        sinonimos   TYPE string,
-        obrigatoria TYPE abap_boolean,
-      END OF ty_coluna.
-    TYPES tt_colunas TYPE STANDARD TABLE OF ty_coluna WITH EMPTY KEY.
-
-    TYPES:
-      BEGIN OF ty_valor,
-        campo TYPE string,
-        valor TYPE string,
-      END OF ty_valor.
-    TYPES tt_valores TYPE HASHED TABLE OF ty_valor WITH UNIQUE KEY campo.
-
-    TYPES:
-      BEGIN OF ty_registro,
-        linha   TYPE i,
-        valores TYPE tt_valores,
-      END OF ty_registro.
-    TYPES tt_registros TYPE STANDARD TABLE OF ty_registro WITH EMPTY KEY.
-
-    TYPES tt_matriz TYPE STANDARD TABLE OF string_table WITH EMPTY KEY.
-
-    "! Lê o arquivo e devolve os registros (linhas de dados) já associados às
-    "! colunas pedidas. Em ET_ERROS vêm os problemas de leitura/cabeçalho; se
-    "! houver algum, ET_REGISTROS fica vazio.
-    "! O texto de cada coluna em IT_COLUNAS-CAMPO é o nome de acesso em VALOR( ).
-    "! IT_COLUNAS-SINONIMOS: nomes alternativos já normalizados, separados por |.
-    CLASS-METHODS ler
-      IMPORTING iv_conteudo  TYPE xstring
-                it_colunas   TYPE tt_colunas
-      EXPORTING et_registros TYPE tt_registros
-                et_erros     TYPE string_table.
-
-    "! Valor (aparado) da coluna no registro; vazio se a coluna não existir.
-    CLASS-METHODS valor
-      IMPORTING is_registro     TYPE ty_registro
-                iv_campo        TYPE csequence
-      RETURNING VALUE(rv_valor) TYPE string.
-
-    "! Maiúsculas, sem acentos e só A-Z/0-9 (comparação de cabeçalhos).
-    CLASS-METHODS normalizar
-      IMPORTING iv_texto        TYPE csequence
-      RETURNING VALUE(rv_texto) TYPE string.
-
-    "! CSV -> matriz de células (uma linha por linha do arquivo, vazias inclusive).
-    CLASS-METHODS ler_csv
-      IMPORTING iv_conteudo TYPE xstring
-      EXPORTING et_matriz   TYPE tt_matriz
-                ev_erro     TYPE string.
-
-    "! Data em ISO (2024-05-31), brasileira (31/05/2024), AAAAMMDD ou número
-    "! serial do Excel. Inicial se não for uma data válida.
-    CLASS-METHODS para_data
-      IMPORTING iv_texto       TYPE csequence
-      RETURNING VALUE(rv_data) TYPE d.
-
-    "! Número com ponto ou vírgula decimal, sem separador de milhar
-    "! (se houver ponto e vírgula, o último é o decimal).
-    CLASS-METHODS para_decimal
-      IMPORTING iv_texto  TYPE csequence
-      EXPORTING ev_valor  TYPE decfloat34
-                ev_valido TYPE abap_boolean.
-
-    "! Número inteiro (aceita 10, 10.0 ou 10,00).
-    CLASS-METHODS para_inteiro
-      IMPORTING iv_texto  TYPE csequence
-      EXPORTING ev_valor  TYPE i
-                ev_valido TYPE abap_boolean.
+    ALIASES ler FOR zif_pc_planilha~ler.
+    ALIASES valor FOR zif_pc_planilha~valor.
+    ALIASES normalizar FOR zif_pc_planilha~normalizar.
+    ALIASES ler_csv FOR zif_pc_planilha~ler_csv.
+    ALIASES para_data FOR zif_pc_planilha~para_data.
+    ALIASES para_decimal FOR zif_pc_planilha~para_decimal.
+    ALIASES para_inteiro FOR zif_pc_planilha~para_inteiro.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -117,7 +55,7 @@ CLASS zcl_pc_planilha DEFINITION
 
     CLASS-METHODS ler_xlsx
       IMPORTING iv_conteudo TYPE xstring
-      EXPORTING et_matriz   TYPE tt_matriz
+      EXPORTING et_matriz   TYPE zif_pc_planilha=>tt_matriz
                 ev_erro     TYPE string.
 
     "! XLSX cujos textos estão em linha na planilha (t="inlineStr"), como gravam
@@ -141,7 +79,7 @@ ENDCLASS.
 
 CLASS zcl_pc_planilha IMPLEMENTATION.
 
-  METHOD ler.
+  METHOD zif_pc_planilha~ler.
     CLEAR: et_registros, et_erros.
 
     IF xstrlen( iv_conteudo ) = 0.
@@ -149,7 +87,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA lt_matriz TYPE tt_matriz.
+    DATA lt_matriz TYPE zif_pc_planilha=>tt_matriz.
     DATA lv_erro   TYPE string.
 
     " Assinatura ZIP (PK) = XLSX; OLE2 = XLS antigo (não suportado); resto = CSV
@@ -228,7 +166,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
     WHILE lv_atual <= lv_total.
       DATA(lt_dados) = lt_matriz[ lv_atual ].
       IF linha_vazia( lt_dados ) = abap_false.
-        DATA(ls_registro) = VALUE ty_registro( linha = lv_atual ).
+        DATA(ls_registro) = VALUE zif_pc_planilha=>ty_registro( linha = lv_atual ).
         LOOP AT it_colunas INTO ls_coluna.
           DATA(lv_valor) = VALUE string( ).
           READ TABLE lt_mapa INTO DATA(ls_mapa) WITH TABLE KEY campo = ls_coluna-campo.
@@ -244,14 +182,14 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
 
     IF et_registros IS INITIAL.
       APPEND `A planilha não possui linhas de dados abaixo do cabeçalho.` TO et_erros.
-    ELSEIF lines( et_registros ) > c_max_linhas.
-      APPEND |A planilha tem { lines( et_registros ) } linhas de dados; o máximo por importação é { c_max_linhas }.| TO et_erros.
+    ELSEIF lines( et_registros ) > zif_pc_planilha=>c_max_linhas.
+      APPEND |A planilha tem { lines( et_registros ) } linhas de dados; o máximo por importação é { zif_pc_planilha=>c_max_linhas }.| TO et_erros.
       CLEAR et_registros.
     ENDIF.
   ENDMETHOD.
 
 
-  METHOD valor.
+  METHOD zif_pc_planilha~valor.
     READ TABLE is_registro-valores INTO DATA(ls_valor) WITH TABLE KEY campo = iv_campo.
     IF sy-subrc = 0.
       rv_valor = ls_valor-valor.
@@ -259,7 +197,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD normalizar.
+  METHOD zif_pc_planilha~normalizar.
     DATA(lv_texto) = to_upper( CONV string( iv_texto ) ).
     lv_texto = translate( val  = lv_texto
                           from = 'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ'
@@ -301,7 +239,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD ler_csv.
+  METHOD zif_pc_planilha~ler_csv.
     CLEAR: et_matriz, ev_erro.
 
     DATA(lv_texto) = decodificar( iv_conteudo ).
@@ -437,7 +375,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD para_data.
+  METHOD zif_pc_planilha~para_data.
     DATA lv_ano TYPE i.
     DATA lv_mes TYPE i.
     DATA lv_dia TYPE i.
@@ -485,7 +423,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD para_decimal.
+  METHOD zif_pc_planilha~para_decimal.
     CLEAR: ev_valor, ev_valido.
 
     DATA(lv_texto) = condense( CONV string( iv_texto ) ).
@@ -523,7 +461,7 @@ CLASS zcl_pc_planilha IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD para_inteiro.
+  METHOD zif_pc_planilha~para_inteiro.
     CLEAR: ev_valor, ev_valido.
 
     para_decimal( EXPORTING iv_texto  = iv_texto

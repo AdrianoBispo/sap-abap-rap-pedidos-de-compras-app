@@ -712,7 +712,7 @@ CLASS lhc_item IMPLEMENTATION.
         moeda     TYPE string VALUE `Moeda`,
       END OF c_col.
 
-    DATA lt_colunas   TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_colunas   TYPE zif_pc_planilha=>tt_colunas.
     DATA lt_erros     TYPE string_table.
     DATA lt_itens     TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
     DATA lt_nomes_arq TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.

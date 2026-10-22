@@ -1,62 +1,23 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Utilitários</p>
 "! Funções puras (sem acesso a banco) reutilizadas pelos três BOs.
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_UTIL.
 CLASS zcl_pc_util DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    "! Remove tudo que não for dígito (CPF, CEP, telefone, cartão).
-    CLASS-METHODS somente_digitos
-      IMPORTING iv_valor        TYPE csequence
-      RETURNING VALUE(rv_valor) TYPE string.
+    INTERFACES zif_pc_util.
 
-    "! Valida CPF: 11 dígitos, não repetidos e dígitos verificadores.
-    CLASS-METHODS validar_cpf
-      IMPORTING iv_cpf           TYPE csequence
-      RETURNING VALUE(rv_valido) TYPE abap_boolean.
-
-    "! Calcula os 2 dígitos verificadores para uma base de 9 dígitos.
-    CLASS-METHODS calcular_dv_cpf
-      IMPORTING iv_base9      TYPE csequence
-      RETURNING VALUE(rv_cpf) TYPE string.
-
-    "! Formata CPF (somente dígitos) como 000.000.000-00.
-    CLASS-METHODS formatar_cpf
-      IMPORTING iv_cpf              TYPE csequence
-      RETURNING VALUE(rv_formatado) TYPE string.
-
-    "! Formata telefone (10/11 dígitos) como (00) 00000-0000.
-    CLASS-METHODS formatar_telefone
-      IMPORTING iv_telefone         TYPE csequence
-      RETURNING VALUE(rv_formatado) TYPE string.
-
-    CLASS-METHODS validar_email
-      IMPORTING iv_email         TYPE csequence
-      RETURNING VALUE(rv_valido) TYPE abap_boolean.
-
-    "! Aceita somente JPEG/PNG/WEBP: MIME type, extensão e assinatura binária.
-    "! Conteúdo vazio é considerado válido (foto opcional).
-    CLASS-METHODS validar_imagem
-      IMPORTING iv_conteudo      TYPE xstring
-                iv_mime_type     TYPE csequence
-                iv_nome_arquivo  TYPE csequence
-      RETURNING VALUE(rv_valida) TYPE abap_boolean.
-
-    "! SEM_ESTOQUE (0), ACABANDO (1-10) ou EM_ESTOQUE (>= 11).
-    CLASS-METHODS calcular_status_estoque
-      IMPORTING iv_qtde_disponivel TYPE i
-      RETURNING VALUE(rv_status)   TYPE zif_pc_constants=>ty_status_estoque.
-
-    CLASS-METHODS formatar_endereco
-      IMPORTING iv_logradouro      TYPE csequence
-                iv_numero          TYPE csequence
-                iv_complemento     TYPE csequence OPTIONAL
-                iv_bairro          TYPE csequence
-                iv_cidade          TYPE csequence
-                iv_uf              TYPE csequence
-                iv_cep             TYPE csequence
-      RETURNING VALUE(rv_endereco) TYPE string.
+    ALIASES somente_digitos FOR zif_pc_util~somente_digitos.
+    ALIASES validar_cpf FOR zif_pc_util~validar_cpf.
+    ALIASES calcular_dv_cpf FOR zif_pc_util~calcular_dv_cpf.
+    ALIASES formatar_cpf FOR zif_pc_util~formatar_cpf.
+    ALIASES formatar_telefone FOR zif_pc_util~formatar_telefone.
+    ALIASES validar_email FOR zif_pc_util~validar_email.
+    ALIASES validar_imagem FOR zif_pc_util~validar_imagem.
+    ALIASES calcular_status_estoque FOR zif_pc_util~calcular_status_estoque.
+    ALIASES formatar_endereco FOR zif_pc_util~formatar_endereco.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -66,7 +27,7 @@ ENDCLASS.
 
 CLASS zcl_pc_util IMPLEMENTATION.
 
-  METHOD somente_digitos.
+  METHOD zif_pc_util~somente_digitos.
     rv_valor = replace( val  = iv_valor
                         pcre = `[^0-9]`
                         with = ``
@@ -74,7 +35,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD validar_cpf.
+  METHOD zif_pc_util~validar_cpf.
     rv_valido = abap_false.
 
     DATA(lv_cpf) = somente_digitos( iv_cpf ).
@@ -93,7 +54,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD calcular_dv_cpf.
+  METHOD zif_pc_util~calcular_dv_cpf.
     DATA lv_soma  TYPE i.
     DATA lv_resto TYPE i.
 
@@ -120,7 +81,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD formatar_cpf.
+  METHOD zif_pc_util~formatar_cpf.
     DATA(lv_cpf) = somente_digitos( iv_cpf ).
     IF strlen( lv_cpf ) <> 11.
       rv_formatado = lv_cpf.
@@ -130,7 +91,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD formatar_telefone.
+  METHOD zif_pc_util~formatar_telefone.
     DATA(lv_tel) = somente_digitos( iv_telefone ).
     CASE strlen( lv_tel ).
       WHEN 11.
@@ -143,14 +104,14 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD validar_email.
+  METHOD zif_pc_util~validar_email.
     DATA(lv_email) = condense( to_lower( iv_email ) ).
     rv_valido = xsdbool( matches( val  = lv_email
                                   pcre = `^[a-z0-9._%+\-]+@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.[a-z]{2,}$` ) ).
   ENDMETHOD.
 
 
-  METHOD calcular_status_estoque.
+  METHOD zif_pc_util~calcular_status_estoque.
     IF iv_qtde_disponivel <= 0.
       rv_status = zif_pc_constants=>c_status_estoque-sem_estoque.
     ELSEIF iv_qtde_disponivel <= zif_pc_constants=>c_limite_acabando.
@@ -161,7 +122,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD validar_imagem.
+  METHOD zif_pc_util~validar_imagem.
     CONSTANTS lc_assinatura_png  TYPE x LENGTH 8 VALUE '89504E470D0A1A0A'.
     CONSTANTS lc_assinatura_jpeg TYPE x LENGTH 3 VALUE 'FFD8FF'.
     " WEBP é um contêiner RIFF: "RIFF" + tamanho (4 bytes) + "WEBP"
@@ -211,7 +172,7 @@ CLASS zcl_pc_util IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD formatar_endereco.
+  METHOD zif_pc_util~formatar_endereco.
     DATA(lv_cep) = somente_digitos( iv_cep ).
     IF strlen( lv_cep ) = 8.
       lv_cep = |{ lv_cep(5) }-{ lv_cep+5(3) }|.

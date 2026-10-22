@@ -2,17 +2,16 @@
 "! Insere 100 itens (25 produtos-base x 4 linhas) com SKU gerado pela numeração.
 "! Estoque variado: 5 itens sem estoque, 5 acabando e os demais em estoque.
 "! Pode ser executada mais de uma vez: itens com o mesmo nome são ignorados.
+"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_ESTOQUE.
 CLASS zcl_setup_estoque DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS c_quantidade TYPE i VALUE 100.
+    INTERFACES zif_setup_estoque.
 
-    METHODS carregar_dados
-      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out
-      RAISING   cx_uuid_error cx_number_ranges.
+    ALIASES carregar_dados FOR zif_setup_estoque~carregar_dados.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -34,7 +33,7 @@ ENDCLASS.
 
 CLASS zcl_setup_estoque IMPLEMENTATION.
 
-  METHOD carregar_dados.
+  METHOD zif_setup_estoque~carregar_dados.
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
@@ -84,7 +83,7 @@ CLASS zcl_setup_estoque IMPLEMENTATION.
 
     SELECT nome FROM zta_pc_item INTO TABLE @DATA(lt_nomes_existentes).
 
-    DO c_quantidade TIMES.
+    DO zif_setup_estoque=>c_quantidade TIMES.
       DATA(lv_i) = sy-index - 1.
 
       DATA(ls_base)     = lt_base[ lv_i MOD lines( lt_base ) + 1 ].
