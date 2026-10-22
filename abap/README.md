@@ -463,10 +463,10 @@ A correção foi incluir na PSE anônima a raiz e, se necessário, o R46 *cross-
 ### 5.5. A classe On-Premise
 
 O código completo está em
-[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
-A interface pública (`ty_endereco`, `ty_resultado`, `consultar`) é um superconjunto da versão BTP
-(acrescenta `status_http` e `mensagem_erro`), por isso o behavior pool `ZBP_R_PC_CLIENTE` não muda. A
-diferença está em `chamar_servico`:
+[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/Classes/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
+As duas versões implementam a mesma interface `ZIF_PC_VIACEP` (`ty_endereco`, `ty_resultado`, `consultar`);
+só a versão On-Premise preenche `status_http` e `mensagem_erro`. Por isso o behavior pool `ZBP_R_PC_CLIENTE`
+não muda. A diferença está em `chamar_servico`:
 
 ```abap
 " BTP (ZCL_PC_VIACEP/): URL no código
@@ -576,9 +576,11 @@ Usuário                                           Usuário (SU01)
 #### Classe central `ZCL_PC_AUTH`
 
 Toda verificação passa por `ZCL_PC_AUTH` (pacote `ZAVBS_PC_COMMON`), que encapsula o `AUTHORITY-CHECK` dos
-objetos `ZPC_ADMIN` (clientes e estoque) e `ZPC_PEDIDO` (pedidos e reembolsos):
+objetos `ZPC_ADMIN` (clientes e estoque) e `ZPC_PEDIDO` (pedidos e reembolsos). As atividades e os métodos
+públicos ficam na interface `ZIF_PC_AUTH`, implementada pela classe:
 
 ```abap
+" ZIF_PC_AUTH
 CONSTANTS: BEGIN OF c_actvt,
              criar    TYPE c LENGTH 2 VALUE '01',
              alterar  TYPE c LENGTH 2 VALUE '02',
@@ -586,6 +588,7 @@ CONSTANTS: BEGIN OF c_actvt,
              executar TYPE c LENGTH 2 VALUE '16',
            END OF c_actvt.
 
+" ZCL_PC_AUTH (método privado)
 METHOD verificar_pedido.
   IF zif_pc_constants=>c_modo_trial = abap_true.
     rv_autorizado = abap_true.
@@ -1185,7 +1188,8 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
 2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZIF_PC_MSG`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
-   `ZCL_PC_NUMERACAO`.
+   `ZCL_PC_NUMERACAO`. Cada classe com interface própria (tabela abaixo) é ativada junto com ela, ou depois
+   dela.
 3. **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo `ZR_PC_REEMBOLSO` (BO próprio,
@@ -1202,6 +1206,25 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 12. Executar `ZCL_PC_SETUP` (**F9**): intervalos de numeração, CodeLists e dados de demonstração. Sem os
     intervalos, o Save de pedido e de item falha com "Erro ao obter numeração".
 13. Front-end: [`ui5/README.md`](../ui5/README.md).
+
+Classes e as interfaces que elas implementam (constantes, tipos e métodos públicos ficam na interface; a
+classe declara `ALIASES` para os métodos, então chamadas como `zcl_pc_util=>validar_cpf( )` continuam
+válidas, mas tipos e constantes são lidos da interface, ex.: `zif_pc_planilha=>tt_colunas`):
+
+| Classe | Interface | Pacote |
+| --- | --- | --- |
+| `ZCX_PC_MSG` | `ZIF_PC_MSG` (só as chaves T100) | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_AUTH` | `ZIF_PC_AUTH` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_IMPORTACAO` | `ZIF_PC_IMPORTACAO` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_NUMERACAO` | `ZIF_PC_NUMERACAO` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_PLANILHA` | `ZIF_PC_PLANILHA` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_RESET` | `ZIF_PC_RESET` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_UTIL` | `ZIF_PC_UTIL` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_VIACEP` (as duas versões) | `ZIF_PC_VIACEP` | `ZAVBS_PC_COMMON` |
+| `ZCL_SETUP_CLIENTE` | `ZIF_SETUP_CLIENTE` | `ZAVBS_PC_CLIENTES` |
+| `ZCL_SETUP_ESTOQUE` | `ZIF_SETUP_ESTOQUE` | `ZAVBS_PC_ESTOQUE` |
+| `ZCL_SETUP_PEDIDOS` | `ZIF_SETUP_PEDIDOS` | `ZAVBS_PC_PEDIDOS` |
+| `ZCL_PC_PAGAMENTO_SIM` | `ZIF_PC_PAGAMENTO_SIM` | `ZAVBS_PC_PEDIDOS_PAGAMENTOS` |
 
 > [!IMPORTANT]
 > Há dependências cruzadas intencionais (ex.: o BO Cliente consulta pedidos para bloquear a exclusão). Por

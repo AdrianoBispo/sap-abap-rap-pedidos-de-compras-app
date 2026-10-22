@@ -7,7 +7,7 @@ CLASS ltcl_planilha DEFINITION FINAL FOR TESTING
       IMPORTING iv_texto       TYPE string
       RETURNING VALUE(rv_hex)  TYPE xstring.
     METHODS colunas
-      RETURNING VALUE(rt_colunas) TYPE zcl_pc_planilha=>tt_colunas.
+      RETURNING VALUE(rt_colunas) TYPE zif_pc_planilha=>tt_colunas.
 
     METHODS normaliza_cabecalho   FOR TESTING.
     METHODS csv_ponto_e_virgula   FOR TESTING.
@@ -177,7 +177,7 @@ CLASS ltcl_planilha IMPLEMENTATION.
 
   METHOD limite_de_linhas.
     DATA(lv_csv) = |CPF;Nome;E-mail\n|.
-    DO zcl_pc_planilha=>c_max_linhas + 1 TIMES.
+    DO zif_pc_planilha=>c_max_linhas + 1 TIMES.
       lv_csv = lv_csv && |{ sy-index };N;e@x.com\n|.
     ENDDO.
     zcl_pc_planilha=>ler( EXPORTING iv_conteudo  = xstr( lv_csv )

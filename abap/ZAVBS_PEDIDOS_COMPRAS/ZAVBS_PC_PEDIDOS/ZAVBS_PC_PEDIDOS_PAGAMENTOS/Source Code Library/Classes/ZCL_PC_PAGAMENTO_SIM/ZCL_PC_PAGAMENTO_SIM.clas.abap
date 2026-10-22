@@ -5,38 +5,16 @@
 "!  - número iniciado com 4 => VISA; iniciado com 5 => MASTERCARD
 "!  - CVV 000 => pagamento RECUSADO
 "!  - demais combinações válidas => APROVADO
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_PAGAMENTO_SIM.
 CLASS zcl_pc_pagamento_sim DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    TYPES:
-      BEGIN OF ty_entrada,
-        metodo   TYPE string,
-        numero   TYPE string,
-        validade TYPE string,
-        cvv      TYPE string,
-      END OF ty_entrada.
+    INTERFACES zif_pc_pagamento_sim.
 
-    TYPES:
-      BEGIN OF ty_resultado,
-        "! abap_false => dados inválidos (erro de entrada, não é recusa)
-        dados_validos      TYPE abap_boolean,
-        erro               TYPE string,
-        status             TYPE zif_pc_constants=>ty_status_pagamento,
-        metodo             TYPE zif_pc_constants=>ty_metodo_pagamento,
-        bandeira           TYPE string,
-        ultimos4           TYPE string,
-        cartao_mascarado   TYPE string,
-        codigo_autorizacao TYPE string,
-        mensagem           TYPE string,
-      END OF ty_resultado.
-
-    CLASS-METHODS simular
-      IMPORTING is_entrada          TYPE ty_entrada
-                iv_data_referencia  TYPE d OPTIONAL
-      RETURNING VALUE(rs_resultado) TYPE ty_resultado.
+    ALIASES simular FOR zif_pc_pagamento_sim~simular.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -46,7 +24,7 @@ ENDCLASS.
 
 CLASS zcl_pc_pagamento_sim IMPLEMENTATION.
 
-  METHOD simular.
+  METHOD zif_pc_pagamento_sim~simular.
     DATA(lv_hoje) = COND d( WHEN iv_data_referencia IS INITIAL
                             THEN cl_abap_context_info=>get_system_date( )
                             ELSE iv_data_referencia ).

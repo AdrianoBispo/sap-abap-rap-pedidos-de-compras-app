@@ -804,7 +804,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
     FIELD-SYMBOLS <ls_dem> TYPE ty_demanda.
 
-    DATA lt_colunas    TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_colunas    TYPE zif_pc_planilha=>tt_colunas.
     DATA lt_erros      TYPE string_table.
     DATA lt_linhas     TYPE STANDARD TABLE OF ty_linha WITH EMPTY KEY.
     DATA lt_grupos     TYPE STANDARD TABLE OF ty_grupo WITH EMPTY KEY.

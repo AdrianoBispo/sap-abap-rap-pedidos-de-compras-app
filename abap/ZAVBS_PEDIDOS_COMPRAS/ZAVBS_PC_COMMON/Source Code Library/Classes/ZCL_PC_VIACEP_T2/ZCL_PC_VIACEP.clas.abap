@@ -13,56 +13,28 @@
 "! HTTP Z_VIACEP (SM59, tipo G) e a confiança TLS no STRUST (PSE SSL Client
 "! Anonymous). Ver abap/README.md, seção 5.
 "!
-"! A interface pública (ty_endereco, ty_resultado, consultar) é um
-"! superconjunto da versão BTP: o behavior pool ZBP_R_PC_CLIENTE não muda.
+"! As duas versões implementam a mesma interface ZIF_PC_VIACEP (ty_endereco,
+"! ty_resultado, consultar): o behavior pool ZBP_R_PC_CLIENTE não muda.
+"! Tipos e método público: interface ZIF_PC_VIACEP (a constante de conexão é própria de cada versão).
 CLASS zcl_pc_viacep DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    TYPES:
-      BEGIN OF ty_endereco,
-        cep         TYPE string,
-        logradouro  TYPE string,
-        complemento TYPE string,
-        bairro      TYPE string,
-        localidade  TYPE string,
-        uf          TYPE string,
-        estado      TYPE string,
-        erro        TYPE string,
-      END OF ty_endereco.
+    INTERFACES zif_pc_viacep.
 
-    TYPES:
-      BEGIN OF ty_resultado,
-        "! CEP existe e dados foram retornados
-        valido        TYPE abap_boolean,
-        "! Serviço indisponível (destination, timeout, HTTP 408/429/5xx, rede)
-        indisponivel  TYPE abap_boolean,
-        "! CEP geral de município: ViaCEP não retorna logradouro/bairro
-        cep_geral     TYPE abap_boolean,
-        "! Status HTTP da resposta (0 quando não houve resposta)
-        status_http   TYPE i,
-        "! Detalhe técnico para log/diagnóstico (não exibir ao usuário final)
-        mensagem_erro TYPE string,
-        endereco      TYPE ty_endereco,
-      END OF ty_resultado.
+    ALIASES consultar FOR zif_pc_viacep~consultar.
 
     "! Destination HTTP (SM59, tipo G) com host viacep.com.br, porta 443 e SSL
     CONSTANTS c_destination TYPE c LENGTH 32 VALUE 'Z_VIACEP'.
-
-    "! Consulta o CEP (8 dígitos). Resultados definitivos ficam em cache por
-    "! sessão (limitado a c_max_cache entradas) para evitar chamadas repetidas.
-    CLASS-METHODS consultar
-      IMPORTING iv_cep              TYPE csequence
-      RETURNING VALUE(rs_resultado) TYPE ty_resultado.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
     TYPES:
       BEGIN OF ty_cache,
         cep       TYPE string,
-        resultado TYPE ty_resultado,
+        resultado TYPE zif_pc_viacep=>ty_resultado,
       END OF ty_cache.
 
     CONSTANTS c_max_cache TYPE i VALUE 100.
@@ -72,7 +44,7 @@ CLASS zcl_pc_viacep DEFINITION
 
     CLASS-METHODS chamar_servico
       IMPORTING iv_cep              TYPE string
-      RETURNING VALUE(rs_resultado) TYPE ty_resultado.
+      RETURNING VALUE(rs_resultado) TYPE zif_pc_viacep=>ty_resultado.
 
     "! Extrai um campo de um JSON plano ("campo": "valor" ou "campo": literal).
     CLASS-METHODS extrair_campo
@@ -85,7 +57,7 @@ ENDCLASS.
 
 CLASS zcl_pc_viacep IMPLEMENTATION.
 
-  METHOD consultar.
+  METHOD zif_pc_viacep~consultar.
     DATA(lv_cep) = zcl_pc_util=>somente_digitos( iv_cep ).
 
     IF strlen( lv_cep ) <> 8.
