@@ -71,9 +71,9 @@ ZAVBS_PC_<domínio>/
 ```
 
 - Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
-  `Number Range Management/` e `Texts/`.
-- Service Definitions, Service Bindings, objetos de autorização, IAM Apps e o domínio `ZPC_NR_NUMC10`
-  **não são versionados** aqui: são
+  `Number Range Management/`.
+- Service Definitions, Service Bindings, objetos de autorização, IAM Apps, a Message Class `ZPC_MSG` e o
+  domínio `ZPC_NR_NUMC10` **não são versionados** aqui: são
   criados no ADT (ou na SAP GUI, no On-Premise) seguindo as seções [6](#6-autorização-authority-check-nos-dois-cenários),
   [7.4](#74-mapa-das-regras) (entidades expostas por serviço) e [8](#8-instalação-objetos-manuais-e-ordem-de-ativação).
 
@@ -108,7 +108,6 @@ Um arquivo por objeto ADT:
 | `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
 | `*.clas.testclasses.abap` | Aba *Test Classes* da mesma classe (ABAP Unit) |
 | `*.intf.abap` | Interface |
-| `ZPC_MSG.msagn.xml` | Message Class |
 
 O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
 cada fonte. Para automatizar, converta para abapGit ou gCTS.
@@ -1049,8 +1048,84 @@ Estes objetos não têm código-fonte editável no repositório, ou exigem um pa
 ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS Code ainda não oferece
 ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)):
 
-1. **Message Class `ZPC_MSG`** (ADT; On-Premise também `SE91`) — cadastrar as mensagens de
-   `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Texts/ZPC_MSG.msagn.xml` (até 73 caracteres por texto; `&1`/`&2` são parâmetros).
+1. **Message Class `ZPC_MSG`** (pacote `ZAVBS_PC_COMMON`) — mensagens T100 lidas pela classe de exceção
+   `ZCX_PC_MSG`; precisa existir antes dela, pois as constantes da classe apontam para os números abaixo.
+
+   | Propriedade | Valor |
+   | --- | --- |
+   | Nome | `ZPC_MSG` |
+   | Descrição | `Pedidos de Compras - Mensagens` |
+   | Pacote | `ZAVBS_PC_COMMON` |
+
+   - **ADT no Eclipse** — BTP e On-Premise: botão direito no pacote `ZAVBS_PC_COMMON` → *New* →
+     *Other ABAP Repository Object* → *Texts* → *Message Class*; informe nome e descrição, clique em *Next*,
+     selecione a request de transporte e clique em *Finish*. No editor que se abre, cadastre cada mensagem da
+     tabela abaixo (coluna *Number* e *Short Text*), com *Self-Explanatory* marcado, e salve (**Ctrl+S**).
+   - **ADT no VS Code** — BTP e On-Premise: *ABAP: Create New ABAP Object...* (**Ctrl+Shift+Alt+N**) →
+     *Message Class*; informe pacote, nome, descrição e request, e cadastre as mensagens no editor como no
+     Eclipse.
+   - **SAP GUI (transação `SE91`)** — só On-Premise: informe `ZPC_MSG` e clique em *Criar*; na aba
+     *Atributos*, preencha a descrição breve; na aba *Mensagens*, informe número e texto de cada linha e
+     marque *Autoexplicativo*; salve, atribuindo o pacote `ZAVBS_PC_COMMON` e a request.
+
+   Cada texto tem até 73 caracteres; `&1` a `&4` são os parâmetros preenchidos pela exceção (atributos
+   `MSGV1` a `MSGV4`). Digite os textos exatamente como na tabela, com acentos: alguns testes ABAP Unit
+   comparam o texto devolvido. A coluna *Constante* é o nome correspondente em `ZCX_PC_MSG`.
+
+   | Nº | Texto | Constante em `ZCX_PC_MSG` |
+   | --- | --- | --- |
+   | 001 | CPF inválido. Verifique o número informado. | `CLIENTE_CPF_INVALIDO` |
+   | 002 | Já existe um cliente cadastrado com este CPF. | `CLIENTE_CPF_DUPLICADO` |
+   | 003 | Cliente inativo não pode realizar pedido. | `CLIENTE_INATIVO` |
+   | 004 | Cliente não pode ser excluído pois possui pedido vinculado. | `CLIENTE_COM_PEDIDO` |
+   | 005 | Cliente selecionado não possui endereço principal válido. | `CLIENTE_SEM_ENDERECO_PRINCIPAL` |
+   | 006 | Não foi possível validar o CEP agora. Tente novamente em instantes. | `CEP_INDISPONIVEL` |
+   | 007 | CEP inválido ou não encontrado. Verifique o número informado. | `CEP_INVALIDO` |
+   | 008 | Número do endereço é obrigatório. | `ENDERECO_NUMERO_OBRIGATORIO` |
+   | 009 | Formato de imagem inválido. Utilize JPEG, PNG ou WEBP. | `FOTO_FORMATO_INVALIDO` |
+   | 010 | Já existe item cadastrado com este SKU. | `ITEM_SKU_DUPLICADO` |
+   | 011 | Estoque insuficiente para o item &1 (disponível: &2). | `ITEM_ESTOQUE_INSUFICIENTE` |
+   | 012 | Estoque do item &1 alterado por outra operação. Atualize e tente de novo. | `ITEM_ESTOQUE_CONCORRENTE` |
+   | 013 | Item &1 inativo não pode ser usado em novo pedido. | `ITEM_INATIVO` |
+   | 014 | Item possui estoque disponível ou pedido ativo. Inativação bloqueada. | `ITEM_INATIVACAO_BLOQUEADA` |
+   | 015 | Transição de status não permitida (status atual: &1). | `PEDIDO_STATUS_INVALIDO` |
+   | 016 | Pagamento pendente. O pedido não pode ser finalizado. | `PEDIDO_PAGAMENTO_PENDENTE` |
+   | 017 | Pedido finalizado não pode ser alterado. | `PEDIDO_FINALIZADO_IMUTAVEL` |
+   | 018 | Pedido cancelado não pode ser alterado. | `PEDIDO_CANCELADO_IMUTAVEL` |
+   | 019 | Informe o motivo do cancelamento. | `PEDIDO_MOTIVO_CANCEL_OBRIG` |
+   | 020 | Pagamento aprovado com sucesso. | `PAGAMENTO_APROVADO` |
+   | 021 | Pagamento recusado. O pedido permanecerá aguardando pagamento. | `PAGAMENTO_RECUSADO` |
+   | 022 | Snapshot do pedido já foi gerado e não pode ser recriado. | `SNAPSHOT_EXISTENTE` |
+   | 023 | Campo &1 é obrigatório. | `CAMPO_OBRIGATORIO` |
+   | 024 | E-mail em formato inválido. | `EMAIL_INVALIDO` |
+   | 025 | Data de nascimento não pode ser futura. | `DATA_NASCIMENTO_FUTURA` |
+   | 026 | Telefone deve conter 10 ou 11 dígitos (DDD + número). | `TELEFONE_INVALIDO` |
+   | 027 | Pedido deve possuir ao menos um item. | `PEDIDO_SEM_ITENS` |
+   | 028 | Quantidade do item deve ser maior que zero. | `ITEM_QTDE_INVALIDA` |
+   | 029 | Preço unitário deve ser maior ou igual a zero. | `ITEM_PRECO_INVALIDO` |
+   | 030 | Qtde em estoque não pode ser negativa nem menor que a reservada (&1). | `ITEM_QTDE_ESTOQUE_INVALIDA` |
+   | 031 | Item não pode ser excluído pois está vinculado a pedido ou reserva. | `ITEM_EXCLUSAO_BLOQUEADA` |
+   | 032 | Dados do cartão inválidos: &1. | `CARTAO_DADOS_INVALIDOS` |
+   | 033 | Pedido &1 registrado. Estoque reservado. | `PEDIDO_CONFIRMADO` |
+   | 034 | Pedido &1 finalizado com sucesso. | `PEDIDO_FINALIZADO` |
+   | 035 | Pedido &1 cancelado. | `PEDIDO_CANCELADO` |
+   | 036 | Erro ao obter numeração (&1). Verifique o intervalo de numeração. | `NUMERACAO_ERRO` |
+   | 037 | Usuário sem autorização para esta operação. | `SEM_AUTORIZACAO` |
+   | 038 | Reserva do item &1 inconsistente com o pedido. | `ITEM_RESERVA_INCONSISTENTE` |
+   | 039 | Pedido só pode ser editado ou excluído no status ABERTO. | `PEDIDO_EDICAO_BLOQUEADA` |
+   | 040 | Peso e dimensões não podem ser negativos. | `ITEM_DIMENSAO_INVALIDA` |
+   | 041 | Valor inválido para o campo &1. | `VALOR_INVALIDO` |
+   | 042 | Pedido &1 enviado para processamento de reembolso. | `PEDIDO_REEMBOLSO_SOLICITADO` |
+   | 043 | Informe o motivo da decisão sobre o reembolso. | `REEMBOLSO_MOTIVO_DECISAO_OBRIG` |
+   | 044 | Reembolso do pedido &1 aprovado. Pedido cancelado. | `REEMBOLSO_APROVADO` |
+   | 045 | Reembolso do pedido &1 rejeitado. Pedido retomado. | `REEMBOLSO_REJEITADO` |
+   | 046 | Solicitação de reembolso não está mais pendente. | `REEMBOLSO_STATUS_INVALIDO` |
+   | 047 | Já existe um endereço cadastrado com este CEP para este cliente. | `CEP_DUPLICADO_CLIENTE` |
+   | 048 | Item &1 está sem estoque disponível e não pode ser adicionado ao pedido. | `ITEM_SEM_ESTOQUE` |
+   | 049 | `&1&2&3&4` | `TEXTO_LIVRE` |
+
+   A mensagem 049 não tem texto fixo: `ZCX_PC_MSG=>texto( )` reparte um texto livre de até 200 caracteres
+   pelas quatro variáveis (50 caracteres cada), usada no resumo e nos erros da importação por planilha.
 2. **Domínio `ZPC_NR_NUMC10`** (pacote `ZAVBS_PC_COMMON`) — *Number Length Domain* do objeto de numeração
    `ZPC_NR`; precisa estar ativo antes dele.
 
