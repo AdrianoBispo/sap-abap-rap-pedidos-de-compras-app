@@ -309,15 +309,16 @@ CLASS lhc_pedido IMPLEMENTATION.
     DELETE lt_pedidos WHERE StatusPedido IS NOT INITIAL.
     CHECK lt_pedidos IS NOT INITIAL.
 
+    " ValorTotal não é inicializado aqui: no create com itens no mesmo request,
+    " CalcularValorItem (linha) pode rodar antes e já ter gravado o total.
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido
-        UPDATE FIELDS ( StatusPedido StatusPagamento Currency ValorTotal )
+        UPDATE FIELDS ( StatusPedido StatusPagamento Currency )
         WITH VALUE #( FOR p IN lt_pedidos
                       ( %tky            = p-%tky
                         StatusPedido    = zif_pc_constants=>c_status_pedido-aberto
                         StatusPagamento = zif_pc_constants=>c_status_pagamento-pendente
-                        Currency        = zif_pc_constants=>c_moeda_padrao
-                        ValorTotal      = 0 ) )
+                        Currency        = zif_pc_constants=>c_moeda_padrao ) )
       REPORTED DATA(ls_reported_ini).
 
     LOOP AT ls_reported_ini-pedido INTO DATA(ls_rep_ini) WHERE %msg IS BOUND.
