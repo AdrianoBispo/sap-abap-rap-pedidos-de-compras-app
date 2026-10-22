@@ -50,6 +50,8 @@ abap/
     │       ├── Classes/
     │       │   ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
     │       │   └── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
+    │       ├── Interfaces/
+    │       │   └── ZIF_PC_VIACEP.intf.abap  contrato comum às duas versões do ViaCEP
     │       └── ZPC_TESTE_VIACEP_T2/     report de teste da destination (somente On-Premise)
     ├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps (serviço ZUI_PC_CLIENTES)
     ├── ZAVBS_PC_ESTOQUE             BO Item, value help de item (serviço ZUI_PC_ESTOQUE)
@@ -70,7 +72,8 @@ ZAVBS_PC_<domínio>/
 │   └── Database Tables/         *.abap
 └── Source Code Library/
     ├── Classes/                 uma pasta por classe (*.clas.*.abap)
-    └── ...                      interfaces e programas, fora de Classes/
+    ├── Interfaces/              um arquivo por interface (*.intf.abap)
+    └── ...                      programas, fora de Classes/ e Interfaces/
 ```
 
 - Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
