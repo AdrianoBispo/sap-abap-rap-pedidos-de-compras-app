@@ -52,7 +52,8 @@ abap/
     │       │   └── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
     │       ├── Interfaces/
     │       │   └── ZIF_PC_VIACEP.intf.abap  contrato comum às duas versões do ViaCEP
-    │       └── ZPC_TESTE_VIACEP_T2/     report de teste da destination (somente On-Premise)
+    │       └── Programs/
+    │           └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
     ├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps (serviço ZUI_PC_CLIENTES)
     ├── ZAVBS_PC_ESTOQUE             BO Item, value help de item (serviço ZUI_PC_ESTOQUE)
     ├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens) (serviço ZUI_PC_PEDIDOS_COMPRAS)
@@ -73,7 +74,7 @@ ZAVBS_PC_<domínio>/
 └── Source Code Library/
     ├── Classes/                 uma pasta por classe (*.clas.*.abap)
     ├── Interfaces/              um arquivo por interface (*.intf.abap)
-    └── ...                      programas, fora de Classes/ e Interfaces/
+    └── Programs/                uma pasta por programa (*.prog.abap)
 ```
 
 - Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
@@ -114,6 +115,7 @@ Um arquivo por objeto ADT:
 | `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
 | `*.clas.testclasses.abap` | Aba *Test Classes* da mesma classe (ABAP Unit) |
 | `*.intf.abap` | Interface |
+| `*.prog.abap` | Programa (report executável) |
 
 O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
 cada fonte. Para automatizar, converta para abapGit ou gCTS.
@@ -183,7 +185,7 @@ Cobertura dos objetos deste projeto na extensão do VS Code, segundo a lista pub
 | IDE ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)) | ADT no Eclipse ou no VS Code (conexão HTTP) | ADT no Eclipse ou no VS Code (conexão RFC, a partir do S/4HANA 2025), mais o SAP GUI |
 | `ZIF_PC_CONSTANTS=>c_modo_trial` | `abap_true` no Trial compartilhado (sem Business Roles) | **`abap_false`** (o `AUTHORITY-CHECK` passa a valer) |
 | `ZCL_PC_VIACEP` | Pasta `ZCL_PC_VIACEP/`: `cl_http_destination_provider=>create_by_url` | Pasta `ZCL_PC_VIACEP_T2/`: `CL_HTTP_CLIENT` + destination `Z_VIACEP` (`SM59`) + `STRUST` |
-| Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `ZPC_TESTE_VIACEP_T2/` (teste da destination) |
+| Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `Programs/ZPC_TESTE_VIACEP_T2/` (teste da destination) |
 | Objetos de autorização | ADT, classe `CPAE` (`*.susob.xml`) | `SU21`, classe própria `ZPC` (mesmos objetos e atividades) |
 | Vínculo serviço × autorização | IAM App (`*.sia6.xml`) | `SU24` (valores propostos) |
 | Agrupamento e atribuição | Business Catalog + Business Role | Role `PFCG` (`Z_PC_ADMIN`, `Z_PC_COMUM`) + `SU01` |
@@ -507,7 +509,7 @@ mantenha só as disponíveis (ou use apenas `OTHERS = 1`).
 
 ### 5.6. Report de teste
 
-[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
+[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/Programs/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
 chama `ZCL_PC_VIACEP=>consultar` e mostra o status HTTP e o endereço. Execute-o (F8) em cada sistema depois
 de configurar `SM59` e `STRUST`, antes de testar o cadastro de endereço na app Gestão de Clientes. Para um CEP
 válido (ex.: `01310-100`), ele deve retornar HTTP 200 e o endereço.
