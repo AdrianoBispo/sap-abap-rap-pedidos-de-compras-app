@@ -63,10 +63,11 @@ CLASS ltcl_authority_check IMPLEMENTATION.
     ENDIF.
 
     DATA(lo_role) = cl_aunit_authority_check=>create_auth_object_set(
-      VALUE #( ( object         = iv_objeto
-                 authorizations = VALUE #( ( VALUE #( ( fieldname   = 'ACTVT'
-                                                        fieldvalues = VALUE #( FOR a IN it_actvt
-                                                                               ( lower_value = a ) ) ) ) ) ) ) ) ).
+      VALUE #( ( role_authorizations = VALUE #(
+                   ( object         = iv_objeto
+                     authorizations = VALUE #( ( VALUE #( ( fieldname   = 'ACTVT'
+                                                            fieldvalues = VALUE #( FOR a IN it_actvt
+                                                                                   ( lower_value = a ) ) ) ) ) ) ) ) ) ) ).
     lo_ctrl->restrict_authorizations_to( lo_role ).
   ENDMETHOD.
 

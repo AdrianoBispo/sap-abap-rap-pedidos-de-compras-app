@@ -49,7 +49,8 @@ CLASS ltcl_ve_cliente IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD criticidade.
-    rv_criticidade = calcular( VALUE #( ( ScoreCliente = iv_score ) ) )[ 1 ]-ScoreCriticality.
+    DATA(lt_calc) = calcular( VALUE #( ( ScoreCliente = iv_score ) ) ).
+    rv_criticidade = lt_calc[ 1 ]-ScoreCriticality.
   ENDMETHOD.
 
   METHOD cpf_formatado.
@@ -67,7 +68,8 @@ CLASS ltcl_ve_cliente IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD score_em_percentual.
-    cl_abap_unit_assert=>assert_equals( act = calcular( VALUE #( ( ScoreCliente = 55 ) ) )[ 1 ]-ScoreUnidade
+    DATA(lt_calc) = calcular( VALUE #( ( ScoreCliente = 55 ) ) ).
+    cl_abap_unit_assert=>assert_equals( act = lt_calc[ 1 ]-ScoreUnidade
                                         exp = '%'
                                         msg = 'O score é exibido em %' ).
   ENDMETHOD.

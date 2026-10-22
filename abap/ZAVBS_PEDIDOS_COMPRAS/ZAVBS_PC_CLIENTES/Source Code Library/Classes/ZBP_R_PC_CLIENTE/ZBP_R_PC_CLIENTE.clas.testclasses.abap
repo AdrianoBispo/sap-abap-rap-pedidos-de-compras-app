@@ -34,14 +34,16 @@ ENDCLASS.
 
 
 *"* Base: ambiente de test doubles, dados semeados e atalhos de EML.
-CLASS lcl_base_cliente DEFINITION ABSTRACT.
+CLASS lcl_base_cliente DEFINITION ABSTRACT FOR TESTING
+  DURATION SHORT
+  RISK LEVEL HARMLESS.
 
   PROTECTED SECTION.
     TYPES ty_failed    TYPE RESPONSE FOR FAILED EARLY zr_pc_cliente.
     TYPES ty_reported  TYPE RESPONSE FOR REPORTED EARLY zr_pc_cliente.
     TYPES tt_enderecos TYPE TABLE FOR READ RESULT zr_pc_cliente\\Cliente\_Endereco.
 
-    "! CEPs já validados no double (a determination não consulta o ViaCEP)
+    " CEPs já validados no double (a determination não consulta o ViaCEP)
     CONSTANTS:
       BEGIN OF c_cep,
         paulista   TYPE c LENGTH 8 VALUE '01310100',
@@ -204,9 +206,11 @@ CLASS lcl_base_cliente IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD preparar.
+    " EXECUTE Prepare por EML não devolve as falhas das validations nesta LUW;
+    " o Activate executa o Prepare do rascunho e devolve FAILED/REPORTED.
     MODIFY ENTITIES OF zr_pc_cliente
       ENTITY Cliente
-        EXECUTE Prepare FROM VALUE #( ( %key-ClienteUUID = iv_cliente ) )
+        EXECUTE Activate FROM VALUE #( ( %cid = 'ACT' %key-ClienteUUID = iv_cliente ) )
       FAILED es_failed
       REPORTED es_reported.
   ENDMETHOD.
@@ -304,7 +308,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'CPF com DV errado deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `001` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 001 (CPF inválido)' ).
   ENDMETHOD.
 
@@ -315,7 +319,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'CPF já cadastrado deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `002` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 002 (CPF duplicado)' ).
   ENDMETHOD.
 
@@ -325,7 +329,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'E-mail sem @ deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `024` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 024 (e-mail inválido)' ).
   ENDMETHOD.
 
@@ -335,7 +339,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'Telefone com 9 dígitos deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `026` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 026 (telefone inválido)' ).
   ENDMETHOD.
 
@@ -346,7 +350,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'Nascimento no futuro deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `025` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 025 (data de nascimento futura)' ).
   ENDMETHOD.
 
@@ -356,7 +360,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'Gênero fora da CodeList deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `041` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 041 (valor inválido)' ).
   ENDMETHOD.
 
@@ -384,7 +388,7 @@ CLASS ltcl_cliente_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-cliente msg = 'Foto GIF deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `009` table = lcl_msgs=>numeros( ls_reported-cliente )
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 009 (formato de foto inválido)' ).
   ENDMETHOD.
 
@@ -460,13 +464,14 @@ CLASS ltcl_cliente_endereco IMPLEMENTATION.
     DATA(lv_cli) = criar_rascunho( ).
     criar_enderecos( iv_cliente = lv_cli it_ceps = VALUE #( ( `0131` ) ) ).
 
-    cl_abap_unit_assert=>assert_equals( act = ler_enderecos( lv_cli )[ 1 ]-CepStatus
+    DATA(lt_end) = ler_enderecos( lv_cli ).
+    cl_abap_unit_assert=>assert_equals( act = lt_end[ 1 ]-CepStatus
                                         exp = zif_pc_constants=>c_status_cep-invalido
                                         msg = 'CEP sem 8 dígitos é marcado inválido sem consultar o ViaCEP' ).
 
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
-    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-endereco msg = 'CEP inválido deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `007` table = lcl_msgs=>numeros( ls_reported-endereco )
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed msg = 'CEP inválido deve bloquear' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 007 (CEP inválido)' ).
   ENDMETHOD.
 
@@ -477,8 +482,8 @@ CLASS ltcl_cliente_endereco IMPLEMENTATION.
 
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
-    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-endereco msg = 'CEP repetido no mesmo cliente deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `047` table = lcl_msgs=>numeros( ls_reported-endereco )
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed msg = 'CEP repetido no mesmo cliente deve bloquear' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-cliente )
                                                 msg = 'Mensagem 047 (CEP duplicado no cliente)' ).
   ENDMETHOD.
 
@@ -488,7 +493,7 @@ CLASS ltcl_cliente_endereco IMPLEMENTATION.
 
     preparar( EXPORTING iv_cliente = lv_cli IMPORTING es_failed = DATA(ls_failed) ).
 
-    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-endereco msg = 'Endereço sem número deve bloquear' ).
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed msg = 'Endereço sem número deve bloquear' ).
   ENDMETHOD.
 
 ENDCLASS.

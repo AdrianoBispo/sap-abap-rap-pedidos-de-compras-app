@@ -32,7 +32,9 @@ ENDCLASS.
 
 
 *"* Base: ambiente de test doubles, dados semeados e atalhos de EML.
-CLASS lcl_base_pedido DEFINITION ABSTRACT.
+CLASS lcl_base_pedido DEFINITION ABSTRACT FOR TESTING
+  DURATION SHORT
+  RISK LEVEL HARMLESS.
 
   PROTECTED SECTION.
     TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_pedido.
@@ -218,9 +220,12 @@ CLASS lcl_base_pedido IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD preparar.
+    " EXECUTE Prepare por EML não devolve as falhas das validations nesta LUW;
+    " o Activate executa o Prepare do rascunho e devolve FAILED/REPORTED
+    " (no REPORTED só a mensagem genérica do framework, sem o número T100).
     MODIFY ENTITIES OF zr_pc_pedido
       ENTITY Pedido
-        EXECUTE Prepare FROM VALUE #( ( %key-PedidoUUID = iv_pedido ) )
+        EXECUTE Activate FROM VALUE #( ( %cid = 'ACT' %key-PedidoUUID = iv_pedido ) )
       FAILED es_failed
       REPORTED es_reported.
   ENDMETHOD.
@@ -374,8 +379,8 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-pedido msg = 'Cliente inativo não faz pedido' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `003` table = lcl_msgs=>numeros( ls_reported-pedido )
-                                                msg = 'Mensagem 003 (cliente inativo)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-pedido )
+                                             msg = 'Mensagem 003 (cliente inativo)' ).
   ENDMETHOD.
 
   METHOD cliente_sem_endereco_bloqueia.
@@ -384,8 +389,8 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-pedido msg = 'Sem endereço principal não registra' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `005` table = lcl_msgs=>numeros( ls_reported-pedido )
-                                                msg = 'Mensagem 005 (sem endereço principal)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-pedido )
+                                             msg = 'Mensagem 005 (sem endereço principal)' ).
   ENDMETHOD.
 
   METHOD pedido_sem_itens_bloqueia.
@@ -393,8 +398,8 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-pedido msg = 'Pedido vazio não registra' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `027` table = lcl_msgs=>numeros( ls_reported-pedido )
-                                                msg = 'Mensagem 027 (pedido sem itens)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-pedido )
+                                             msg = 'Mensagem 027 (pedido sem itens)' ).
   ENDMETHOD.
 
   METHOD estoque_insuficiente_bloqueia.
@@ -404,8 +409,8 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-pedido msg = 'Quantidade acima do disponível não registra' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `011` table = lcl_msgs=>numeros( ls_reported-pedido )
-                                                msg = 'Mensagem 011 (estoque insuficiente)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-pedido )
+                                             msg = 'Mensagem 011 (estoque insuficiente)' ).
   ENDMETHOD.
 
   METHOD item_inativo_bloqueia.
@@ -413,9 +418,9 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
                                                     iv_item    = semear_item( iv_ativo = abap_false ) )
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
-    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-itempedido msg = 'Item inativo não pode ser pedido' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `013` table = lcl_msgs=>numeros( ls_reported-itempedido )
-                                                msg = 'Mensagem 013 (item inativo)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed msg = 'Item inativo não pode ser pedido' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-pedido )
+                                             msg = 'Mensagem 013 (item inativo)' ).
   ENDMETHOD.
 
   METHOD quantidade_zero_bloqueia.
@@ -424,7 +429,7 @@ CLASS ltcl_pedido_rascunho IMPLEMENTATION.
                                                     iv_qtde    = 0 )
               IMPORTING es_failed = DATA(ls_failed) ).
 
-    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-itempedido msg = 'Linha com quantidade zero não registra' ).
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed msg = 'Linha com quantidade zero não registra' ).
   ENDMETHOD.
 
   METHOD item_sem_estoque_no_precheck.

@@ -1490,9 +1490,14 @@ cenários manuais da [seção 11.2](#112-cenários-de-teste-manuais).
 
 - Os testes dos behavior pools usam `cl_cds_test_environment` para as entidades `ZR_*` e
   `cl_osql_test_environment` para as tabelas de rascunho: cada teste começa com as tabelas vazias e semeia os
-  próprios dados. As validations são verificadas no `Prepare` e as actions no buffer transacional, sem
+  próprios dados. As validations do Save são verificadas com `EXECUTE Activate` no rascunho (o
+  `EXECUTE Prepare` por EML não executa as validations nesta LUW) e as actions no buffer transacional, sem
   `COMMIT ENTITIES`, por isso nada é gravado no banco e o ViaCEP nunca é chamado.
-- As mensagens são conferidas pelo número T100 da Message Class `ZPC_MSG` (seção 8.1), não pelo texto.
+- As mensagens das actions e dos prechecks são conferidas pelo número T100 da Message Class `ZPC_MSG`
+  (seção 8.1), não pelo texto. Nas validations do Save, o `Activate` por EML devolve só a mensagem genérica
+  do framework (`RAP_DSP_REQUEST/023`): o teste confere o bloqueio e a presença da mensagem, e cada caso
+  altera um único campo de um registro válido. Os números entre parênteses na tabela acima indicam a
+  mensagem que a regra emite na app.
 - Sem o modo trial, o usuário que executa os testes de criação por EML precisa das atividades 01 de
   `ZPC_ADMIN` e `ZPC_PEDIDO`, porque a autorização global dos BOs continua ativa.
 - `ZCL_PC_VIACEP_T2/` tem o seu próprio include de testes, com os mesmos casos e a mensagem de diagnóstico

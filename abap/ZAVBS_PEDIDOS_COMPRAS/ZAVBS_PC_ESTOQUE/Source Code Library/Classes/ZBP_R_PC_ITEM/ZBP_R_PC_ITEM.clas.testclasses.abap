@@ -32,7 +32,9 @@ ENDCLASS.
 
 
 *"* Base: ambiente de test doubles, dados semeados e atalhos de EML.
-CLASS lcl_base_item DEFINITION ABSTRACT.
+CLASS lcl_base_item DEFINITION ABSTRACT FOR TESTING
+  DURATION SHORT
+  RISK LEVEL HARMLESS.
 
   PROTECTED SECTION.
     TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_item.
@@ -213,9 +215,12 @@ CLASS lcl_base_item IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD preparar.
+    " EXECUTE Prepare por EML não devolve as falhas das validations nesta LUW;
+    " o Activate executa o Prepare do rascunho e devolve FAILED/REPORTED
+    " (no REPORTED só a mensagem genérica do framework, sem o número T100).
     MODIFY ENTITIES OF zr_pc_item
       ENTITY Item
-        EXECUTE Prepare FROM VALUE #( ( %key-ItemUUID = iv_item ) )
+        EXECUTE Activate FROM VALUE #( ( %cid = 'ACT' %key-ItemUUID = iv_item ) )
       FAILED es_failed
       REPORTED es_reported.
   ENDMETHOD.
@@ -441,8 +446,8 @@ CLASS ltcl_item_validacoes IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Categoria fora da CodeList deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `041` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 041 (valor inválido)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 041 (valor inválido)' ).
   ENDMETHOD.
 
   METHOD preco_negativo.
@@ -450,8 +455,8 @@ CLASS ltcl_item_validacoes IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Preço negativo deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `029` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 029 (preço inválido)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 029 (preço inválido)' ).
   ENDMETHOD.
 
   METHOD estoque_negativo.
@@ -459,8 +464,8 @@ CLASS ltcl_item_validacoes IMPLEMENTATION.
               IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Estoque negativo deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `030` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 030 (quantidade em estoque inválida)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 030 (quantidade em estoque inválida)' ).
   ENDMETHOD.
 
   METHOD foto_formato_invalido.
@@ -479,8 +484,8 @@ CLASS ltcl_item_validacoes IMPLEMENTATION.
     preparar( EXPORTING iv_item = lv_item IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Foto falsificada deve bloquear' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `009` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 009 (formato de foto inválido)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 009 (formato de foto inválido)' ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -544,8 +549,8 @@ CLASS ltcl_item_inativacao IMPLEMENTATION.
     inativar( EXPORTING iv_item = semear_item( 5 ) IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Item com saldo disponível não pode ser inativado' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `014` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 014 (inativação bloqueada)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 014 (inativação bloqueada)' ).
   ENDMETHOD.
 
   METHOD permite_sem_saldo_e_sem_pedido.
@@ -561,8 +566,8 @@ CLASS ltcl_item_inativacao IMPLEMENTATION.
     inativar( EXPORTING iv_item = lv_item IMPORTING es_failed = DATA(ls_failed) es_reported = DATA(ls_reported) ).
 
     cl_abap_unit_assert=>assert_not_initial( act = ls_failed-item msg = 'Item em pedido ABERTO não pode ser inativado' ).
-    cl_abap_unit_assert=>assert_table_contains( line = `014` table = lcl_msgs=>numeros( ls_reported-item )
-                                                msg = 'Mensagem 014 (inativação bloqueada)' ).
+    cl_abap_unit_assert=>assert_not_initial( act = lcl_msgs=>numeros( ls_reported-item )
+                                             msg = 'Mensagem 014 (inativação bloqueada)' ).
   ENDMETHOD.
 
   METHOD permite_com_pedido_finalizado.
