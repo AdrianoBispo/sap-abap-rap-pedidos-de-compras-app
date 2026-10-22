@@ -810,7 +810,8 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 
 As mensagens devem ficar numa Message Class (`ZPC_MSG`, textos com até 73 caracteres) e ser expostas por uma
 classe de exceção que implemente `IF_ABAP_BEHV_MESSAGE` (`ZCX_PC_MSG`). As chaves de cada mensagem ficam numa
-interface própria (`ZIF_PC_MSG`, constantes com até 30 caracteres), implementada pela classe de exceção.
+interface própria (`ZIF_PC_MSG`, constantes com até 30 caracteres), implementada pela classe de exceção, junto
+com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o construtor fica na classe.
 
 | Código | Mensagem |
 | --- | --- |
