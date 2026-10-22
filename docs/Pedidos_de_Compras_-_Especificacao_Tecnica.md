@@ -5,7 +5,7 @@
 | Item | Valor |
 | --- | --- |
 | Documento | Especificação técnica — requisitos de construção da solução |
-| Versão | 3.2 (21/10/2026) |
+| Versão | 3.3 (22/10/2026) |
 | Ambientes-alvo | SAP BTP, ABAP environment (ABAP Cloud) e SAP S/4HANA On-Premise 2025 ou superior (Standard ABAP) |
 | Diagramas | `docs/pedidos-de-compras.drawio` (uma página por diagrama), exportados em `assets/` |
 
@@ -1004,12 +1004,30 @@ numa transação RAP.
 
 - As classes de teste ABAP Unit devem ser permanentes, versionadas junto com o código e ajustadas a cada mudança
   das funcionalidades que cobrem.
-- Devem cobrir: validações de CPF, telefone, e-mail e imagem; status de estoque; registro do pedido com reserva;
-  edição de itens com reserva incremental; pagamento aprovado e recusado; aprovação e cancelamento; reembolso
-  aprovado e rejeitado; geração de SKU; persistência de endereços; pagamento simulado; leitura de planilhas e
-  as três importações, inclusive a reimportação.
-- Os testes de integração devem semear os próprios dados e usar test doubles (`cl_cds_test_environment`,
-  `cl_osql_test_environment`) quando precisarem de `COMMIT ENTITIES`.
+- Toda classe com lógica e todo behavior pool devem ter a sua própria classe de teste local. Ficam de fora apenas
+  as classes de carga e limpeza de dados de demonstração, que confirmam gravações e são executadas manualmente.
+- A cobertura mínima por objeto é a da matriz abaixo.
+
+| Objeto | Tipo de teste | Deve cobrir |
+| --- | --- | --- |
+| Utilitários | Regra pura | CPF, telefone, e-mail, imagem (MIME, extensão e assinatura), status de estoque e endereço formatado |
+| Exceção de mensagens | Regra pura | Chave da mensagem, severidade padrão e informada, mensagem de sucesso e texto livre em blocos |
+| Numeração | Regra pura e objeto de numeração | Prefixo do SKU, número do pedido com 10 dígitos e crescente, SKU único |
+| Verificação de perfil | Autorização simulada | Modo de demonstração liberado; fora dele, cada atividade só com a sua autorização |
+| Consulta de CEP | Regra pura, sem chamada externa | Leitura da resposta, CEP fora do formato sem consulta e cache da sessão, nos dois ambientes |
+| Virtual elements do cliente | Regra pura | CPF e telefone formatados e faixas de cor do score |
+| Pagamento simulado | Regra pura | Bandeira, máscara, aprovação, recusa e dados inválidos |
+| Leitura de planilhas e importações | Integração | Formatos XLSX e CSV, as três importações e a reimportação recusada |
+| BO Cliente | Integração com test doubles | Validações do Save, normalização, preenchimento pelo CEP, endereço principal, CEP único e exclusão bloqueada |
+| BO Item | Integração com test doubles | Reserva, liberação e baixa com recálculo do saldo, validações, inativação e exclusão bloqueadas |
+| BO Pedido | Integração com test doubles e com o banco | Registro com reserva, edição de itens, validações do Save, precheck de estoque, total, pagamento, aprovação, cancelamento e snapshots |
+| BO Reembolso | Integração com test doubles e com o banco | Aprovação e rejeição na mesma transação do pedido e recusa de solicitação já decidida |
+
+- Os testes de integração devem semear os próprios dados e usar test doubles das entidades e das tabelas de
+  rascunho (`cl_cds_test_environment`, `cl_osql_test_environment`), para começar de tabelas vazias e não gravar
+  no banco; a persistência real (`COMMIT ENTITIES`) só é testada sobre test doubles.
+- Os testes não devem depender de serviços externos (ViaCEP) nem dos dados de demonstração do sistema.
+- As mensagens devem ser verificadas pelo número da Message Class, não pelo texto.
 - Os testes de autorização devem usar `CL_AUNIT_AUTHORITY_CHECK`, sem depender das roles de quem executa.
 - No front-end: testes OPA5 gerados pelo SAP Fiori tools nas aplicações Fiori Elements e QUnit nas análises.
 - Os mesmos testes devem passar nos dois ambientes; no On-Premise, o ATC deve rodar sem erros antes da
