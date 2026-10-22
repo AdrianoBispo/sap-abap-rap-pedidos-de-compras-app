@@ -178,7 +178,7 @@ dois ambientes. A única classe com implementação diferente por ambiente é a 
 | Parâmetro de action (abstract entity) | `ZPC_A_*` | `ZPC_A_PAGAMENTO_INPUT` |
 | Behavior pool | `ZBP_R_PC_*` | `ZBP_R_PC_PEDIDO` |
 | Service Definition / Binding | `ZUI_PC_*` / `ZUI_PC_*_O4` | `ZUI_PC_ESTOQUE_O4` |
-| Classes, exceções e mensagens | `ZCL_PC_*` / `ZCX_PC_*` / `ZPC_MSG` | `ZCL_PC_AUTH`, `ZCX_PC_MSG` |
+| Classes, interfaces, exceções e mensagens | `ZCL_PC_*` / `ZIF_PC_*` / `ZCX_PC_*` / `ZPC_MSG` | `ZCL_PC_AUTH`, `ZIF_PC_MSG`, `ZCX_PC_MSG` |
 | Objetos de autorização | `ZPC_*` | `ZPC_ADMIN`, `ZPC_PEDIDO` |
 | BTP: IAM App / Business Catalog / Business Role | `ZPC_IAM_*` / `ZPC_BC_*` / `ZPC_BR_*` | `ZPC_IAM_PEDIDOS`, `ZPC_BR_ADMIN` |
 | On-Premise: classe de objetos / roles | `ZPC` / `Z_PC_*` | `Z_PC_ADMIN`, `Z_PC_COMUM` |
@@ -809,7 +809,8 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 ## 21. Mensagens de erro e sucesso
 
 As mensagens devem ficar numa Message Class (`ZPC_MSG`, textos com até 73 caracteres) e ser expostas por uma
-classe de exceção que implemente `IF_ABAP_BEHV_MESSAGE` (`ZCX_PC_MSG`, constantes com até 30 caracteres).
+classe de exceção que implemente `IF_ABAP_BEHV_MESSAGE` (`ZCX_PC_MSG`). As chaves de cada mensagem ficam numa
+interface própria (`ZIF_PC_MSG`, constantes com até 30 caracteres), implementada pela classe de exceção.
 
 | Código | Mensagem |
 | --- | --- |

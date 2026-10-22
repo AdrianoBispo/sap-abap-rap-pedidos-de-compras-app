@@ -79,7 +79,7 @@ CLASS lhc_reembolso IMPLEMENTATION.
       IF ls_reemb-StatusReembolso <> zif_pc_constants=>c_status_reembolso-pendente.
         APPEND VALUE #( %tky = ls_reemb-%tky ) TO failed-reembolso.
         APPEND VALUE #( %tky = ls_reemb-%tky
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>reembolso_status_invalido ) )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>reembolso_status_invalido ) )
                TO reported-reembolso.
         CONTINUE.
       ENDIF.
@@ -121,7 +121,7 @@ CLASS lhc_reembolso IMPLEMENTATION.
       ENDIF.
 
       APPEND VALUE #( %tky = ls_reemb-%tky
-                      %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>reembolso_aprovado
+                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>reembolso_aprovado
                                                   attr1  = ls_reemb-NumeroPedido ) )
              TO reported-reembolso.
     ENDLOOP.
@@ -154,7 +154,7 @@ CLASS lhc_reembolso IMPLEMENTATION.
       IF ls_reemb-StatusReembolso <> zif_pc_constants=>c_status_reembolso-pendente.
         APPEND VALUE #( %tky = ls_reemb-%tky ) TO failed-reembolso.
         APPEND VALUE #( %tky = ls_reemb-%tky
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>reembolso_status_invalido ) )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>reembolso_status_invalido ) )
                TO reported-reembolso.
         CONTINUE.
       ENDIF.
@@ -164,7 +164,7 @@ CLASS lhc_reembolso IMPLEMENTATION.
       IF lv_motivo IS INITIAL.
         APPEND VALUE #( %tky = ls_reemb-%tky ) TO failed-reembolso.
         APPEND VALUE #( %tky = ls_reemb-%tky
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>reembolso_motivo_decisao_obrig ) )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>reembolso_motivo_decisao_obrig ) )
                TO reported-reembolso.
         CONTINUE.
       ENDIF.
@@ -208,7 +208,7 @@ CLASS lhc_reembolso IMPLEMENTATION.
       ENDIF.
 
       APPEND VALUE #( %tky = ls_reemb-%tky
-                      %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>reembolso_rejeitado
+                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>reembolso_rejeitado
                                                   attr1  = ls_reemb-NumeroPedido ) )
              TO reported-reembolso.
     ENDLOOP.
