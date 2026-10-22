@@ -23,7 +23,7 @@ endereços é marcado como principal, usado depois pelos pedidos.
 
 | Lista | Endereço pelo ViaCEP | Cliente |
 | --- | --- | --- |
-| <img src="../../assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="../../assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="../../assets/telas/clientes/cliente.png" alt="Object Page do cliente com score e endereços" width="290"> |
+| <img src="../../../assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="../../../assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="../../../assets/telas/clientes/cliente.png" alt="Object Page do cliente com score e endereços" width="290"> |
 
 ## Comportamento
 
@@ -42,18 +42,18 @@ As colunas, filtros, seções e ações vêm das metadata extensions do backend 
 - **Excluir** é bloqueado para cliente que tem pedido.
 - **Importar planilha** (CSV ou XLSX, até 500 linhas, tudo ou nada): uma linha por cliente com o endereço
   principal. Colunas e regras em
-  [`abap/README.md`](../../abap/README.md#94-importação-em-massa-por-planilha); modelo em
-  [`docs/modelos-importacao/`](../../docs/modelos-importacao).
+  [`abap/README.md`](../../../abap/README.md#94-importação-em-massa-por-planilha); modelo em
+  [`docs/modelos-importacao/`](../../../docs/modelos-importacao).
 
-Regras completas do BO: [`abap/README.md`](../../abap/README.md#91-clientes-estoque-e-pedidos) e
-[consulta de CEP](../../abap/README.md#92-endereço-do-cliente-consulta-de-cep).
+Regras completas do BO: [`abap/README.md`](../../../abap/README.md#91-clientes-estoque-e-pedidos) e
+[consulta de CEP](../../../abap/README.md#92-endereço-do-cliente-consulta-de-cep).
 
 ## Navegação
 
 - **Entrada**: CPF e nome do cliente nas apps Pedidos de Compras e Gestão de Reembolsos e *Abrir gestão* na
   Análise de Clientes abrem esta app pelo semantic object `ZPCCliente`. Com `ClienteUUID` ou `Cpf` no
   intent, a app abre direto a página do cliente.
-- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../launchpad/)).
+- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../../launchpad/)).
 
 ## Estrutura
 
@@ -87,7 +87,7 @@ npm run start-noflp # index.html, sem launchpad
 
 O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`: o navegador
 abre o login do BTP na primeira chamada). Para um SAP S/4HANA On-Premise, troque o `backend` como em
-[`ui5/README.md`](../README.md#sistema-on-premise).
+[`ui5/README.md`](../../README.md#sistema-on-premise).
 
 ## Validar
 
@@ -114,10 +114,10 @@ npm run undeploy      # remove a BSP
 
 O prefixo `ZAVBS` do pacote `ZAVBS_PC_CLIENTES` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
 projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
-`ZPK_PC_CLIENTES`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
-Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
+`ZPK_PC_CLIENTES`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
+Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_ADMIN` (01 criar e importar, 02 alterar e definir endereço principal, 06 excluir),
-em [`abap/README.md`](../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
+em [`abap/README.md`](../../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
 
 ---
 

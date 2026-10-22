@@ -28,18 +28,18 @@ server:
       configuration:
         paths:
           - path: /apps/gestaoclientes
-            src: ../gestao-clientes/webapp
+            src: ../apps-list-reports/gestao-clientes/webapp
           - path: /apps/gestaoestoque
-            src: ../gestao-estoque/webapp
+            src: ../apps-list-reports/gestao-estoque/webapp
           - path: /apps/pedidoscompras
-            src: ../pedidos-compras/webapp
+            src: ../apps-list-reports/pedidos-compras/webapp
           - path: /apps/gestaoreembolsos
-            src: ../gestao-reembolsos/webapp
+            src: ../apps-list-reports/gestao-reembolsos/webapp
           - path: /apps/analisepedidos
-            src: ../analise-pedidos/webapp
+            src: ../apps-analiticos/analise-pedidos/webapp
           - path: /apps/analiseclientes
-            src: ../analise-clientes/webapp
+            src: ../apps-analiticos/analise-clientes/webapp
           - path: /apps/analiseestoque
-            src: ../analise-estoque/webapp
+            src: ../apps-analiticos/analise-estoque/webapp
           - path: /apps/analisereembolsos
-            src: ../analise-reembolsos/webapp
+            src: ../apps-analiticos/analise-reembolsos/webapp

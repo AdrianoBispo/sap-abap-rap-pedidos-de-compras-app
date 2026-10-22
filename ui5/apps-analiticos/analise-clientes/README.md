@@ -21,7 +21,7 @@ cadastros por mês e score médio por UF.
 | Detalhe | `#/analise/<cenário>` | Gráfico grande com troca do tipo (colunas, barras, linha, rosca) e tabela com valores, % do total e linha de total |
 
 <p align="center">
-  <img src="../../assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="700">
+  <img src="../../../assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="700">
 </p>
 
 ## Filtros e indicadores
@@ -96,7 +96,7 @@ npm run start-noflp # index.html, sem launchpad
 ```
 
 O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`). Para um SAP
-S/4HANA On-Premise, troque o `backend` como em [`ui5/README.md`](../README.md#sistema-on-premise). Para ter
+S/4HANA On-Premise, troque o `backend` como em [`ui5/README.md`](../../README.md#sistema-on-premise). Para ter
 dados no sistema, carregue os dados de demonstração (`ZCL_PC_SETUP`).
 
 > [!NOTE]
@@ -128,6 +128,6 @@ npm run undeploy      # remove a BSP
 
 O prefixo `ZAVBS` do pacote `ZAVBS_PC_CLIENTES` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
 projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
-`ZPK_PC_CLIENTES`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
-Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
-Camada analítica no backend: [`abap/README.md`](../../abap/README.md#10-camada-analítica).
+`ZPK_PC_CLIENTES`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
+Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
+Camada analítica no backend: [`abap/README.md`](../../../abap/README.md#10-camada-analítica).

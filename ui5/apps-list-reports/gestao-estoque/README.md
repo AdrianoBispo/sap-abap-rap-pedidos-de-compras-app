@@ -22,7 +22,7 @@ quanto está reservado pelos pedidos em aberto e quanto ainda está disponível.
 
 | Lista | Item |
 | --- | --- |
-| <img src="../../assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="../../assets/telas/estoque/item.png" alt="Object Page do item com SKU gerado no Save" width="440"> |
+| <img src="../../../assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="../../../assets/telas/estoque/item.png" alt="Object Page do item com SKU gerado no Save" width="440"> |
 
 ## Comportamento
 
@@ -41,17 +41,17 @@ extensões de código.
 - **Concorrência**: enquanto um item está em edição aqui, o *Salvar* de um pedido com esse item é recusado
   (`ITEM_ESTOQUE_CONCORRENTE`). Salve ou descarte o rascunho para liberar o item.
 - **Importar planilha** (CSV ou XLSX, até 500 linhas, tudo ou nada): uma linha por item, moeda padrão `BRL`.
-  Colunas e regras em [`abap/README.md`](../../abap/README.md#94-importação-em-massa-por-planilha); modelo
-  em [`docs/modelos-importacao/`](../../docs/modelos-importacao).
+  Colunas e regras em [`abap/README.md`](../../../abap/README.md#94-importação-em-massa-por-planilha); modelo
+  em [`docs/modelos-importacao/`](../../../docs/modelos-importacao).
 
-Regras completas do BO: [`abap/README.md`](../../abap/README.md#91-clientes-estoque-e-pedidos).
+Regras completas do BO: [`abap/README.md`](../../../abap/README.md#91-clientes-estoque-e-pedidos).
 
 ## Navegação
 
 - **Entrada**: item e SKU nos itens de um pedido (app Pedidos de Compras) e *Abrir gestão* na Análise de
   Itens do Estoque abrem esta app pelo semantic object `ZPCItemEstoque`. Com `ItemUUID` ou `Sku` no intent,
   a app abre direto a página do item.
-- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../launchpad/)).
+- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../../launchpad/)).
 
 ## Estrutura
 
@@ -85,7 +85,7 @@ npm run start-noflp # index.html, sem launchpad
 
 O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`: o navegador
 abre o login do BTP na primeira chamada). Para um SAP S/4HANA On-Premise, troque o `backend` como em
-[`ui5/README.md`](../README.md#sistema-on-premise).
+[`ui5/README.md`](../../README.md#sistema-on-premise).
 
 ## Validar
 
@@ -112,10 +112,10 @@ npm run undeploy      # remove a BSP
 
 O prefixo `ZAVBS` do pacote `ZAVBS_PC_ESTOQUE` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
 projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
-`ZPK_PC_ESTOQUE`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
-Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
+`ZPK_PC_ESTOQUE`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
+Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_ADMIN` (01 criar e importar, 02 alterar, 06 excluir), em
-[`abap/README.md`](../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
+[`abap/README.md`](../../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
 
 ---
 

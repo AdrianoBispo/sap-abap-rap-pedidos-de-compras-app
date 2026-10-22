@@ -24,11 +24,11 @@ com baixa do estoque e cancelamento, com abertura de reembolso quando o pedido j
 
 | Lista | Rascunho com itens *inline* | Efetuar pagamento |
 | --- | --- | --- |
-| <img src="../../assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="../../assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="../../assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
+| <img src="../../../assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="../../../assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="../../../assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
 
 | Pedido finalizado (snapshot) | Cancelamento de pedido pago |
 | --- | --- |
-| <img src="../../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="../../assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="440"> |
+| <img src="../../../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="../../../assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="440"> |
 
 ## Comportamento
 
@@ -57,12 +57,12 @@ mapeamento local do CPF para a navegação.
 - **Importar planilha** (CSV ou XLSX, até 500 linhas, tudo ou nada): uma linha por item; a coluna *Pedido*
   agrupa as linhas e evita importar o mesmo pedido duas vezes. Os pedidos nascem `ABERTO` com o estoque
   reservado. Colunas e regras em
-  [`abap/README.md`](../../abap/README.md#94-importação-em-massa-por-planilha); modelo em
-  [`docs/modelos-importacao/`](../../docs/modelos-importacao).
+  [`abap/README.md`](../../../abap/README.md#94-importação-em-massa-por-planilha); modelo em
+  [`docs/modelos-importacao/`](../../../docs/modelos-importacao).
 
 Dados de teste do pagamento: cartão `4111 1111 1111 1111`, validade `12/30` e CVV `123` aprovam; CVV `000`
-recusa. Regras completas: [`abap/README.md`](../../abap/README.md#91-clientes-estoque-e-pedidos) e
-[reembolso](../../abap/README.md#93-reembolso-de-pedidos).
+recusa. Regras completas: [`abap/README.md`](../../../abap/README.md#91-clientes-estoque-e-pedidos) e
+[reembolso](../../../abap/README.md#93-reembolso-de-pedidos).
 
 ## Navegação
 
@@ -76,7 +76,7 @@ recusa. Regras completas: [`abap/README.md`](../../abap/README.md#91-clientes-es
   direto o pedido.
 - No pedido, o CPF chama `CpfCliente`; `webapp/annotations/annotation.xml` repete o mapeamento
   `CpfCliente` → `Cpf` do backend para os links de cliente.
-- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../launchpad/)).
+- A navegação entre apps precisa de um launchpad (o do sistema ou o [launchpad local](../../launchpad/)).
 
 ## Estrutura
 
@@ -110,7 +110,7 @@ npm run start-noflp # index.html, sem launchpad
 
 O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`: o navegador
 abre o login do BTP na primeira chamada). Para um SAP S/4HANA On-Premise, troque o `backend` como em
-[`ui5/README.md`](../README.md#sistema-on-premise). O mock server não executa as ações nem as regras do
+[`ui5/README.md`](../../README.md#sistema-on-premise). O mock server não executa as ações nem as regras do
 backend: use-o só para a interface.
 
 ## Validar
@@ -138,10 +138,10 @@ npm run undeploy      # remove a BSP
 
 O prefixo `ZAVBS` do pacote `ZAVBS_PC_PEDIDOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
 projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
-`ZPK_PC_PEDIDOS`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
-Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
+`ZPK_PC_PEDIDOS`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
+Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_PEDIDO` (01 criar e importar, 02 alterar, 16 pagar, aprovar e cancelar), em
-[`abap/README.md`](../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
+[`abap/README.md`](../../../abap/README.md#6-autorização-authority-check-nos-dois-cenários).
 
 ---
 

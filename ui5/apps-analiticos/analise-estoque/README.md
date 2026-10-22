@@ -1,16 +1,16 @@
-# Análise de Pedidos de Compras
+# Análise de Itens do Estoque
 
-Painel somente leitura com indicadores e gráficos dos pedidos de compras: valores por status, por mês e por
-UF, situação dos pagamentos e ticket médio.
+Painel somente leitura com indicadores e gráficos dos itens do estoque: quantidades reservadas e disponíveis
+por categoria, situação do estoque, valor em estoque e itens mais reservados.
 
 | | |
 | --- | --- |
 | Tipo | SAPUI5 freestyle (OData V4, somente leitura, gráficos `sap.viz`) |
-| `sap.app.id` | `analisepedidos` |
+| `sap.app.id` | `analiseestoque` |
 | Serviço | `ZUI_PC_ANALITICO` (binding OData V4 `ZUI_PC_ANALITICO_O4`) |
-| Entity set | `PedidoAnalise` (`ZI_PC_PEDIDO_CUBE` → `ZC_PC_PEDIDO_ANALISE`) |
-| Tile (inbound) | `ZPCAnalisePedido-display` — "Análise de Pedidos de Compras" / "Valores, status e pagamentos" |
-| BSP / pacote | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` |
+| Entity set | `ItemAnalise` (`ZI_PC_ITEM_CUBE` → `ZC_PC_ITEM_ANALISE`) |
+| Tile (inbound) | `ZPCAnaliseItemEstoque-display` — "Análise de Itens do Estoque" / "Categorias, reservas e valor em estoque" |
+| BSP / pacote | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` |
 | SAPUI5 mínimo | 1.136.0 |
 
 ## Telas
@@ -21,33 +21,32 @@ UF, situação dos pagamentos e ticket médio.
 | Detalhe | `#/analise/<cenário>` | Gráfico grande com troca do tipo (colunas, barras, linha, rosca) e tabela com valores, % do total e linha de total |
 
 <p align="center">
-  <img src="../../assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="700">
+  <img src="../../../assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="700">
 </p>
 
 ## Filtros e indicadores
 
 | Filtros | Indicadores (KPIs) |
 | --- | --- |
-| Status do pedido, status do pagamento, UF e mês de criação (listas com os valores do próprio serviço) | Valor total, pedidos e ticket médio |
+| Categoria e situação do estoque (listas com os valores do próprio serviço), nome e SKU (contém) | Itens, em estoque, reservada, disponível e valor em estoque |
 
 Os filtros valem para os indicadores e para todos os gráficos, e continuam aplicados ao abrir um detalhe e ao
-voltar. A UF é a do endereço principal do cliente.
+voltar. O valor em estoque é o preço unitário vezes a quantidade em estoque.
 
 ## Cenários
 
-| Id | Título | Dimensão | Medida | Gráfico | Ordem |
+| Id | Título | Dimensão | Medidas | Gráfico | Ordem |
 | --- | --- | --- | --- | --- | --- |
-| `PedValorPorStatus` | Valor por status do pedido | `StatusPedido` | `ValorTotal` | Colunas | Maior valor |
-| `PedPorMes` | Pedidos por mês | `MesCriacao` | `QtdePedidos` | Colunas | Mês |
-| `PedValorPorUf` | Valor dos pedidos por UF | `Uf` | `ValorTotal` | Colunas | Maior valor |
-| `PedPorPagamento` | Pedidos por status do pagamento | `StatusPagamento` | `QtdePedidos` | Rosca | Maior valor |
-| `PedTicketMedio` | Ticket médio por status do pedido | `StatusPedido` | `ValorMedio` | Colunas | Maior valor |
+| `EstDisponivelPorCategoria` | Estoque por categoria | `Categoria` | `QtdeReservada`, `QtdeDisponivel` | Colunas | Maior disponível |
+| `EstItensPorSituacao` | Itens por situação do estoque | `StatusEstoque` | `QtdeItens` | Rosca | Maior valor |
+| `EstValorPorCategoria` | Valor em estoque por categoria | `Categoria` | `ValorEstoque` | Colunas | Maior valor |
+| `EstMaisReservados` | Itens mais reservados (top 10) | `Nome` | `QtdeReservada` | Colunas | Maior valor, 10 primeiros |
+| `EstItensPorCategoria` | Itens por categoria | `Categoria` | `QtdeItens` | Rosca | Maior valor |
 
-Cada gráfico é uma consulta agregada no servidor. Exemplo do primeiro cenário (medidas monetárias agrupam
-também por `Currency`):
+Cada gráfico é uma consulta agregada no servidor. Exemplo do primeiro cenário:
 
 ```
-PedidoAnalise?$apply=groupby((StatusPedido,StatusPedidoTexto,Currency),aggregate(ValorTotal))
+ItemAnalise?$apply=groupby((Categoria,CategoriaTexto),aggregate(QtdeReservada,QtdeDisponivel))
 ```
 
 As medidas usam a agregação padrão do backend (`@Aggregation.default`), por isso o `aggregate` não informa o
@@ -55,15 +54,15 @@ método. Se um gráfico vier vazio ou com erro de `groupby`, teste a URL acima n
 
 ## Navegação
 
-- **Abrir gestão** abre a app Pedidos de Compras: pelo intent `ZPCPedidoCompra-manage` no launchpad; fora
-  dele, pela BSP irmã (`../zpc_pedidos/index.html`) em outra aba.
+- **Abrir gestão** abre a app Gestão de Estoque: pelo intent `ZPCItemEstoque-manage` no launchpad; fora
+  dele, pela BSP irmã (`../zpc_estoque/index.html`) em outra aba.
 - Um hash desconhecido (por exemplo, um link antigo `#/painel/<domínio>` do app único de análises) volta ao
   painel.
 
 ## Estrutura
 
 ```
-analise-pedidos/
+analise-estoque/
 ├── package.json            scripts (start, start-mock, build, lint, unit-test, deploy)
 ├── ui5.yaml / ui5-local.yaml / ui5-mock.yaml / ui5-deploy.yaml
 └── webapp/
@@ -77,7 +76,7 @@ analise-pedidos/
     ├── controller/ view/   App, Dashboard (painel) e Detail
     ├── css/style.css
     ├── i18n/i18n.properties        textos pt-BR (cenários, medidas, dimensões)
-    ├── localService/mainService/   metadata.xml e data/PedidoAnalise.json (dados de demonstração)
+    ├── localService/mainService/   metadata.xml e data/ItemAnalise.json (dados de demonstração)
     └── test/               suíte QUnit: unit/model/Scenarios e unit/model/AnalyticsQuery
 ```
 
@@ -97,12 +96,8 @@ npm run start-noflp # index.html, sem launchpad
 ```
 
 O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`). Para um SAP
-S/4HANA On-Premise, troque o `backend` como em [`ui5/README.md`](../README.md#sistema-on-premise). Para ter
+S/4HANA On-Premise, troque o `backend` como em [`ui5/README.md`](../../README.md#sistema-on-premise). Para ter
 dados no sistema, carregue os dados de demonstração (`ZCL_PC_SETUP`).
-
-> [!NOTE]
-> O mock server soma o `ValorMedio` em vez de tirar a média como o backend: no `start-mock`, o ticket médio
-> não é confiável. Use o mock só para a interface.
 
 ## Validar
 
@@ -116,19 +111,19 @@ npm run unit-test   # suíte QUnit: catálogo, consultas $apply e moldagem das l
 
 ```bash
 npm run deploy-test   # simula, sem gravar nada
-npm run deploy        # build + deploy da BSP ZPC_ANL_PEDIDOS
+npm run deploy        # build + deploy da BSP ZPC_ANL_ESTOQUE
 npm run undeploy      # remove a BSP
 ```
 
 | | SAP BTP, ABAP environment | SAP S/4HANA On-Premise |
 | --- | --- | --- |
 | `ui5-deploy.yaml` | Como está: URL do sistema, `reentranceTicket`, `transport: ""` (pacotes do `ZLOCAL`) | URL e mandante do sistema, `credentials` por variáveis de ambiente e ordem de transporte Workbench |
-| O que é criado | BSP `ZPC_ANL_PEDIDOS` e IAM App `ZPC_ANL_PEDIDOS_UI5R` | Só a BSP `ZPC_ANL_PEDIDOS` |
+| O que é criado | BSP `ZPC_ANL_ESTOQUE` e IAM App `ZPC_ANL_ESTOQUE_UI5R` | Só a BSP `ZPC_ANL_ESTOQUE` |
 | Acesso | Tile pelo business catalog (ou tile URL no SAP Build Work Zone) | Catálogo `/UI2/FLPAM` e role `PFCG` |
-| URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_pedidos/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_anl_pedidos/index.html` |
+| URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_anl_estoque/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_anl_estoque/index.html` |
 
-O prefixo `ZAVBS` do pacote `ZAVBS_PC_PEDIDOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
+O prefixo `ZAVBS` do pacote `ZAVBS_PC_ESTOQUE` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
 projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
-`ZPK_PC_PEDIDOS`; veja [`abap/README.md`](../../abap/README.md#12-prefixo-dos-pacotes)).
-Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../README.md#sistema-on-premise).
-Camada analítica no backend: [`abap/README.md`](../../abap/README.md#10-camada-analítica).
+`ZPK_PC_ESTOQUE`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
+Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
+Camada analítica no backend: [`abap/README.md`](../../../abap/README.md#10-camada-analítica).
