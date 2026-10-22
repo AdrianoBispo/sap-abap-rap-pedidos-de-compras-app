@@ -1425,14 +1425,29 @@ de demonstração (`ZCL_PC_SETUP`).
 ### 11.1. ABAP Unit
 
 **As classes de teste são permanentes**: ficam no SAP e neste repositório e são ajustadas quando a
-funcionalidade que cobrem muda. Execute com `Ctrl+Shift+F10` no ADT.
+funcionalidade que cobrem muda. Cada classe e cada behavior pool tem a sua aba *Test Classes*
+(`*.clas.testclasses.abap`): são **204 testes em 13 classes**. Execute com `Ctrl+Shift+F10` no ADT, por
+classe ou no pacote `ZAVBS_PEDIDOS_COMPRAS` inteiro.
 
-| Classe | Testes |
-| --- | --- |
-| `ZCL_PC_UTIL` | 50 (integração dos BOs e utilitários; tabela abaixo) |
-| `ZCL_PC_PAGAMENTO_SIM` | 14 |
-| `ZCL_PC_IMPORTACAO` | 17 (as três actions `ImportarPlanilha` via EML) |
-| `ZCL_PC_PLANILHA` | 17 (leitor XLSX/CSV) |
+| Pacote | Classe | Testes | Tipo |
+| --- | --- | --- | --- |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_UTIL` | 50 | Regras puras e integração dos BOs (tabela abaixo) |
+| `ZAVBS_PC_COMMON` | `ZCX_PC_MSG` | 10 | Regra pura |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_NUMERACAO` | 8 | Regra pura e objeto `ZPC_NR` |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_AUTH` | 6 | Modo trial ou `CL_AUNIT_AUTHORITY_CHECK` |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_VIACEP` | 9 | Regra pura, sem chamada HTTP (mesmos testes nas duas versões) |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_PLANILHA` | 17 | Leitor XLSX/CSV |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_IMPORTACAO` | 17 | As três actions `ImportarPlanilha` via EML |
+| `ZAVBS_PC_CLIENTES` | `ZCL_PC_VE_CLIENTE` | 8 | Virtual elements, sem banco |
+| `ZAVBS_PC_CLIENTES` | `ZBP_R_PC_CLIENTE` | 19 | EML sobre test doubles |
+| `ZAVBS_PC_ESTOQUE` | `ZBP_R_PC_ITEM` | 24 | EML sobre test doubles |
+| `ZAVBS_PC_PEDIDOS` | `ZBP_R_PC_PEDIDO` | 17 | EML sobre test doubles |
+| `ZAVBS_PC_PEDIDOS_PAGAMENTOS` | `ZCL_PC_PAGAMENTO_SIM` | 14 | Regra pura |
+| `ZAVBS_PC_REEMBOLSOS` | `ZBP_R_PC_REEMBOLSO` | 5 | EML sobre test doubles |
+
+`ZCL_PC_SETUP` e `ZCL_PC_RESET` não têm testes de propósito: gravam ou apagam dados com `COMMIT WORK` e são
+executados manualmente (F9). As CDS, BDEFs e serviços são cobertos pelos testes dos behavior pools e pelos
+cenários manuais da [seção 11.2](#112-cenários-de-teste-manuais).
 
 | Classe de teste (local) de `ZCL_PC_UTIL` | Cobre |
 | --- | --- |
@@ -1454,6 +1469,36 @@ funcionalidade que cobrem muda. Execute com `Ctrl+Shift+F10` no ADT.
 - Os testes exigem o objeto `ZPC_NR` configurado ([seção 8.1](#81-objetos-criados-manualmente)). Depois de
   editar um include de testes, ative também o include `testclasses`, senão o ABAP Unit roda a versão antiga.
 - Testes de autorização com `CL_AUNIT_AUTHORITY_CHECK`: [seção 6.5](#65-testes-unitários-de-autorização).
+
+| Classe de teste (local) | Classe | Cobre |
+| --- | --- | --- |
+| `ltcl_construtor`, `ltcl_texto_livre` | `ZCX_PC_MSG` | chave T100, severidade padrão (erro) e informada, `SUCESSO`; `TEXTO` em blocos de 50 caracteres, cortado em 200 |
+| `ltcl_prefixo` | `ZCL_PC_NUMERACAO` | prefixo do SKU: 3 letras em maiúsculas, completado com `X` |
+| `ltcl_intervalos` | `ZCL_PC_NUMERACAO` | número do pedido com 10 dígitos no intervalo 01 e crescente; SKU `SKU-XXX-` + 10 dígitos, único |
+| `ltcl_modo_trial` | `ZCL_PC_AUTH` | com `c_modo_trial = abap_true`, todas as operações liberadas |
+| `ltcl_authority_check` | `ZCL_PC_AUTH` | com `c_modo_trial = abap_false`, cada atividade (01, 02, 06, 16) só com o seu `ACTVT` em `ZPC_ADMIN`/`ZPC_PEDIDO` |
+| `ltcl_viacep` | `ZCL_PC_VIACEP` | parse do JSON (texto, literal, `null`, campo ausente ou vazio); CEP fora do formato sem consulta; cache da sessão |
+| `ltcl_ve_cliente` | `ZCL_PC_VE_CLIENTE` | CPF e telefone formatados, unidade `%` e criticidade do score (até 40, de 40 a 70, a partir de 70); campos originais pedidos ao SADL |
+| `ltcl_cliente_validacoes` | `ZBP_R_PC_CLIENTE` | cliente nasce ativo com score; normalização de telefone e e-mail; CPF inválido (001) e duplicado (002), e-mail (024), telefone (026), nascimento futuro (025), gênero (041), foto (009) |
+| `ltcl_cliente_endereco` | `ZBP_R_PC_CLIENTE` | CEP já cadastrado preenche o endereço sem ViaCEP; um único principal; CEP incompleto (007), CEP repetido no cliente (047), número obrigatório |
+| `ltcl_cliente_exclusao` | `ZBP_R_PC_CLIENTE` | exclusão livre sem pedido; bloqueada com pedido ativo ou em rascunho |
+| `ltcl_item_movimentacao` | `ZBP_R_PC_ITEM` | reservar, liberar e baixar estoque com recálculo de disponível e status; estoque insuficiente (011), item inativo (013), quantidade zero (028), reserva inconsistente (038) |
+| `ltcl_item_validacoes` | `ZBP_R_PC_ITEM` | valores iniciais (BRL, ativo, disponível), status acompanha o estoque; categoria (041), preço (029), estoque negativo (030), foto (009) |
+| `ltcl_item_inativacao` | `ZBP_R_PC_ITEM` | inativação bloqueada com saldo ou pedido em andamento (014); permitida sem saldo ou com pedido encerrado |
+| `ltcl_item_exclusao` | `ZBP_R_PC_ITEM` | exclusão livre; bloqueada com reserva ou com o item em pedido (ativo ou rascunho) |
+| `ltcl_pedido_rascunho` | `ZBP_R_PC_PEDIDO` | rascunho `ABERTO` com número e endereço principal; valor da linha e total; cliente inativo (003), sem endereço principal (005), sem itens (027), estoque insuficiente (011), item inativo (013), quantidade zero; precheck de item sem estoque (048) |
+| `ltcl_pedido_acoes` | `ZBP_R_PC_PEDIDO` | cartão inválido (032); só o cartão mascarado é gravado; pagamento só com pedido `ABERTO`; aprovar gera os snapshots `FINALIZACAO`; aprovar sem reserva (038); cancelar gera o snapshot `CANCELAMENTO` e libera a reserva; pedido `FINALIZADO` não é cancelado |
+| `ltcl_reembolso_decisao` | `ZBP_R_PC_REEMBOLSO` | aprovar (decisão gravada, pedido `CANCELADO`, pagamento `DEVOLVIDO`, reserva liberada); rejeitar (motivo, pedido volta ao status anterior); solicitação já decidida; pedido fora de `PROCESSANDO_REEMBOLSO` mantém a solicitação `PENDENTE` |
+
+- Os testes dos behavior pools usam `cl_cds_test_environment` para as entidades `ZR_*` e
+  `cl_osql_test_environment` para as tabelas de rascunho: cada teste começa com as tabelas vazias e semeia os
+  próprios dados. As validations são verificadas no `Prepare` e as actions no buffer transacional, sem
+  `COMMIT ENTITIES`, por isso nada é gravado no banco e o ViaCEP nunca é chamado.
+- As mensagens são conferidas pelo número T100 da Message Class `ZPC_MSG` (seção 8.1), não pelo texto.
+- Sem o modo trial, o usuário que executa os testes de criação por EML precisa das atividades 01 de
+  `ZPC_ADMIN` e `ZPC_PEDIDO`, porque a autorização global dos BOs continua ativa.
+- `ZCL_PC_VIACEP_T2/` tem o seu próprio include de testes, com os mesmos casos e a mensagem de diagnóstico
+  da versão On-Premise: importe o da pasta que corresponde ao ambiente.
 
 ### 11.2. Cenários de teste manuais
 

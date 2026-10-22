@@ -306,6 +306,7 @@ Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 
 
 | Versão | Mudanças |
 | ------ | -------- |
+| v2.13  | Classes de teste ABAP Unit em todas as classes e behavior pools (204 testes em 13 classes, com test doubles nos BOs); mapa de cobertura no [`abap/README.md`](abap/README.md#111-abap-unit) e Especificação Técnica v3.3 |
 | v2.12  | Launchpad no início do README, logo após os badges, como no projeto CAP; telas da Demonstração recolhidas em seções expansíveis, com o fluxo de Pedidos de Compras sempre visível |
 | v2.11  | README próprio para cada app Fiori e para o launchpad local; prefixo `ZAVBS` dos pacotes documentado como opcional (escolha pessoal do autor), com a sugestão genérica `ZPK` na documentação, na Especificação Técnica v3.1 e nas apresentações |
 | v2.10  | README principal só com a visão geral; detalhes do backend em [`abap/README.md`](abap/README.md) e do front-end em [`ui5/README.md`](ui5/README.md); Especificação Técnica v3.0 escrita como requisitos técnicos para os dois ambientes, com diagramas e telas, em Markdown e Word |
