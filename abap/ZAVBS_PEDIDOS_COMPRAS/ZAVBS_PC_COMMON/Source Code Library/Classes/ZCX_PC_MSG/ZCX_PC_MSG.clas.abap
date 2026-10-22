@@ -1,6 +1,6 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Mensagens RAP (T100)</p>
 "! Classe de mensagens usada em todos os BOs. Os textos ficam na
-"! Message Class ZPC_MSG (ver zpc_msg.msag.csv).
+"! Message Class ZPC_MSG (textos em abap/README.md, seção 8.1).
 CLASS zcx_pc_msg DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
