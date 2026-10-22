@@ -47,9 +47,10 @@ abap/
     ├── ZAVBS_PC_COMMON              constantes, mensagens, utilitários, autorização, numeração,
     │   │                            CodeLists, setup, consultas do serviço analítico ZUI_PC_ANALITICO
     │   └── Source Code Library/
-    │       ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
-    │       ├── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
-    │       └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
+    │       ├── Classes/
+    │       │   ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
+    │       │   └── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
+    │       └── ZPC_TESTE_VIACEP_T2/     report de teste da destination (somente On-Premise)
     ├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps (serviço ZUI_PC_CLIENTES)
     ├── ZAVBS_PC_ESTOQUE             BO Item, value help de item (serviço ZUI_PC_ESTOQUE)
     ├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens) (serviço ZUI_PC_PEDIDOS_COMPRAS)
@@ -67,7 +68,9 @@ ZAVBS_PC_<domínio>/
 │   └── Metadata Extensions/     *.ddlx.asddlxs
 ├── Dictionary/
 │   └── Database Tables/         *.abap
-└── Source Code Library/         uma pasta por classe, interface ou programa
+└── Source Code Library/
+    ├── Classes/                 uma pasta por classe (*.clas.*.abap)
+    └── ...                      interfaces e programas, fora de Classes/
 ```
 
 - Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
@@ -200,7 +203,7 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 
 | Objeto | Motivo | Substituto On-Premise |
 | --- | --- | --- |
-| `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source Code Library/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
+| `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source Code Library/Classes/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
 | `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Number Range Management/ZPC_NR.abap` | Editor do BTP | `ZPC_NR` na `SNRO` (domínio `ZPC_NR_NUMC10`, buffer em memória com 10 números) |
 | Tabela draft `ZTA_PC_REEMB_D` | Resíduo (o BO Reembolso não tem draft) | Não criar |
 
