@@ -229,7 +229,10 @@ stateDiagram-v2
 ```text
 .
 ├── abap/            backend RAP, o mesmo para ABAP Cloud e On-Premise (pacote ZAVBS_PEDIDOS_COMPRAS com um ZAVBS_PC_* por domínio)
-├── ui5/             quatro apps Fiori Elements, quatro apps de análise e o launchpad local
+├── ui5/
+│   ├── apps-list-reports/   quatro apps Fiori Elements (List Report + Object Page), uma por domínio
+│   ├── apps-analiticos/     quatro apps freestyle de análise, uma por domínio
+│   └── launchpad/           launchpad local que reúne as oito apps
 ├── assets/          imagens dos diagramas e capturas de tela (assets/telas/)
 └── docs/
     ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md     especificação técnica (Markdown)

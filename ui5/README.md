@@ -7,9 +7,16 @@ serviço RAP de gestão do pacote `ZAVBS_PEDIDOS_COMPRAS`. Cada app é um **proj
 Além delas, há quatro apps freestyle de análise, um por domínio (`analise-pedidos/`,
 `analise-clientes/`, `analise-estoque/` e `analise-reembolsos/`; veja
 [Apps de análise](#apps-de-análise-freestyle)), e `launchpad/` é um launchpad local que reúne as
-oito apps (veja [Launchpad local](#launchpad-local)).
+oito apps (veja [Launchpad local](#launchpad-local)). As apps ficam agrupadas por tipo:
 
-Cada pasta tem o próprio README, com telas, comportamento, comandos e deploy da app.
+```
+ui5/
+├── apps-list-reports/   gestao-clientes/, gestao-estoque/, pedidos-compras/, gestao-reembolsos/ (Fiori Elements)
+├── apps-analiticos/     analise-pedidos/, analise-clientes/, analise-estoque/, analise-reembolsos/ (freestyle)
+└── launchpad/           launchpad local com as oito apps
+```
+
+Cada pasta de app tem o próprio README, com telas, comportamento, comandos e deploy da app.
 
 A UI é orientada a anotações. Colunas, filtros, seções, ações e criticidade vêm das Metadata
 Extensions (`*.ddlx`) do backend. Nas apps ficam só o `manifest.json` (rotas, páginas,
@@ -17,10 +24,10 @@ tabelas, tile) e a configuração das ferramentas.
 
 | App                | Pasta              | `sap.app.id`     | Serviço (binding OData V4)  | Tile (inbound)           | BSP / pacote                         |
 | ------------------ | ------------------ | ---------------- | --------------------------- | ------------------------ | ------------------------------------ |
-| Gestão de Clientes | [`gestao-clientes/`](gestao-clientes/) | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
-| Gestão de Estoque  | [`gestao-estoque/`](gestao-estoque/) | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
-| Pedidos de Compras | [`pedidos-compras/`](pedidos-compras/) | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
-| Gestão de Reembolsos | [`gestao-reembolsos/`](gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_REEMBOLSOS` |
+| Gestão de Clientes | [`apps-list-reports/gestao-clientes/`](apps-list-reports/gestao-clientes/) | `gestaoclientes` | `ZUI_PC_CLIENTES_O4`        | `ZPCCliente-manage`      | `ZPC_CLIENTES` / `ZAVBS_PC_CLIENTES` |
+| Gestão de Estoque  | [`apps-list-reports/gestao-estoque/`](apps-list-reports/gestao-estoque/) | `gestaoestoque`  | `ZUI_PC_ESTOQUE_O4`         | `ZPCItemEstoque-manage`  | `ZPC_ESTOQUE` / `ZAVBS_PC_ESTOQUE`   |
+| Pedidos de Compras | [`apps-list-reports/pedidos-compras/`](apps-list-reports/pedidos-compras/) | `pedidoscompras` | `ZUI_PC_PEDIDOS_COMPRAS_O4` | `ZPCPedidoCompra-manage` | `ZPC_PEDIDOS` / `ZAVBS_PC_PEDIDOS`   |
+| Gestão de Reembolsos | [`apps-list-reports/gestao-reembolsos/`](apps-list-reports/gestao-reembolsos/) | `gestaoreembolsos` | `ZUI_PC_REEMBOLSOS_O4` | `ZPCReembolso-manage` | `ZPC_REEMBOLSOS` / `ZAVBS_PC_REEMBOLSOS` |
 
 ## Estrutura de cada app
 
@@ -118,10 +125,10 @@ Eles substituem o app único `analise-compras` (que, por sua vez, substituiu os 
 
 | App | Pasta | `sap.app.id` | Entity set | Tile (inbound) | BSP / pacote | Abrir gestão |
 | --- | --- | --- | --- | --- | --- | --- |
-| Análise de Pedidos de Compras | [`analise-pedidos/`](analise-pedidos/) | `analisepedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` | `ZPCPedidoCompra-manage` |
-| Análise de Clientes | [`analise-clientes/`](analise-clientes/) | `analiseclientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` | `ZPCCliente-manage` |
-| Análise de Itens do Estoque | [`analise-estoque/`](analise-estoque/) | `analiseestoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` | `ZPCItemEstoque-manage` |
-| Análise de Pedidos de Reembolsos | [`analise-reembolsos/`](analise-reembolsos/) | `analisereembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` | `ZPCReembolso-manage` |
+| Análise de Pedidos de Compras | [`apps-analiticos/analise-pedidos/`](apps-analiticos/analise-pedidos/) | `analisepedidos` | `PedidoAnalise` | `ZPCAnalisePedido-display` | `ZPC_ANL_PEDIDOS` / `ZAVBS_PC_PEDIDOS` | `ZPCPedidoCompra-manage` |
+| Análise de Clientes | [`apps-analiticos/analise-clientes/`](apps-analiticos/analise-clientes/) | `analiseclientes` | `ClienteAnalise` | `ZPCAnaliseCliente-display` | `ZPC_ANL_CLIENTE` / `ZAVBS_PC_CLIENTES` | `ZPCCliente-manage` |
+| Análise de Itens do Estoque | [`apps-analiticos/analise-estoque/`](apps-analiticos/analise-estoque/) | `analiseestoque` | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | `ZPC_ANL_ESTOQUE` / `ZAVBS_PC_ESTOQUE` | `ZPCItemEstoque-manage` |
+| Análise de Pedidos de Reembolsos | [`apps-analiticos/analise-reembolsos/`](apps-analiticos/analise-reembolsos/) | `analisereembolsos` | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | `ZPC_ANL_REEMB` / `ZAVBS_PC_REEMBOLSOS` | `ZPCReembolso-manage` |
 
 - **Painel** (`#/`): barra de filtros, indicadores (KPIs) e os 5 gráficos do domínio.
 - **Detalhe** (`#/analise/<cenário>`, clicando no título do card): gráfico grande com troca do tipo
@@ -146,7 +153,7 @@ Os quatro projetos têm a mesma estrutura e o mesmo motor; só mudam o catálogo
 (`model/Scenarios.js`), os textos, os testes, o `manifest.json` (id e tile) e o deploy:
 
 ```
-analise-<domínio>/webapp/
+apps-analiticos/analise-<domínio>/webapp/
 ├── Component.js           estado compartilhado (filtros), serviço e roteamento
 ├── manifest.json          rotas "" / analise/{scenario}, modelo OData V4, tile
 ├── model/Scenarios.js     catálogo do domínio: entity set, filtros, KPIs e os 5 cenários (dimensão, medidas, gráfico)
@@ -181,7 +188,7 @@ deve ser repetida nos quatro apps: os arquivos são iguais, a menos do namespace
 ## Executar localmente
 
 ```bash
-cd ui5/<app>
+cd ui5/apps-list-reports/<app>   # ou ui5/apps-analiticos/<app>
 npm install
 npm start          # launchpad local (sandbox) com dados reais
 npm run start-mock # dados de mock, sem backend
