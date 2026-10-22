@@ -238,6 +238,7 @@ stateDiagram-v2
     ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md     especificação técnica (Markdown)
     ├── Pedidos_de_Compras_-_Especificacao_Tecnica.docx   especificação técnica (Word)
     ├── pedidos-de-compras.drawio                         diagramas (uma página por diagrama)
+    ├── fluxos-bo-*.drawio                                fluxogramas das operações de cada BO (uma página por fluxo)
     ├── apresentacoes/                                    slides das cinco etapas
     └── modelos-importacao/                               planilhas modelo (CSV/XLSX)
 ```
@@ -289,6 +290,18 @@ para [`assets/`](assets).
 
 Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 2, borda 20), uma página por vez.
 
+### Fluxogramas das operações dos BOs
+
+As operações de cada business object estão em um arquivo próprio, com uma página por fluxo: autorização,
+feature control, determinations, validations, chamadas EML entre BOs e os caminhos de erro.
+
+| Arquivo | BO | Páginas |
+| --- | --- | --- |
+| [`fluxos-bo-cliente.drawio`](docs/fluxos-bo-cliente.drawio) | Cliente e Endereço (`ZR_PC_CLIENTE`) | criar, editar, excluir, endereço e CEP, endereço principal, importação |
+| [`fluxos-bo-item-estoque.drawio`](docs/fluxos-bo-item-estoque.drawio) | Item de Estoque (`ZR_PC_ITEM`) | criar, editar e inativar, excluir, reservar/liberar/baixar estoque, importação |
+| [`fluxos-bo-pedido.drawio`](docs/fluxos-bo-pedido.drawio) | Pedido (`ZR_PC_PEDIDO`) | criar e registrar, editar itens, simular pagamento, aprovar, cancelar, decisão do reembolso, importação |
+| [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo-reembolso.drawio) | Reembolso (`ZR_PC_REEMBOLSO`) | abertura da solicitação, aprovar, rejeitar |
+
 ---
 
 ## Documentação
@@ -309,6 +322,7 @@ Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 
 
 | Versão | Mudanças |
 | ------ | -------- |
+| v2.14  | Fluxogramas das operações de cada BO no draw.io (`docs/fluxos-bo-*.drawio`), uma página por fluxo, no padrão visual SAP |
 | v2.13  | Classes de teste ABAP Unit em todas as classes e behavior pools (204 testes em 13 classes, com test doubles nos BOs); mapa de cobertura no [`abap/README.md`](abap/README.md#111-abap-unit) e Especificação Técnica v3.3 |
 | v2.12  | Launchpad no início do README, logo após os badges, como no projeto CAP; telas da Demonstração recolhidas em seções expansíveis, com o fluxo de Pedidos de Compras sempre visível |
 | v2.11  | README próprio para cada app Fiori e para o launchpad local; prefixo `ZAVBS` dos pacotes documentado como opcional (escolha pessoal do autor), com a sugestão genérica `ZPK` na documentação, na Especificação Técnica v3.1 e nas apresentações |
