@@ -77,10 +77,9 @@ ZAVBS_PC_<domínio>/
     └── Programs/                uma pasta por programa (*.prog.abap)
 ```
 
-- Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
-  `Number Range Management/`.
-- Service Definitions, Service Bindings, objetos de autorização, IAM Apps, a Message Class `ZPC_MSG` e o
-  domínio `ZPC_NR_NUMC10` **não são versionados** aqui: são
+- Cada pacote só tem as subpastas dos tipos de objeto que contém.
+- Service Definitions, Service Bindings, objetos de autorização, IAM Apps, a Message Class `ZPC_MSG`, o
+  domínio `ZPC_NR_NUMC10` e o objeto de numeração `ZPC_NR` **não são versionados** aqui: são
   criados no ADT (ou na SAP GUI, no On-Premise) seguindo as seções [6](#6-autorização-authority-check-nos-dois-cenários),
   [7.4](#74-mapa-das-regras) (entidades expostas por serviço) e [8](#8-instalação-objetos-manuais-e-ordem-de-ativação).
 
@@ -209,7 +208,6 @@ Estes arquivos são gerados ou mantidos por ferramentas exclusivas do ABAP envir
 | Objeto | Motivo | Substituto On-Premise |
 | --- | --- | --- |
 | `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source Code Library/Classes/ZCL_PC_VIACEP/` | `create_by_url` não estava disponível no sistema On-Premise testado | `ZCL_PC_VIACEP_T2/` (mesma classe `ZCL_PC_VIACEP`) |
-| `ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Number Range Management/ZPC_NR.abap` | Editor do BTP | `ZPC_NR` na `SNRO` (domínio `ZPC_NR_NUMC10`, buffer em memória com 10 números) |
 | Tabela draft `ZTA_PC_REEMB_D` | Resíduo (o BO Reembolso não tem draft) | Não criar |
 
 ---
