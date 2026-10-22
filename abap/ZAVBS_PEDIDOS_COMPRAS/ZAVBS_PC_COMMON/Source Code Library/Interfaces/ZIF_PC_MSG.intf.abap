@@ -1,7 +1,9 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Chaves das mensagens T100</p>
-"! Chaves (T100KEY) das mensagens da Message Class ZPC_MSG, usadas como
-"! TEXTID da classe de exceção ZCX_PC_MSG (textos em abap/README.md, seção 8.1).
-"! Os atributos MV_ATTR1 a MV_ATTR4 referenciados aqui pertencem a ZCX_PC_MSG.
+"! <p class="shorttext synchronized">Pedidos de Compras - Mensagens RAP (T100)</p>
+"! Contrato público de ZCX_PC_MSG: chaves (T100KEY) das mensagens da Message Class
+"! ZPC_MSG, usadas como TEXTID da exceção (textos em abap/README.md, seção 8.1),
+"! e os métodos de atalho TEXTO e SUCESSO.
+"! As variáveis &1 a &4 vêm dos atributos MV_ATTR1 a MV_ATTR4 desta interface,
+"! preenchidos pelo construtor de ZCX_PC_MSG (nome dinâmico ZIF_PC_MSG~MV_ATTRn).
 INTERFACE zif_pc_msg PUBLIC.
 
   CONSTANTS:
@@ -99,8 +101,8 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_estoque_insuficiente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '011',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
-      attr2 TYPE scx_attrname VALUE 'MV_ATTR2',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
+      attr2 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR2',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_estoque_insuficiente,
@@ -108,7 +110,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_estoque_concorrente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '012',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -117,7 +119,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_inativo,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '013',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -135,7 +137,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF pedido_status_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '015',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -207,7 +209,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF campo_obrigatorio,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '023',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -270,7 +272,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_qtde_estoque_invalida,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '030',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -288,7 +290,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF cartao_dados_invalidos,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '032',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -297,7 +299,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF pedido_confirmado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '033',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -306,7 +308,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF pedido_finalizado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '034',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -315,7 +317,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF pedido_cancelado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '035',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -324,7 +326,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF numeracao_erro,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '036',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -342,7 +344,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_reserva_inconsistente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '038',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -369,7 +371,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF valor_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '041',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -378,7 +380,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF pedido_reembolso_solicitado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '042',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -396,7 +398,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF reembolso_aprovado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '044',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -405,7 +407,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF reembolso_rejeitado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '045',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -432,7 +434,7 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF item_sem_estoque,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '048',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
       attr2 TYPE scx_attrname VALUE '',
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
@@ -441,10 +443,34 @@ INTERFACE zif_pc_msg PUBLIC.
     BEGIN OF texto_livre,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
       msgno TYPE symsgno VALUE '049',
-      attr1 TYPE scx_attrname VALUE 'MV_ATTR1',
-      attr2 TYPE scx_attrname VALUE 'MV_ATTR2',
-      attr3 TYPE scx_attrname VALUE 'MV_ATTR3',
-      attr4 TYPE scx_attrname VALUE 'MV_ATTR4',
+      attr1 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR1',
+      attr2 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR2',
+      attr3 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR3',
+      attr4 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR4',
     END OF texto_livre.
+
+  DATA mv_attr1 TYPE string READ-ONLY.
+  DATA mv_attr2 TYPE string READ-ONLY.
+  DATA mv_attr3 TYPE string READ-ONLY.
+  DATA mv_attr4 TYPE string READ-ONLY.
+
+  "! Mensagem com texto livre (até 200 caracteres; o excedente é cortado).
+  "! Cada variável de mensagem T100 comporta só 50 caracteres, então o texto
+  "! é distribuído em 4 blocos na mensagem 049 (&1&2&3&4).
+  CLASS-METHODS texto
+    IMPORTING
+      iv_texto      TYPE csequence
+      iv_severity   TYPE if_abap_behv_message=>t_severity DEFAULT if_abap_behv_message=>severity-error
+    RETURNING
+      VALUE(result) TYPE REF TO zcx_pc_msg.
+
+  "! Atalho para criar mensagens de sucesso/informação.
+  CLASS-METHODS sucesso
+    IMPORTING
+      textid        LIKE if_t100_message=>t100key
+      attr1         TYPE csequence OPTIONAL
+      attr2         TYPE csequence OPTIONAL
+    RETURNING
+      VALUE(result) TYPE REF TO zcx_pc_msg.
 
 ENDINTERFACE.

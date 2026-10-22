@@ -1191,7 +1191,8 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 ### 8.2. Ordem de criação e ativação
 
 1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
-2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZIF_PC_MSG`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
+2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZIF_PC_MSG` e `ZCX_PC_MSG` (ativar juntas:
+   uma referencia a outra), `ZCL_PC_UTIL`,
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
    `ZCL_PC_NUMERACAO`. Cada classe com interface própria (tabela abaixo) é ativada junto com ela, ou depois
    dela.
@@ -1218,7 +1219,7 @@ válidas, mas tipos e constantes são lidos da interface, ex.: `zif_pc_planilha=
 
 | Classe | Interface | Pacote |
 | --- | --- | --- |
-| `ZCX_PC_MSG` | `ZIF_PC_MSG` (só as chaves T100) | `ZAVBS_PC_COMMON` |
+| `ZCX_PC_MSG` | `ZIF_PC_MSG` (chaves T100, `MV_ATTR1`–`MV_ATTR4`, `texto` e `sucesso`; o construtor fica na classe) | `ZAVBS_PC_COMMON` |
 | `ZCL_PC_AUTH` | `ZIF_PC_AUTH` | `ZAVBS_PC_COMMON` |
 | `ZCL_PC_IMPORTACAO` | `ZIF_PC_IMPORTACAO` | `ZAVBS_PC_COMMON` |
 | `ZCL_PC_NUMERACAO` | `ZIF_PC_NUMERACAO` | `ZAVBS_PC_COMMON` |

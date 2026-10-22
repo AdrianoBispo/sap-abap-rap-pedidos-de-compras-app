@@ -1,7 +1,8 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Mensagens RAP (T100)</p>
 "! Classe de mensagens usada em todos os BOs. Os textos ficam na
-"! Message Class ZPC_MSG (textos em abap/README.md, seção 8.1); as chaves
-"! de cada mensagem ficam na interface ZIF_PC_MSG.
+"! Message Class ZPC_MSG (textos em abap/README.md, seção 8.1). As chaves de
+"! cada mensagem, os atributos MV_ATTR1 a MV_ATTR4 e os métodos TEXTO e SUCESSO
+"! ficam na interface ZIF_PC_MSG; o construtor não pode ir para uma interface.
 CLASS zcx_pc_msg DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
@@ -14,10 +15,12 @@ CLASS zcx_pc_msg DEFINITION
     INTERFACES if_t100_dyn_msg.
     INTERFACES zif_pc_msg.
 
-    DATA mv_attr1 TYPE string READ-ONLY.
-    DATA mv_attr2 TYPE string READ-ONLY.
-    DATA mv_attr3 TYPE string READ-ONLY.
-    DATA mv_attr4 TYPE string READ-ONLY.
+    ALIASES mv_attr1 FOR zif_pc_msg~mv_attr1.
+    ALIASES mv_attr2 FOR zif_pc_msg~mv_attr2.
+    ALIASES mv_attr3 FOR zif_pc_msg~mv_attr3.
+    ALIASES mv_attr4 FOR zif_pc_msg~mv_attr4.
+    ALIASES texto FOR zif_pc_msg~texto.
+    ALIASES sucesso FOR zif_pc_msg~sucesso.
 
     METHODS constructor
       IMPORTING
@@ -28,25 +31,6 @@ CLASS zcx_pc_msg DEFINITION
         attr2    TYPE csequence OPTIONAL
         attr3    TYPE csequence OPTIONAL
         attr4    TYPE csequence OPTIONAL.
-
-    "! Mensagem com texto livre (até 200 caracteres; o excedente é cortado).
-    "! Cada variável de mensagem T100 comporta só 50 caracteres, então o texto
-    "! é distribuído em 4 blocos na mensagem 049 (&1&2&3&4).
-    CLASS-METHODS texto
-      IMPORTING
-        iv_texto      TYPE csequence
-        iv_severity   TYPE if_abap_behv_message=>t_severity DEFAULT if_abap_behv_message=>severity-error
-      RETURNING
-        VALUE(result) TYPE REF TO zcx_pc_msg.
-
-    "! Atalho para criar mensagens de sucesso/informação.
-    CLASS-METHODS sucesso
-      IMPORTING
-        textid        LIKE if_t100_message=>t100key
-        attr1         TYPE csequence OPTIONAL
-        attr2         TYPE csequence OPTIONAL
-      RETURNING
-        VALUE(result) TYPE REF TO zcx_pc_msg.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -74,14 +58,14 @@ CLASS zcx_pc_msg IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD sucesso.
+  METHOD zif_pc_msg~sucesso.
     result = NEW zcx_pc_msg( textid   = textid
                              severity = if_abap_behv_message=>severity-success
                              attr1    = attr1
                              attr2    = attr2 ).
   ENDMETHOD.
 
-  METHOD texto.
+  METHOD zif_pc_msg~texto.
     DATA(lv_texto) = CONV string( iv_texto ).
     DATA lt_blocos TYPE string_table.
 
