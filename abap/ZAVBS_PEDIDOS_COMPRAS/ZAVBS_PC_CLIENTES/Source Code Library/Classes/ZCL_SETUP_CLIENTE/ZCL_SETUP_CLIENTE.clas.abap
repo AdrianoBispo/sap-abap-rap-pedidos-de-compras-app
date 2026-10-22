@@ -1,17 +1,16 @@
 "! <p class="shorttext synchronized">Pedidos de Compras - Carga de clientes de demonstração</p>
 "! Insere 100 clientes (cada um com um endereço principal já validado).
 "! Pode ser executada mais de uma vez: CPFs já existentes são ignorados.
+"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_CLIENTE.
 CLASS zcl_setup_cliente DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CONSTANTS c_quantidade TYPE i VALUE 100.
+    INTERFACES zif_setup_cliente.
 
-    METHODS carregar_dados
-      IMPORTING io_out TYPE REF TO if_oo_adt_classrun_out
-      RAISING   cx_uuid_error.
+    ALIASES carregar_dados FOR zif_setup_cliente~carregar_dados.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -35,7 +34,7 @@ ENDCLASS.
 
 CLASS zcl_setup_cliente IMPLEMENTATION.
 
-  METHOD carregar_dados.
+  METHOD zif_setup_cliente~carregar_dados.
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
@@ -95,7 +94,7 @@ CLASS zcl_setup_cliente IMPLEMENTATION.
     DATA lt_clientes  TYPE STANDARD TABLE OF zta_pc_cliente WITH EMPTY KEY.
     DATA lt_enderecos TYPE STANDARD TABLE OF zta_pc_endereco WITH EMPTY KEY.
 
-    DO c_quantidade TIMES.
+    DO zif_setup_cliente=>c_quantidade TIMES.
       DATA(lv_i) = sy-index.
 
       " CPF válido e determinístico: base de 9 dígitos + dígitos verificadores

@@ -16,7 +16,7 @@ CLASS ltcl_pagamento DEFINITION FINAL FOR TESTING
                 iv_validade         TYPE string DEFAULT `12/30`
                 iv_cvv              TYPE string DEFAULT `123`
                 iv_metodo           TYPE string DEFAULT `CARTAO_CREDITO`
-      RETURNING VALUE(rs_resultado) TYPE zcl_pc_pagamento_sim=>ty_resultado.
+      RETURNING VALUE(rs_resultado) TYPE zif_pc_pagamento_sim=>ty_resultado.
 
     METHODS credito_aprovado_visa      FOR TESTING.
     METHODS debito_aprovado            FOR TESTING.

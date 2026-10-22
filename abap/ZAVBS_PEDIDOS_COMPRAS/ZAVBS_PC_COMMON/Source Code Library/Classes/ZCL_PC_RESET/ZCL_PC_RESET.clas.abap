@@ -11,6 +11,7 @@
 "! Proteção: só roda com ZIF_PC_CONSTANTS=>C_MODO_TRIAL = abap_true, o mesmo
 "! indicador de ambiente educacional/demonstração usado em ZCL_PC_AUTH.
 "! Depois do reset, ZCL_PC_SETUP recarrega os dados de demonstração.
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_RESET.
 CLASS zcl_pc_reset DEFINITION
   PUBLIC
   FINAL
@@ -18,19 +19,9 @@ CLASS zcl_pc_reset DEFINITION
 
   PUBLIC SECTION.
     INTERFACES if_oo_adt_classrun.
+    INTERFACES zif_pc_reset.
 
-    TYPES:
-      BEGIN OF ty_resultado,
-        tabela    TYPE string,
-        apagados  TYPE i,
-      END OF ty_resultado.
-    TYPES tt_resultado TYPE STANDARD TABLE OF ty_resultado WITH EMPTY KEY.
-
-    "! Apaga os dados e confirma (COMMIT WORK). Devolve a quantidade apagada
-    "! por tabela. Em ambiente que não é de demonstração não apaga nada.
-    CLASS-METHODS resetar
-      EXPORTING et_resultado TYPE tt_resultado
-                ev_executado TYPE abap_boolean.
+    ALIASES resetar FOR zif_pc_reset~resetar.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -62,7 +53,7 @@ CLASS zcl_pc_reset IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD resetar.
+  METHOD zif_pc_reset~resetar.
     CLEAR: et_resultado, ev_executado.
 
     IF zif_pc_constants=>c_modo_trial = abap_false.

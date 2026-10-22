@@ -3,32 +3,18 @@
 "!   intervalo 01 -> NumeroPedido
 "!   intervalo 02 -> sequencial do SKU
 "! Os intervalos são criados pela classe ZCL_PC_SETUP.
+"! Constantes, tipos e métodos públicos: interface ZIF_PC_NUMERACAO.
 CLASS zcl_pc_numeracao DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    TYPES ty_numero_pedido TYPE c LENGTH 10.
-    TYPES ty_sku           TYPE c LENGTH 21.
+    INTERFACES zif_pc_numeracao.
 
-    "! Próximo número de pedido, com 10 dígitos (ex.: 0000000001).
-    CLASS-METHODS proximo_numero_pedido
-      RETURNING VALUE(rv_numero) TYPE ty_numero_pedido
-      RAISING   cx_number_ranges.
-
-    "! SKU no formato SKU-<3 letras da categoria>-<10 dígitos>.
-    "! Ex.: SKU-ELE-0000000042 (18 caracteres; campo CHAR 21).
-    CLASS-METHODS gerar_sku
-      IMPORTING iv_categoria  TYPE csequence
-      RETURNING VALUE(rv_sku) TYPE ty_sku
-      RAISING   cx_number_ranges.
-
-    "! Prefixo de 3 letras do SKU a partir do código da categoria
-    "! (maiúsculas; categoria curta ou vazia é completada com X).
-    CLASS-METHODS prefixo_categoria
-      IMPORTING iv_categoria     TYPE csequence
-      RETURNING VALUE(rv_prefixo) TYPE string.
+    ALIASES proximo_numero_pedido FOR zif_pc_numeracao~proximo_numero_pedido.
+    ALIASES gerar_sku FOR zif_pc_numeracao~gerar_sku.
+    ALIASES prefixo_categoria FOR zif_pc_numeracao~prefixo_categoria.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -54,13 +40,13 @@ CLASS zcl_pc_numeracao IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD proximo_numero_pedido.
+  METHOD zif_pc_numeracao~proximo_numero_pedido.
     DATA(lv_numero) = proximo_numero( zif_pc_constants=>c_numeracao-intervalo_pedido ).
     rv_numero = |{ lv_numero WIDTH = 10 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 
 
-  METHOD gerar_sku.
+  METHOD zif_pc_numeracao~gerar_sku.
     DATA(lv_numero) = proximo_numero( zif_pc_constants=>c_numeracao-intervalo_sku )
                       - CONV int8( zif_pc_constants=>c_numeracao-sku_de ).
 
@@ -68,7 +54,7 @@ CLASS zcl_pc_numeracao IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD prefixo_categoria.
+  METHOD zif_pc_numeracao~prefixo_categoria.
     rv_prefixo = to_upper( condense( iv_categoria ) ).
     IF strlen( rv_prefixo ) < 3.
       rv_prefixo = |{ rv_prefixo WIDTH = 3 PAD = 'X' }|.

@@ -98,11 +98,11 @@ CLASS ltcl_importacao IMPLEMENTATION.
 
   METHOD resumo_de_erros.
     DATA lt_erros TYPE string_table.
-    DO zcl_pc_importacao=>c_max_erros_exibidos + 5 TIMES.
+    DO zif_pc_importacao=>c_max_erros_exibidos + 5 TIMES.
       APPEND |erro { sy-index }| TO lt_erros.
     ENDDO.
     DATA(lt_resumo) = zcl_pc_importacao=>resumir_erros( lt_erros ).
-    cl_abap_unit_assert=>assert_equals( act = lines( lt_resumo ) exp = zcl_pc_importacao=>c_max_erros_exibidos + 1 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( lt_resumo ) exp = zif_pc_importacao=>c_max_erros_exibidos + 1 ).
     cl_abap_unit_assert=>assert_true( act = xsdbool( lt_resumo[ lines( lt_resumo ) ] CS `mais 5` ) ).
 
     DATA(lt_curto) = zcl_pc_importacao=>resumir_erros( VALUE #( ( `a` ) ( `b` ) ) ).

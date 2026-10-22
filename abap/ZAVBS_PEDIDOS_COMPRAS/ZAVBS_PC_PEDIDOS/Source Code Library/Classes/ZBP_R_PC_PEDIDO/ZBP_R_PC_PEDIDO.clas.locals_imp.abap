@@ -377,7 +377,7 @@ CLASS lhc_pedido IMPLEMENTATION.
                           %control-NumeroPedido = if_abap_behv=>mk-on ) TO lt_update.
         CATCH cx_number_ranges INTO DATA(lx_nr).
           APPEND VALUE #( %tky = ls_pedido-%tky
-                          %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>numeracao_erro
+                          %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>numeracao_erro
                                                  attr1    = lx_nr->get_text( )
                                                  previous = lx_nr ) ) TO reported-pedido.
       ENDTRY.
@@ -440,7 +440,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
         APPEND VALUE #( %cid = ls_target-%cid %is_draft = ls_key-%is_draft ) TO failed-itempedido.
         APPEND VALUE #( %cid = ls_target-%cid %is_draft = ls_key-%is_draft
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_sem_estoque
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>item_sem_estoque
                                                attr1  = ls_estoque-Sku ) ) TO reported-itempedido.
       ENDLOOP.
     ENDLOOP.
@@ -547,7 +547,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       IF ls_pedido-ClienteUUID IS INITIAL.
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Cliente' )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Cliente' )
                         %element-ClienteUUID = if_abap_behv=>mk-on ) TO reported-pedido.
         CONTINUE.
       ENDIF.
@@ -560,7 +560,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       IF sy-subrc <> 0 OR lv_ativo = abap_false.
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>cliente_inativo )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_inativo )
                         %element-ClienteUUID = if_abap_behv=>mk-on ) TO reported-pedido.
         CONTINUE.
       ENDIF.
@@ -569,7 +569,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       DATA(ls_endereco) = endereco_principal( ls_pedido-ClienteUUID ).
       IF ls_endereco-endereco_uuid IS INITIAL.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente
-                        %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>cliente_sem_endereco_principal
+                        %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>cliente_sem_endereco_principal
                                                severity = if_abap_behv_message=>severity-warning )
                         %element-ClienteUUID = if_abap_behv=>mk-on ) TO reported-pedido.
       ENDIF.
@@ -614,7 +614,7 @@ CLASS lhc_pedido IMPLEMENTATION.
          AND endereco_principal( ls_pedido-ClienteUUID )-endereco_uuid IS INITIAL.
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-registro
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>cliente_sem_endereco_principal )
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_sem_endereco_principal )
                         %element-ClienteUUID = if_abap_behv=>mk-on ) TO reported-pedido.
       ENDIF.
 
@@ -625,7 +625,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       IF lt_itens_ped IS INITIAL.
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-registro
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>pedido_sem_itens ) ) TO reported-pedido.
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>pedido_sem_itens ) ) TO reported-pedido.
         CONTINUE.
       ENDIF.
 
@@ -650,7 +650,7 @@ CLASS lhc_pedido IMPLEMENTATION.
           IF ls_qtde-qtde > lv_livre.
             APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
             APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-registro
-                            %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_estoque_insuficiente
+                            %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>item_estoque_insuficiente
                                                    attr1  = ls_estoque-Sku
                                                    attr2  = |{ lv_livre }| ) )
                    TO reported-pedido.
@@ -715,7 +715,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         READ TABLE lt_estoque INTO DATA(ls_estoque) WITH KEY ItemUUID = ls_a_reservar-item_uuid.
         IF sy-subrc = 0 AND ls_a_reservar-qtde > ls_estoque-QtdeEstoque - ls_estoque-QtdeReservada.
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>item_estoque_insuficiente
+                                    io_msg    = NEW #( textid = zif_pc_msg=>item_estoque_insuficiente
                                                        attr1  = ls_estoque-Sku
                                                        attr2  = |{ ls_estoque-QtdeEstoque - ls_estoque-QtdeReservada }| )
                           CHANGING  cs_failed = failed cs_reported = reported ).
@@ -804,7 +804,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
     FIELD-SYMBOLS <ls_dem> TYPE ty_demanda.
 
-    DATA lt_colunas    TYPE zcl_pc_planilha=>tt_colunas.
+    DATA lt_colunas    TYPE zif_pc_planilha=>tt_colunas.
     DATA lt_erros      TYPE string_table.
     DATA lt_linhas     TYPE STANDARD TABLE OF ty_linha WITH EMPTY KEY.
     DATA lt_grupos     TYPE STANDARD TABLE OF ty_grupo WITH EMPTY KEY.
@@ -825,7 +825,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       CLEAR: lt_erros, lt_linhas, lt_grupos, lt_cpfs, lt_skus, lt_cli_status, lt_demanda, lt_refs.
 
       IF zcl_pc_auth=>pedido_pode_criar( ) = abap_false.
-        APPEND VALUE #( %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>sem_autorizacao ) ) TO reported-pedido.
+        APPEND VALUE #( %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>sem_autorizacao ) ) TO reported-pedido.
         APPEND VALUE #( %cid = ls_key-%cid ) TO failed-pedido.
         CONTINUE.
       ENDIF.
@@ -1181,10 +1181,10 @@ CLASS lhc_pedido IMPLEMENTATION.
   METHOD erro_status.
     ro_msg = SWITCH #( is_pedido-StatusPedido
                WHEN zif_pc_constants=>c_status_pedido-finalizado
-                 THEN NEW zcx_pc_msg( textid = zcx_pc_msg=>pedido_finalizado_imutavel )
+                 THEN NEW zcx_pc_msg( textid = zif_pc_msg=>pedido_finalizado_imutavel )
                WHEN zif_pc_constants=>c_status_pedido-cancelado
-                 THEN NEW zcx_pc_msg( textid = zcx_pc_msg=>pedido_cancelado_imutavel )
-               ELSE NEW zcx_pc_msg( textid = zcx_pc_msg=>pedido_status_invalido
+                 THEN NEW zcx_pc_msg( textid = zif_pc_msg=>pedido_cancelado_imutavel )
+               ELSE NEW zcx_pc_msg( textid = zif_pc_msg=>pedido_status_invalido
                                     attr1  = COND string( WHEN is_pedido-%is_draft = if_abap_behv=>mk-on
                                                           THEN `DRAFT`
                                                           ELSE is_pedido-StatusPedido ) ) ).
@@ -1218,7 +1218,7 @@ CLASS lhc_pedido IMPLEMENTATION.
          WHERE PedidoUUID IS NOT INITIAL.
       IF NOT line_exists( gt_falhas_registro[ pedido_uuid = ls_fail-PedidoUUID ] ).
         APPEND VALUE #( pedido_uuid = ls_fail-PedidoUUID
-                        msg         = NEW zcx_pc_msg( textid = zcx_pc_msg=>pedido_status_invalido
+                        msg         = NEW zcx_pc_msg( textid = zif_pc_msg=>pedido_status_invalido
                                                       attr1  = `Reserva de estoque` ) ) TO gt_falhas_registro.
       ENDIF.
     ENDLOOP.
@@ -1270,7 +1270,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       IF lt_itens_ped IS INITIAL.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>pedido_sem_itens )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>pedido_sem_itens )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
@@ -1312,7 +1312,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         INTO @DATA(lv_cliente_ativo).
       IF sy-subrc <> 0 OR lv_cliente_ativo = abap_false.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>cliente_inativo )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>cliente_inativo )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         lv_erro = abap_true.
       ENDIF.
@@ -1322,7 +1322,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       DATA(ls_endereco) = endereco_principal( ls_pedido-ClienteUUID ).
       IF ls_endereco-endereco_uuid IS INITIAL.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>cliente_sem_endereco_principal )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>cliente_sem_endereco_principal )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         lv_erro = abap_true.
       ENDIF.
@@ -1340,18 +1340,18 @@ CLASS lhc_pedido IMPLEMENTATION.
         IF ( sy-subrc <> 0 OR ls_estoque-ItemAtivo = abap_false )
            AND line_exists( lt_reservar[ item_uuid = ls_item_ped-ItemUUID ] ).
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>item_inativo
+                                    io_msg    = NEW #( textid = zif_pc_msg=>item_inativo
                                                        attr1  = COND string( WHEN sy-subrc = 0 THEN ls_estoque-Sku ELSE `?` ) )
                           CHANGING  cs_failed = failed cs_reported = reported ).
           lv_erro = abap_true.
         ELSEIF ls_item_ped-QtdeItemPedido <= 0.
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>item_qtde_invalida )
+                                    io_msg    = NEW #( textid = zif_pc_msg=>item_qtde_invalida )
                           CHANGING  cs_failed = failed cs_reported = reported ).
           lv_erro = abap_true.
         ELSEIF ls_estoque-Currency <> zif_pc_constants=>c_moeda_padrao.
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>valor_invalido attr1 = 'Moeda do item' )
+                                    io_msg    = NEW #( textid = zif_pc_msg=>valor_invalido attr1 = 'Moeda do item' )
                           CHANGING  cs_failed = failed cs_reported = reported ).
           lv_erro = abap_true.
         ENDIF.
@@ -1364,7 +1364,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         READ TABLE lt_estoque INTO ls_estoque WITH KEY ItemUUID = ls_a_reservar-item_uuid.
         IF sy-subrc = 0 AND ls_a_reservar-qtde > ls_estoque-QtdeEstoque - ls_estoque-QtdeReservada.
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>item_estoque_insuficiente
+                                    io_msg    = NEW #( textid = zif_pc_msg=>item_estoque_insuficiente
                                                        attr1  = ls_estoque-Sku
                                                        attr2  = |{ ls_estoque-QtdeEstoque - ls_estoque-QtdeReservada }| )
                           CHANGING  cs_failed = failed cs_reported = reported ).
@@ -1459,7 +1459,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = COND #( WHEN lt_velho IS INITIAL
-                                     THEN zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_confirmado
+                                     THEN zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_confirmado
                                                                attr1  = ls_pedido-NumeroPedido )
                                      ELSE zcx_pc_msg=>texto( iv_texto    = |Pedido { ls_pedido-NumeroPedido } atualizado. Reserva de estoque ajustada.|
                                                              iv_severity = if_abap_behv_message=>severity-success ) ) )
@@ -1498,7 +1498,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       IF ls_sim-dados_validos = abap_false.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>cartao_dados_invalidos
+                                  io_msg    = NEW #( textid = zif_pc_msg=>cartao_dados_invalidos
                                                      attr1  = ls_sim-erro )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
@@ -1577,8 +1577,8 @@ CLASS lhc_pedido IMPLEMENTATION.
       " Recusa não é erro técnico: o pedido segue aguardando nova tentativa
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = COND #( WHEN lv_aprovado = abap_true
-                                     THEN zcx_pc_msg=>sucesso( zcx_pc_msg=>pagamento_aprovado )
-                                     ELSE NEW zcx_pc_msg( textid   = zcx_pc_msg=>pagamento_recusado
+                                     THEN zcx_pc_msg=>sucesso( zif_pc_msg=>pagamento_aprovado )
+                                     ELSE NEW zcx_pc_msg( textid   = zif_pc_msg=>pagamento_recusado
                                                           severity = if_abap_behv_message=>severity-warning ) ) )
              TO reported-pedido.
       CLEAR ls_sim.
@@ -1610,7 +1610,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       IF ls_pedido-%is_draft = if_abap_behv=>mk-off
          AND ls_pedido-StatusPedido = zif_pc_constants=>c_status_pedido-aberto.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>pedido_pagamento_pendente )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>pedido_pagamento_pendente )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
@@ -1622,7 +1622,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
       IF ls_pedido-StatusPagamento <> zif_pc_constants=>c_status_pagamento-aprovado.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>pedido_pagamento_pendente )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>pedido_pagamento_pendente )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
@@ -1649,7 +1649,7 @@ CLASS lhc_pedido IMPLEMENTATION.
            OR ls_estoque-QtdeReservada < ls_qtde-qtde
            OR ls_estoque-QtdeEstoque   < ls_qtde-qtde.
           registrar_erro( EXPORTING is_pedido = ls_pedido
-                                    io_msg    = NEW #( textid = zcx_pc_msg=>item_reserva_inconsistente
+                                    io_msg    = NEW #( textid = zif_pc_msg=>item_reserva_inconsistente
                                                        attr1  = ls_estoque-Sku )
                           CHANGING  cs_failed = failed cs_reported = reported ).
           lv_erro = abap_true.
@@ -1703,7 +1703,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
-                      %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_finalizado
+                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_finalizado
                                                   attr1  = ls_pedido-NumeroPedido ) ) TO reported-pedido.
     ENDLOOP.
 
@@ -1746,7 +1746,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       DATA(lv_motivo) = condense( ls_key-%param-MotivoCancelamento ).
       IF lv_motivo IS INITIAL.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>pedido_motivo_cancel_obrig )
+                                  io_msg    = NEW #( textid = zif_pc_msg=>pedido_motivo_cancel_obrig )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
@@ -1820,7 +1820,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
 
       APPEND VALUE #( %tky = ls_pedido-%tky
-                      %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_cancelado
+                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_cancelado
                                                   attr1  = ls_pedido-NumeroPedido ) ) TO reported-pedido.
     ENDLOOP.
 
@@ -1893,7 +1893,7 @@ CLASS lhc_pedido IMPLEMENTATION.
     ENDIF.
 
     APPEND VALUE #( %tky = is_pedido-%tky
-                    %msg = zcx_pc_msg=>sucesso( textid = zcx_pc_msg=>pedido_reembolso_solicitado
+                    %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_reembolso_solicitado
                                                 attr1  = is_pedido-NumeroPedido ) ) TO cs_reported-pedido.
   ENDMETHOD.
 
@@ -2030,7 +2030,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       DATA(lv_status_anterior) = CONV zr_pc_pedido-StatusPedido( condense( ls_key-%param-StatusAnterior ) ).
       IF lv_status_anterior IS INITIAL.
         registrar_erro( EXPORTING is_pedido = ls_pedido
-                                  io_msg    = NEW #( textid = zcx_pc_msg=>campo_obrigatorio
+                                  io_msg    = NEW #( textid = zif_pc_msg=>campo_obrigatorio
                                                      attr1  = 'Status anterior' )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
@@ -2126,7 +2126,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         READ TABLE lt_sku INTO DATA(ls_sku) WITH KEY ItemUUID = ls_fail_item-ItemUUID.
         DATA(lv_sku) = COND string( WHEN sy-subrc = 0 THEN ls_sku-Sku ELSE `?` ).
         APPEND VALUE #( %tky = is_pedido-%tky
-                        %msg = NEW zcx_pc_msg( textid = zcx_pc_msg=>item_estoque_concorrente
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>item_estoque_concorrente
                                                attr1  = lv_sku ) ) TO cs_reported-pedido.
       ENDIF.
     ENDLOOP.
@@ -2158,7 +2158,7 @@ CLASS lhc_pedido IMPLEMENTATION.
           READ TABLE lt_sku INTO DATA(ls_sku_comp) WITH KEY ItemUUID = ls_fail_comp-ItemUUID.
           APPEND VALUE #( %tky = is_pedido-%tky
                           %msg = NEW zcx_pc_msg(
-                                   textid = zcx_pc_msg=>item_reserva_inconsistente
+                                   textid = zif_pc_msg=>item_reserva_inconsistente
                                    attr1  = COND string( WHEN sy-subrc = 0 THEN ls_sku_comp-Sku ELSE `?` ) ) )
                  TO cs_reported-pedido.
         ENDLOOP.
@@ -2181,7 +2181,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
     IF lt_snap_cli IS NOT INITIAL OR lt_snap_itm IS NOT INITIAL.
       APPEND VALUE #( %tky = is_pedido-%tky
-                      %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>snapshot_existente
+                      %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>snapshot_existente
                                              severity = if_abap_behv_message=>severity-information ) )
              TO cs_reported-pedido.
       RETURN.
@@ -2380,11 +2380,11 @@ CLASS lhc_itempedido IMPLEMENTATION.
 
       READ TABLE lt_mestre INTO DATA(ls_mestre) WITH KEY ItemUUID = ls_item-ItemUUID.
       IF ls_item-ItemUUID IS INITIAL.
-        lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Item' ).
+        lo_msg = NEW #( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Item' ).
       ELSEIF sy-subrc <> 0 OR ls_mestre-ItemAtivo = abap_false.
-        lo_msg = NEW #( textid = zcx_pc_msg=>item_inativo attr1 = ls_mestre-Sku ).
+        lo_msg = NEW #( textid = zif_pc_msg=>item_inativo attr1 = ls_mestre-Sku ).
       ELSEIF ls_item-QtdeItemPedido <= 0.
-        lo_msg = NEW #( textid = zcx_pc_msg=>item_qtde_invalida ).
+        lo_msg = NEW #( textid = zif_pc_msg=>item_qtde_invalida ).
       ENDIF.
       CLEAR ls_mestre.
 

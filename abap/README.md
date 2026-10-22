@@ -50,7 +50,10 @@ abap/
     │       ├── Classes/
     │       │   ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
     │       │   └── ZCL_PC_VIACEP_T2/    ViaCEP — versão On-Premise: CL_HTTP_CLIENT + destination SM59
-    │       └── ZPC_TESTE_VIACEP_T2/     report de teste da destination (somente On-Premise)
+    │       ├── Interfaces/
+    │       │   └── ZIF_PC_VIACEP.intf.abap  contrato comum às duas versões do ViaCEP
+    │       └── Programs/
+    │           └── ZPC_TESTE_VIACEP_T2/ report de teste da destination (somente On-Premise)
     ├── ZAVBS_PC_CLIENTES            BO Cliente + Endereço, value helps (serviço ZUI_PC_CLIENTES)
     ├── ZAVBS_PC_ESTOQUE             BO Item, value help de item (serviço ZUI_PC_ESTOQUE)
     ├── ZAVBS_PC_PEDIDOS             BO Pedido (+ itens) (serviço ZUI_PC_PEDIDOS_COMPRAS)
@@ -70,7 +73,8 @@ ZAVBS_PC_<domínio>/
 │   └── Database Tables/         *.abap
 └── Source Code Library/
     ├── Classes/                 uma pasta por classe (*.clas.*.abap)
-    └── ...                      interfaces e programas, fora de Classes/
+    ├── Interfaces/              um arquivo por interface (*.intf.abap)
+    └── Programs/                uma pasta por programa (*.prog.abap)
 ```
 
 - Cada pacote só tem as subpastas dos tipos de objeto que contém. `ZAVBS_PC_COMMON` também tem
@@ -111,6 +115,7 @@ Um arquivo por objeto ADT:
 | `*.clas.locals_imp.abap` | Aba *Local Types* da mesma classe (behavior pools) |
 | `*.clas.testclasses.abap` | Aba *Test Classes* da mesma classe (ABAP Unit) |
 | `*.intf.abap` | Interface |
+| `*.prog.abap` | Programa (report executável) |
 
 O repositório guarda os fontes no formato do ADT, não no formato abapGit: a criação é feita no ADT copiando
 cada fonte. Para automatizar, converta para abapGit ou gCTS.
@@ -180,7 +185,7 @@ Cobertura dos objetos deste projeto na extensão do VS Code, segundo a lista pub
 | IDE ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)) | ADT no Eclipse ou no VS Code (conexão HTTP) | ADT no Eclipse ou no VS Code (conexão RFC, a partir do S/4HANA 2025), mais o SAP GUI |
 | `ZIF_PC_CONSTANTS=>c_modo_trial` | `abap_true` no Trial compartilhado (sem Business Roles) | **`abap_false`** (o `AUTHORITY-CHECK` passa a valer) |
 | `ZCL_PC_VIACEP` | Pasta `ZCL_PC_VIACEP/`: `cl_http_destination_provider=>create_by_url` | Pasta `ZCL_PC_VIACEP_T2/`: `CL_HTTP_CLIENT` + destination `Z_VIACEP` (`SM59`) + `STRUST` |
-| Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `ZPC_TESTE_VIACEP_T2/` (teste da destination) |
+| Report `ZPC_TESTE_VIACEP` | Não se aplica | Pasta `Programs/ZPC_TESTE_VIACEP_T2/` (teste da destination) |
 | Objetos de autorização | ADT, classe `CPAE` (`*.susob.xml`) | `SU21`, classe própria `ZPC` (mesmos objetos e atividades) |
 | Vínculo serviço × autorização | IAM App (`*.sia6.xml`) | `SU24` (valores propostos) |
 | Agrupamento e atribuição | Business Catalog + Business Role | Role `PFCG` (`Z_PC_ADMIN`, `Z_PC_COMUM`) + `SU01` |
@@ -463,10 +468,10 @@ A correção foi incluir na PSE anônima a raiz e, se necessário, o R46 *cross-
 ### 5.5. A classe On-Premise
 
 O código completo está em
-[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
-A interface pública (`ty_endereco`, `ty_resultado`, `consultar`) é um superconjunto da versão BTP
-(acrescenta `status_http` e `mensagem_erro`), por isso o behavior pool `ZBP_R_PC_CLIENTE` não muda. A
-diferença está em `chamar_servico`:
+[`ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/Classes/ZCL_PC_VIACEP_T2/ZCL_PC_VIACEP.clas.abap).
+As duas versões implementam a mesma interface `ZIF_PC_VIACEP` (`ty_endereco`, `ty_resultado`, `consultar`);
+só a versão On-Premise preenche `status_http` e `mensagem_erro`. Por isso o behavior pool `ZBP_R_PC_CLIENTE`
+não muda. A diferença está em `chamar_servico`:
 
 ```abap
 " BTP (ZCL_PC_VIACEP/): URL no código
@@ -504,7 +509,7 @@ mantenha só as disponíveis (ou use apenas `OTHERS = 1`).
 
 ### 5.6. Report de teste
 
-[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
+[`ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Source%20Code%20Library/Programs/ZPC_TESTE_VIACEP_T2/ZPC_TESTE_VIACEP.prog.abap)
 chama `ZCL_PC_VIACEP=>consultar` e mostra o status HTTP e o endereço. Execute-o (F8) em cada sistema depois
 de configurar `SM59` e `STRUST`, antes de testar o cadastro de endereço na app Gestão de Clientes. Para um CEP
 válido (ex.: `01310-100`), ele deve retornar HTTP 200 e o endereço.
@@ -576,9 +581,11 @@ Usuário                                           Usuário (SU01)
 #### Classe central `ZCL_PC_AUTH`
 
 Toda verificação passa por `ZCL_PC_AUTH` (pacote `ZAVBS_PC_COMMON`), que encapsula o `AUTHORITY-CHECK` dos
-objetos `ZPC_ADMIN` (clientes e estoque) e `ZPC_PEDIDO` (pedidos e reembolsos):
+objetos `ZPC_ADMIN` (clientes e estoque) e `ZPC_PEDIDO` (pedidos e reembolsos). As atividades e os métodos
+públicos ficam na interface `ZIF_PC_AUTH`, implementada pela classe:
 
 ```abap
+" ZIF_PC_AUTH
 CONSTANTS: BEGIN OF c_actvt,
              criar    TYPE c LENGTH 2 VALUE '01',
              alterar  TYPE c LENGTH 2 VALUE '02',
@@ -586,6 +593,7 @@ CONSTANTS: BEGIN OF c_actvt,
              executar TYPE c LENGTH 2 VALUE '16',
            END OF c_actvt.
 
+" ZCL_PC_AUTH (método privado)
 METHOD verificar_pedido.
   IF zif_pc_constants=>c_modo_trial = abap_true.
     rv_autorizado = abap_true.
@@ -1052,7 +1060,8 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)):
 
 1. **Message Class `ZPC_MSG`** (pacote `ZAVBS_PC_COMMON`) — mensagens T100 lidas pela classe de exceção
-   `ZCX_PC_MSG`; precisa existir antes dela, pois as constantes da classe apontam para os números abaixo.
+   `ZCX_PC_MSG`; precisa existir antes dela e da interface `ZIF_PC_MSG`, cujas constantes apontam para os
+   números abaixo.
 
    | Propriedade | Valor |
    | --- | --- |
@@ -1073,9 +1082,10 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 
    Cada texto tem até 73 caracteres; `&1` a `&4` são os parâmetros preenchidos pela exceção (atributos
    `MSGV1` a `MSGV4`). Digite os textos exatamente como na tabela, com acentos: alguns testes ABAP Unit
-   comparam o texto devolvido. A coluna *Constante* é o nome correspondente em `ZCX_PC_MSG`.
+   comparam o texto devolvido. A coluna *Constante* é o nome correspondente em `ZIF_PC_MSG`, usado como
+   `textid` da exceção (`NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_cpf_invalido )`).
 
-   | Nº | Texto | Constante em `ZCX_PC_MSG` |
+   | Nº | Texto | Constante em `ZIF_PC_MSG` |
    | --- | --- | --- |
    | 001 | CPF inválido. Verifique o número informado. | `CLIENTE_CPF_INVALIDO` |
    | 002 | Já existe um cliente cadastrado com este CPF. | `CLIENTE_CPF_DUPLICADO` |
@@ -1181,9 +1191,10 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 ### 8.2. Ordem de criação e ativação
 
 1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
-2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
+2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZIF_PC_MSG`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
-   `ZCL_PC_NUMERACAO`.
+   `ZCL_PC_NUMERACAO`. Cada classe com interface própria (tabela abaixo) é ativada junto com ela, ou depois
+   dela.
 3. **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo `ZR_PC_REEMBOLSO` (BO próprio,
@@ -1200,6 +1211,25 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 12. Executar `ZCL_PC_SETUP` (**F9**): intervalos de numeração, CodeLists e dados de demonstração. Sem os
     intervalos, o Save de pedido e de item falha com "Erro ao obter numeração".
 13. Front-end: [`ui5/README.md`](../ui5/README.md).
+
+Classes e as interfaces que elas implementam (constantes, tipos e métodos públicos ficam na interface; a
+classe declara `ALIASES` para os métodos, então chamadas como `zcl_pc_util=>validar_cpf( )` continuam
+válidas, mas tipos e constantes são lidos da interface, ex.: `zif_pc_planilha=>tt_colunas`):
+
+| Classe | Interface | Pacote |
+| --- | --- | --- |
+| `ZCX_PC_MSG` | `ZIF_PC_MSG` (só as chaves T100) | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_AUTH` | `ZIF_PC_AUTH` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_IMPORTACAO` | `ZIF_PC_IMPORTACAO` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_NUMERACAO` | `ZIF_PC_NUMERACAO` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_PLANILHA` | `ZIF_PC_PLANILHA` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_RESET` | `ZIF_PC_RESET` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_UTIL` | `ZIF_PC_UTIL` | `ZAVBS_PC_COMMON` |
+| `ZCL_PC_VIACEP` (as duas versões) | `ZIF_PC_VIACEP` | `ZAVBS_PC_COMMON` |
+| `ZCL_SETUP_CLIENTE` | `ZIF_SETUP_CLIENTE` | `ZAVBS_PC_CLIENTES` |
+| `ZCL_SETUP_ESTOQUE` | `ZIF_SETUP_ESTOQUE` | `ZAVBS_PC_ESTOQUE` |
+| `ZCL_SETUP_PEDIDOS` | `ZIF_SETUP_PEDIDOS` | `ZAVBS_PC_PEDIDOS` |
+| `ZCL_PC_PAGAMENTO_SIM` | `ZIF_PC_PAGAMENTO_SIM` | `ZAVBS_PC_PEDIDOS_PAGAMENTOS` |
 
 > [!IMPORTANT]
 > Há dependências cruzadas intencionais (ex.: o BO Cliente consulta pedidos para bloquear a exclusão). Por
