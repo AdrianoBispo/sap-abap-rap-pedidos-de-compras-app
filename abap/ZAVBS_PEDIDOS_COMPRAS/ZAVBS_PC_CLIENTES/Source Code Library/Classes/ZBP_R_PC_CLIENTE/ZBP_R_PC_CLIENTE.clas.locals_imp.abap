@@ -168,7 +168,7 @@ CLASS lhc_cliente IMPLEMENTATION.
       IF line_exists( lt_com_pedido[ table_line = ls_key-ClienteUUID ] ).
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_key-%tky
-                        %msg = msg( zcx_pc_msg=>cliente_com_pedido ) ) TO reported-cliente.
+                        %msg = msg( zif_pc_msg=>cliente_com_pedido ) ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -286,7 +286,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky        = ls_cliente-%tky
                         %state_area = c_area-cpf
-                        %msg        = msg( zcx_pc_msg=>cliente_cpf_invalido )
+                        %msg        = msg( zif_pc_msg=>cliente_cpf_invalido )
                         %element-Cpf = if_abap_behv=>mk-on ) TO reported-cliente.
         CONTINUE.
       ENDIF.
@@ -302,7 +302,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky        = ls_cliente-%tky
                         %state_area = c_area-cpf
-                        %msg        = msg( zcx_pc_msg=>cliente_cpf_duplicado )
+                        %msg        = msg( zif_pc_msg=>cliente_cpf_duplicado )
                         %element-Cpf = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       CLEAR lv_existe.
@@ -324,31 +324,31 @@ CLASS lhc_cliente IMPLEMENTATION.
       IF ls_cliente-Cpf IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
-                        %msg = msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'CPF' )
+                        %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'CPF' )
                         %element-Cpf = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       IF ls_cliente-Nome IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
-                        %msg = msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Nome' )
+                        %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Nome' )
                         %element-Nome = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       IF ls_cliente-Email IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
-                        %msg = msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'E-mail' )
+                        %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'E-mail' )
                         %element-Email = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       IF ls_cliente-Telefone IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
-                        %msg = msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Telefone' )
+                        %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Telefone' )
                         %element-Telefone = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       IF ls_cliente-DataNascimento IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
-                        %msg = msg( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Data de nascimento' )
+                        %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Data de nascimento' )
                         %element-DataNascimento = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
@@ -371,7 +371,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky           = ls_cliente-%tky
                         %state_area    = c_area-email
-                        %msg           = msg( zcx_pc_msg=>email_invalido )
+                        %msg           = msg( zif_pc_msg=>email_invalido )
                         %element-Email = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
@@ -396,7 +396,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky              = ls_cliente-%tky
                         %state_area       = c_area-telefone
-                        %msg              = msg( zcx_pc_msg=>telefone_invalido )
+                        %msg              = msg( zif_pc_msg=>telefone_invalido )
                         %element-Telefone = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
@@ -420,7 +420,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky                    = ls_cliente-%tky
                         %state_area             = c_area-nascimento
-                        %msg                    = msg( zcx_pc_msg=>data_nascimento_futura )
+                        %msg                    = msg( zif_pc_msg=>data_nascimento_futura )
                         %element-DataNascimento = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
@@ -450,7 +450,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky            = ls_cliente-%tky
                         %state_area     = c_area-genero
-                        %msg            = msg( textid = zcx_pc_msg=>valor_invalido attr1 = 'Gênero' )
+                        %msg            = msg( textid = zif_pc_msg=>valor_invalido attr1 = 'Gênero' )
                         %element-Genero = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
       CLEAR lv_ok.
@@ -475,7 +475,7 @@ CLASS lhc_cliente IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky                 = ls_cliente-%tky
                         %state_area          = c_area-foto
-                        %msg                 = msg( zcx_pc_msg=>foto_formato_invalido )
+                        %msg                 = msg( zif_pc_msg=>foto_formato_invalido )
                         %element-FotoCliente = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
     ENDLOOP.
@@ -530,7 +530,7 @@ CLASS lhc_cliente IMPLEMENTATION.
       CLEAR: lt_erros, lt_cli, lt_cpf_arq.
 
       IF zcl_pc_auth=>admin_pode_criar( ) = abap_false.
-        APPEND VALUE #( %msg = msg( zcx_pc_msg=>sem_autorizacao ) ) TO reported-cliente.
+        APPEND VALUE #( %msg = msg( zif_pc_msg=>sem_autorizacao ) ) TO reported-cliente.
         APPEND VALUE #( %cid = ls_key-%cid ) TO failed-cliente.
         CONTINUE.
       ENDIF.
@@ -946,7 +946,7 @@ CLASS lhc_endereco IMPLEMENTATION.
           IF ls_viacep-indisponivel = abap_true.
             lv_status = zif_pc_constants=>c_status_cep-indisponivel.
             APPEND VALUE #( %tky = ls_end-%tky
-                            %msg = NEW zcx_pc_msg( textid   = zcx_pc_msg=>cep_indisponivel
+                            %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>cep_indisponivel
                                                    severity = if_abap_behv_message=>severity-warning )
                             %path = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                              cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
@@ -1062,7 +1062,7 @@ CLASS lhc_endereco IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_end-%tky ) TO failed-endereco.
         APPEND VALUE #( %tky        = ls_end-%tky
                         %state_area = c_area-numero
-                        %msg        = NEW zcx_pc_msg( textid = zcx_pc_msg=>endereco_numero_obrigatorio )
+                        %msg        = NEW zcx_pc_msg( textid = zif_pc_msg=>endereco_numero_obrigatorio )
                         %element-Numero = if_abap_behv=>mk-on
                         %path       = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                                cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
@@ -1090,17 +1090,17 @@ CLASS lhc_endereco IMPLEMENTATION.
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
 
       IF strlen( lv_cep ) <> 8.
-        lo_msg = NEW #( textid = zcx_pc_msg=>cep_invalido ).
+        lo_msg = NEW #( textid = zif_pc_msg=>cep_invalido ).
       ELSEIF ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel.
-        lo_msg = NEW #( textid = zcx_pc_msg=>cep_indisponivel ).
+        lo_msg = NEW #( textid = zif_pc_msg=>cep_indisponivel ).
       ELSEIF ls_end-CepStatus <> zif_pc_constants=>c_status_cep-validado
              OR ls_end-Cidade IS INITIAL
              OR ls_end-Uf IS INITIAL.
-        lo_msg = NEW #( textid = zcx_pc_msg=>cep_invalido ).
+        lo_msg = NEW #( textid = zif_pc_msg=>cep_invalido ).
       ELSEIF ls_end-CepGeral = abap_true AND ls_end-Logradouro IS INITIAL.
-        lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Logradouro' ).
+        lo_msg = NEW #( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Logradouro' ).
       ELSEIF ls_end-CepGeral = abap_true AND ls_end-Bairro IS INITIAL.
-        lo_msg = NEW #( textid = zcx_pc_msg=>campo_obrigatorio attr1 = 'Bairro' ).
+        lo_msg = NEW #( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Bairro' ).
       ENDIF.
 
       IF lo_msg IS BOUND.
@@ -1164,7 +1164,7 @@ CLASS lhc_endereco IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_end-%tky ) TO failed-endereco.
         APPEND VALUE #( %tky        = ls_end-%tky
                         %state_area = c_area-cep_unico
-                        %msg        = NEW zcx_pc_msg( textid = zcx_pc_msg=>cep_duplicado_cliente )
+                        %msg        = NEW zcx_pc_msg( textid = zif_pc_msg=>cep_duplicado_cliente )
                         %element-Cep = if_abap_behv=>mk-on
                         %path       = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                                cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.

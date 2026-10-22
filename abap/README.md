@@ -1052,7 +1052,8 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 ([seção 1.3](#13-ferramenta-de-desenvolvimento-adt-no-eclipse-ou-no-vs-code)):
 
 1. **Message Class `ZPC_MSG`** (pacote `ZAVBS_PC_COMMON`) — mensagens T100 lidas pela classe de exceção
-   `ZCX_PC_MSG`; precisa existir antes dela, pois as constantes da classe apontam para os números abaixo.
+   `ZCX_PC_MSG`; precisa existir antes dela e da interface `ZIF_PC_MSG`, cujas constantes apontam para os
+   números abaixo.
 
    | Propriedade | Valor |
    | --- | --- |
@@ -1073,9 +1074,10 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 
    Cada texto tem até 73 caracteres; `&1` a `&4` são os parâmetros preenchidos pela exceção (atributos
    `MSGV1` a `MSGV4`). Digite os textos exatamente como na tabela, com acentos: alguns testes ABAP Unit
-   comparam o texto devolvido. A coluna *Constante* é o nome correspondente em `ZCX_PC_MSG`.
+   comparam o texto devolvido. A coluna *Constante* é o nome correspondente em `ZIF_PC_MSG`, usado como
+   `textid` da exceção (`NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_cpf_invalido )`).
 
-   | Nº | Texto | Constante em `ZCX_PC_MSG` |
+   | Nº | Texto | Constante em `ZIF_PC_MSG` |
    | --- | --- | --- |
    | 001 | CPF inválido. Verifique o número informado. | `CLIENTE_CPF_INVALIDO` |
    | 002 | Já existe um cliente cadastrado com este CPF. | `CLIENTE_CPF_DUPLICADO` |
@@ -1181,7 +1183,7 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
 ### 8.2. Ordem de criação e ativação
 
 1. Pacotes (BTP: *ABAP for Cloud Development*; On-Premise: *Standard ABAP*) e objetos manuais 1–4.
-2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
+2. `ZIF_PC_CONSTANTS` (On-Premise: `c_modo_trial = abap_false`), `ZIF_PC_MSG`, `ZCX_PC_MSG`, `ZCL_PC_UTIL`,
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
    `ZCL_PC_NUMERACAO`.
 3. **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
