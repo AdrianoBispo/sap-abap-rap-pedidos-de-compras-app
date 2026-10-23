@@ -233,12 +233,12 @@ stateDiagram-v2
 │   ├── apps-list-reports/   quatro apps Fiori Elements (List Report + Object Page), uma por domínio
 │   ├── apps-analiticos/     quatro apps freestyle de análise, uma por domínio
 │   └── launchpad/           launchpad local que reúne as oito apps
-├── assets/          imagens dos diagramas e capturas de tela (assets/telas/)
+├── assets/          imagens dos diagramas, dos fluxogramas dos BOs (assets/fluxos-bo/) e capturas de tela (assets/telas/)
 └── docs/
     ├── Pedidos_de_Compras_-_Especificacao_Tecnica.md     especificação técnica (Markdown)
     ├── Pedidos_de_Compras_-_Especificacao_Tecnica.docx   especificação técnica (Word)
     ├── pedidos-de-compras.drawio                         diagramas (uma página por diagrama)
-    ├── fluxos-bo-*.drawio                                fluxogramas das operações de cada BO (uma página por fluxo)
+    ├── fluxos-bo/                                        fluxogramas das operações de cada BO (um .drawio por BO)
     ├── apresentacoes/                                    slides das cinco etapas
     └── modelos-importacao/                               planilhas modelo (CSV/XLSX)
 ```
@@ -292,15 +292,16 @@ Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 
 
 ### Fluxogramas das operações dos BOs
 
-As operações de cada business object estão em um arquivo próprio, com uma página por fluxo: autorização,
-feature control, determinations, validations, chamadas EML entre BOs e os caminhos de erro.
+As operações de cada business object estão em um arquivo próprio em [`docs/fluxos-bo/`](docs/fluxos-bo), com
+uma página por fluxo desenhada na horizontal: autorização, feature control, determinations, validations,
+chamadas EML entre BOs e os caminhos de erro. Cada página tem a sua imagem em [`assets/fluxos-bo/`](assets/fluxos-bo).
 
 | Arquivo | BO | Páginas |
 | --- | --- | --- |
-| [`fluxos-bo-cliente.drawio`](docs/fluxos-bo-cliente.drawio) | Cliente e Endereço (`ZR_PC_CLIENTE`) | criar, editar, excluir, endereço e CEP, endereço principal, importação |
-| [`fluxos-bo-item-estoque.drawio`](docs/fluxos-bo-item-estoque.drawio) | Item de Estoque (`ZR_PC_ITEM`) | criar, editar e inativar, excluir, reservar/liberar/baixar estoque, importação |
-| [`fluxos-bo-pedido.drawio`](docs/fluxos-bo-pedido.drawio) | Pedido (`ZR_PC_PEDIDO`) | criar e registrar, editar itens, simular pagamento, aprovar, cancelar, decisão do reembolso, importação |
-| [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo-reembolso.drawio) | Reembolso (`ZR_PC_REEMBOLSO`) | abertura da solicitação, aprovar, rejeitar |
+| [`fluxos-bo-cliente.drawio`](docs/fluxos-bo/fluxos-bo-cliente.drawio) | Cliente e Endereço (`ZR_PC_CLIENTE`) | [criar cliente](assets/fluxos-bo/cliente-1-criar-cliente.png) · [editar cliente](assets/fluxos-bo/cliente-2-editar-cliente.png) · [excluir cliente](assets/fluxos-bo/cliente-3-excluir-cliente.png) · [endereço e cep](assets/fluxos-bo/cliente-4-endereco-e-cep.png) · [endereço principal](assets/fluxos-bo/cliente-5-endereco-principal.png) · [importar planilha](assets/fluxos-bo/cliente-6-importar-planilha.png) |
+| [`fluxos-bo-item-estoque.drawio`](docs/fluxos-bo/fluxos-bo-item-estoque.drawio) | Item de Estoque (`ZR_PC_ITEM`) | [criar item](assets/fluxos-bo/item-estoque-1-criar-item.png) · [editar e inativar item](assets/fluxos-bo/item-estoque-2-editar-e-inativar-item.png) · [excluir item](assets/fluxos-bo/item-estoque-3-excluir-item.png) · [movimentar estoque](assets/fluxos-bo/item-estoque-4-movimentar-estoque.png) · [importar planilha](assets/fluxos-bo/item-estoque-5-importar-planilha.png) |
+| [`fluxos-bo-pedido.drawio`](docs/fluxos-bo/fluxos-bo-pedido.drawio) | Pedido (`ZR_PC_PEDIDO`) | [criar e registrar pedido](assets/fluxos-bo/pedido-1-criar-e-registrar-pedido.png) · [editar itens do pedido](assets/fluxos-bo/pedido-2-editar-itens-do-pedido.png) · [simular pagamento](assets/fluxos-bo/pedido-3-simular-pagamento.png) · [aprovar pedido](assets/fluxos-bo/pedido-4-aprovar-pedido.png) · [cancelar pedido](assets/fluxos-bo/pedido-5-cancelar-pedido.png) · [decisão do reembolso](assets/fluxos-bo/pedido-6-decisao-do-reembolso.png) · [importar planilha](assets/fluxos-bo/pedido-7-importar-planilha.png) |
+| [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo/fluxos-bo-reembolso.drawio) | Reembolso (`ZR_PC_REEMBOLSO`) | [abrir solicitação](assets/fluxos-bo/reembolso-1-abrir-solicitacao.png) · [aprovar reembolso](assets/fluxos-bo/reembolso-2-aprovar-reembolso.png) · [rejeitar reembolso](assets/fluxos-bo/reembolso-3-rejeitar-reembolso.png) |
 
 ---
 
@@ -322,7 +323,7 @@ feature control, determinations, validations, chamadas EML entre BOs e os caminh
 
 | Versão | Mudanças |
 | ------ | -------- |
-| v2.14  | Fluxogramas das operações de cada BO no draw.io (`docs/fluxos-bo-*.drawio`), uma página por fluxo, no padrão visual SAP |
+| v2.14  | Fluxogramas das operações de cada BO no draw.io (`docs/fluxos-bo/`), uma página por fluxo na horizontal, no padrão visual SAP, com as imagens em `assets/fluxos-bo/` |
 | v2.13  | Classes de teste ABAP Unit em todas as classes e behavior pools (204 testes em 13 classes, com test doubles nos BOs); mapa de cobertura no [`abap/README.md`](abap/README.md#111-abap-unit) e Especificação Técnica v3.3 |
 | v2.12  | Launchpad no início do README, logo após os badges, como no projeto CAP; telas da Demonstração recolhidas em seções expansíveis, com o fluxo de Pedidos de Compras sempre visível |
 | v2.11  | README próprio para cada app Fiori e para o launchpad local; prefixo `ZAVBS` dos pacotes documentado como opcional (escolha pessoal do autor), com a sugestão genérica `ZPK` na documentação, na Especificação Técnica v3.1 e nas apresentações |
