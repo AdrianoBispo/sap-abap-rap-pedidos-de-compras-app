@@ -14,12 +14,11 @@
   <img src="https://img.shields.io/badge/ABAP%20Unit-testes-9C3493?style=for-the-badge&logo=sap&logoColor=white" alt="ABAP Unit">
 </div>
 
-<div>
-  <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="100%">
-</div>
+<img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="100%">
 
-Telas capturadas no launchpad local (`ui5/launchpad`) com os dados de demonstração do SAP BTP, ABAP
-environment, executando os fluxos completos das apps.
+> [!NOTE]
+> Telas capturadas no launchpad local (`ui5/launchpad`) com os dados de demonstração do SAP BTP, ABAP
+> environment, executando os fluxos completos das apps.
 
 <details>
 <summary><b> Prints da aplicação de Gestão de Clientes</b></summary>
@@ -171,8 +170,9 @@ Os mesmos códigos e objetos ABAP e RAP podem ser utilizados no ambiente **SAP B
 - **Análises**: quatro apps freestyle com filtros, indicadores e 5 gráficos cada.
 - **Autorização** por perfil (administrador e usuário comum) e **navegação entre apps** pelo launchpad.
 
-O funcionamento de cada regra no backend está no [`abap/README.md`](abap/README.md); as telas e a navegação,
-no [`ui5/README.md`](ui5/README.md).
+> [!NOTE]
+> O funcionamento de cada regra no backend está no [`abap/README.md`](abap/README.md); as telas e a navegação,
+> no [`ui5/README.md`](ui5/README.md).
 
 ## Arquitetura do Sistema no SAP BTP ABAP Environment:
 
