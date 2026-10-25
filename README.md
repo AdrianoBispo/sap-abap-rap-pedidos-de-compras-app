@@ -1,4 +1,4 @@
-<h1> Pedidos de Compras – SAP RAP (ABAP Cloud e On-Premise) </h1>
+# Pedidos de Compras – SAP RAP (ABAP Cloud e On-Premise)
 
 <div>
   <img src="https://img.shields.io/badge/BTP-ABAP%20Environment-0FAAFF?style=for-the-badge&logo=sap&logoColor=white" alt="SAP BTP ABAP Environment" >
@@ -18,24 +18,87 @@
   <img src="assets/telas/launchpad/inicio.png" alt="Launchpad local com os oito tiles: quatro de gestão e quatro de análise" width="100%">
 </div>
 
----
+Telas capturadas no launchpad local (`ui5/launchpad`) com os dados de demonstração do SAP BTP, ABAP
+environment, executando os fluxos completos das apps.
+
+<details>
+<summary><b> Prints da aplicação de Gestão de Clientes</b></summary>
+<br>
+
+| Lista de clientes | Endereço preenchido pelo ViaCEP | Cliente cadastrado |
+| :---------------: | :-----------------------------: | :----------------: |
+| <img src="assets/telas/clientes/lista.png" alt="Lista de clientes" width="100%"> | <img src="assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="100%"> | <img src="assets/telas/clientes/cliente.png" alt="Object Page da cliente cadastrada" width="100%"> |
+
+</details>
+
+<details>
+<summary><b> Prints da aplicação de Gestão de Estoque</b></summary>
+<br>
+
+| Lista de itens | Item cadastrado (SKU gerado no Save) |
+| :------------: | :----------------------------------: |
+| <img src="assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="100%"> | <img src="assets/telas/estoque/item.png" alt="Object Page do item cadastrado" width="100%"> |
+
+</details>
+
+<details>
+<summary><b>Prints da aplicação de Pedidos de Compras</b></summary>
+<br>
+
+| Lista de pedidos | Rascunho com itens inline | Efetuar Pagamento |
+| :--------------: | :-----------------------: | :---------------: |
+| <img src="assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="100%"> | <img src="assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="100%"> | <img src="assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="100%"> |
+
+| Pedido finalizado (Dados do Cliente)    | Pedido Finalizado (Itens, pagamento e finalização) |
+| :-------------------------------------: | :------------------------------------------------: |
+| <img src="assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="100%"> | <img src="assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="100%"> |
+
+| Cancelar pedido (motivo) | Pedido em processamento de reembolso | Pedido Cancelado (Reembolso Aprovado) |
+| :----------------------: | :----------------------------------: | :-----------------------------------: |
+| <img src="assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="100%"> | <img src="assets/telas/pedidos/processando-reembolso.png" alt="Pedido com status Processando reembolso" width="100%"> | <img src="assets/telas/pedidos/cancelado.png" alt="Pedido cancelado pelo reembolso aprovado, com pagamento devolvido e o snapshot do cliente" width="100%"> |
+
+</details>
+
+<details>
+<summary><b>Prints da aplicação de Gestão de Reembolsos</b></summary>
+<br>
+
+| Lista de Reembolsos      | Solicitação pendente |
+| :----------------------: | :----------------------------------: |
+| <img src="assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="100%"> | <img src="assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="100%"> | 
+
+| Aprovar reembolso (motivo da decisão) | Reembolso aprovado |
+| :-----------------------------------: | :----------------: |
+| <img src="assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="100%"> | <img src="assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="100%"> |
+
+</details>
+
+<details>
+<summary><b>Prints das aplicações de Análises</b></summary>
+<br>
+
+| Análise de Pedidos de Compras | Análise de Clientes |
+| :---------------------------: | :-----------------: |
+| <img src="assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="100%"> | <img src="assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="100%"> |
+
+| Análise de Itens do Estoque | Análise de Pedidos de Reembolsos |
+| :-------------------------: | :------------------------------: |
+| <img src="assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="100%"> | <img src="assets/telas/analises/reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="100%"> |
+
+</details>
 
 ## Índice
 
-- [Índice](#índice)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Sobre o projeto](#sobre-o-projeto)
 - [Tecnologias](#tecnologias)
-- [Arquitetura](#arquitetura)
+- [Apps e Funcionalidades](#apps-e-funcionalidades)
+- [Arquitetura do Sistema no **SAP BTP ABAP Environment**](#arquitetura-do-sistema-no-sap-btp-abap-environment)
+- [Arquitetura do Sistema no **SAP S/4HANA On-Premise**](#arquitetura-do-sistema-no-sap-s4hana-on-premise)
 - [Diagramas](#diagramas)
-  - [Fluxogramas das operações dos BOs](#fluxogramas-das-operações-dos-bos)
-- [Demonstração](#demonstração)
-- [Funcionalidades](#funcionalidades)
+- [Fluxogramas das operações dos BOs](#fluxogramas-das-operações-dos-bos)
 - [Como começar](#como-começar)
 - [Histórico de versões](#histórico-de-versões)
-- [Autor](#autor)
-
----
 
 ## Estrutura do repositório
 
@@ -62,37 +125,11 @@
 > sugestão genérica, `ZPK` (`ZPK_PEDIDOS_COMPRAS`, `ZPK_PC_COMMON`, `ZPK_PC_PEDIDOS`…). O código não depende do
 > nome dos pacotes; detalhes em [`abap/README.md`](abap/README.md#12-prefixo-dos-pacotes).
 
----
-
 ## Sobre o projeto
 
-Projeto de estudo **SAP ABAP RAP (RESTful Application Programming Model)** e **SAP Fiori** que contempla o fluxo de gestão de clientes, estoque, pedidos de compras e reembolsos e que conta também com os apps para análise dos dados dessas mesmas aplicações Fiori. O backend RAP fica em [`abap/`](abap/) e o front-end em [`ui5/`](ui5/).
+Projeto de estudo **SAP ABAP RAP (RESTful Application Programming Model)** e **SAP Fiori** que contempla o fluxo de gestão de clientes, estoque, pedidos de compras e reembolsos e que conta também com os apps para análise dos dados dessas mesmas aplicações Fiori.
 
 Os mesmos códigos e objetos ABAP e RAP podem ser utilizados no ambiente **SAP BTP, ABAP environment** (ABAP Cloud) e no ambiente **SAP S/4HANA On-Premise** (pacotes Standard ABAP). Nos dois ambientes a solução usa CDS View Entities, Behavior Definitions, Behavior Implementations, Service Definitions e Service Bindings OData V4; só a configuração da plataforma (segurança, conectividade, launchpad e transporte) muda de um para o outro.
-
-| Cenário    | Ambiente                                                | Pacotes                      | Segurança                                    | Launchpad                     |
-| ---------- | ------------------------------------------------------- | ---------------------------- | -------------------------------------------- | ----------------------------- |
-| ABAP Cloud | SAP BTP, ABAP environment (Trial ou pago)               | *ABAP for Cloud Development* | IAM Apps, Business Catalogs e Business Roles | SAP Build Work Zone           |
-| On-Premise | SAP S/4HANA (referência: 2025 FPS01) ou Private Edition | *Standard ABAP*              | `SU21`, `SU24`, `PFCG`                       | SAP Fiori launchpad embarcado |
-
-| App                              | O que gerencia                                                                                     |
-| -------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Gestão de Clientes               | Clientes e seus endereços, com preenchimento e cadastro automático via ViaCEP                      |
-| Gestão de Estoque                | Itens (SKU, foto, categoria, descrição) e quantidade disponível                                    |
-| Pedidos de Compras               | Pedidos, itens, pagamento simulado, cancelamento e histórico (snapshots)                           |
-| Gestão de Reembolsos             | Aprovação e rejeição das solicitações de reembolso de pedidos cancelados com pagamento aprovado    |
-| Análise de Pedidos de Compras    | Valores, quantidades, ticket médio, status e pagamentos dos pedidos (somente leitura)              |
-| Análise de Clientes              | Clientes por gênero, UF, faixa de score e mês de cadastro (somente leitura)                        |
-| Análise de Itens do Estoque      | Itens, quantidades reservada e disponível e valor em estoque por categoria (somente leitura)       |
-| Análise de Pedidos de Reembolsos | Valores e quantidades das solicitações de reembolso por status, mês, UF e motivo (somente leitura) |
-
-> [!NOTE]
-> Os fontes foram escritos em ABAP Cloud (`strict ( 2 )`, `with draft`) e verificados com *abaplint*
-> (linguagem **Cloud**). Por isso ativam no SAP BTP, ABAP environment e também, sem erros, em pacotes
-> *Standard ABAP* do On-Premise. Só dois objetos mudam entre os ambientes; as diferenças estão no
-> [`abap/README.md`](abap/README.md#2-o-que-muda-entre-os-cenários).
-
----
 
 ## Tecnologias
 
@@ -106,138 +143,18 @@ Os mesmos códigos e objetos ABAP e RAP podem ser utilizados no ambiente **SAP B
 | Ferramentas | ADT (Eclipse ou VS Code), SAP GUI (On-Premise), SAP Fiori tools, UI5 CLI, UI5 linter, abaplint                  |
 | Testes      | ABAP Unit, OPA5 e QUnit                                                                                         |
 
----
+## Apps e Funcionalidades
 
-## Arquitetura
-
-O mesmo backend RAP tem duas arquiteturas de implantação. No **SAP BTP, ABAP environment**:
-
-<div>
-  <a href="assets/arquitetura.png"><img src="assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%"></a>
-</div>
-
-No **SAP S/4HANA On-Premise**, com SAP Fiori launchpad e SAP Gateway embarcados e a consulta ao ViaCEP
-por uma destination `SM59`:
-
-<div>
-  <a href="assets/arquitetura-onpremise.png"><img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%"></a>
-</div>
-
-- Cada app chama o próprio serviço OData V4, que expõe um BO RAP; as quatro análises usam o mesmo
-  serviço analítico.
-- O BO Pedido reserva estoque no BO Item, grava os snapshots e abre a solicitação no BO Reembolso, tudo por
-  EML na mesma transação; o BO Cliente consulta a API ViaCEP.
-
----
-
-## Diagramas
-
-Desenhados no **draw.io** com as formas oficiais da SAP, num único arquivo
-([`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)) com uma página por diagrama, exportada
-para [`assets/`](assets).
-
-| Página | Diagrama                                        | Imagem                                                          |
-| ------ | ----------------------------------------------- | --------------------------------------------------------------- |
-| 1      | Arquitetura (SAP BTP, ABAP environment)         | [`arquitetura.png`](assets/arquitetura.png)                     |
-| 2      | Fluxo do pedido de compra                       | [`fluxo-pedido.png`](assets/fluxo-pedido.png)                   |
-| 3      | Fluxo de reembolso                              | [`fluxo-reembolso.png`](assets/fluxo-reembolso.png)             |
-| 4      | Endereço e consulta de CEP (ViaCEP)             | [`fluxo-endereco-viacep.png`](assets/fluxo-endereco-viacep.png) |
-| 5      | Importação em massa por planilha                | [`fluxo-importacao.png`](assets/fluxo-importacao.png)           |
-| 6      | Apps de análise                                 | [`fluxo-analises.png`](assets/fluxo-analises.png)               |
-| 7      | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](assets/arquitetura-onpremise.png) |
-
-Para regerar as imagens: *Arquivo → Exportar como → PNG* no draw.io (escala 2, borda 20), uma página por vez.
-
-### Fluxogramas das operações dos BOs
-
-As operações de cada business object estão em um arquivo próprio em [`docs/fluxos-bo/`](docs/fluxos-bo), com
-uma página por fluxo desenhada na horizontal: autorização, feature control, determinations, validations,
-chamadas EML entre BOs e os caminhos de erro. Cada página tem a sua imagem em [`assets/fluxos-bo/`](assets/fluxos-bo).
-
-| Arquivo                                                                         | BO                                   | Páginas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`fluxos-bo-cliente.drawio`](docs/fluxos-bo/fluxos-bo-cliente.drawio)           | Cliente e Endereço (`ZR_PC_CLIENTE`) | [criar cliente](assets/fluxos-bo/cliente-1-criar-cliente.png) · [editar cliente](assets/fluxos-bo/cliente-2-editar-cliente.png) · [excluir cliente](assets/fluxos-bo/cliente-3-excluir-cliente.png) · [endereço e cep](assets/fluxos-bo/cliente-4-endereco-e-cep.png) · [endereço principal](assets/fluxos-bo/cliente-5-endereco-principal.png) · [importar planilha](assets/fluxos-bo/cliente-6-importar-planilha.png)                                                                                                            |
-| [`fluxos-bo-item-estoque.drawio`](docs/fluxos-bo/fluxos-bo-item-estoque.drawio) | Item de Estoque (`ZR_PC_ITEM`)       | [criar item](assets/fluxos-bo/item-estoque-1-criar-item.png) · [editar e inativar item](assets/fluxos-bo/item-estoque-2-editar-e-inativar-item.png) · [excluir item](assets/fluxos-bo/item-estoque-3-excluir-item.png) · [movimentar estoque](assets/fluxos-bo/item-estoque-4-movimentar-estoque.png) · [importar planilha](assets/fluxos-bo/item-estoque-5-importar-planilha.png)                                                                                                                                                 |
-| [`fluxos-bo-pedido.drawio`](docs/fluxos-bo/fluxos-bo-pedido.drawio)             | Pedido (`ZR_PC_PEDIDO`)              | [criar e registrar pedido](assets/fluxos-bo/pedido-1-criar-e-registrar-pedido.png) · [editar itens do pedido](assets/fluxos-bo/pedido-2-editar-itens-do-pedido.png) · [simular pagamento](assets/fluxos-bo/pedido-3-simular-pagamento.png) · [aprovar pedido](assets/fluxos-bo/pedido-4-aprovar-pedido.png) · [cancelar pedido](assets/fluxos-bo/pedido-5-cancelar-pedido.png) · [decisão do reembolso](assets/fluxos-bo/pedido-6-decisao-do-reembolso.png) · [importar planilha](assets/fluxos-bo/pedido-7-importar-planilha.png) |
-| [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo/fluxos-bo-reembolso.drawio)       | Reembolso (`ZR_PC_REEMBOLSO`)        | [abrir solicitação](assets/fluxos-bo/reembolso-1-abrir-solicitacao.png) · [aprovar reembolso](assets/fluxos-bo/reembolso-2-aprovar-reembolso.png) · [rejeitar reembolso](assets/fluxos-bo/reembolso-3-rejeitar-reembolso.png)                                                                                                                                                                                                                                                                                                      |
-
----
-
-## Demonstração
-
-Telas capturadas no launchpad local (`ui5/launchpad`) com os dados de demonstração do SAP BTP, ABAP
-environment, executando os fluxos completos das apps.
-
-<details>
-<summary><b>Gestão de Clientes: cadastro com consulta ao ViaCEP</b></summary>
-<br>
-
-| Lista de clientes | Endereço preenchido pelo ViaCEP | Cliente cadastrado |
-| :---------------: | :-----------------------------: | :----------------: |
-| <img src="assets/telas/clientes/lista.png" alt="Lista de clientes" width="290"> | <img src="assets/telas/clientes/endereco-viacep.png" alt="Endereço do CEP 01310-100 preenchido pelo ViaCEP" width="290"> | <img src="assets/telas/clientes/cliente.png" alt="Object Page da cliente cadastrada" width="290"> |
-
-</details>
-
-<details>
-<summary><b>Gestão de Estoque</b></summary>
-<br>
-
-| Lista de itens | Item cadastrado (SKU gerado no Save) |
-| :------------: | :----------------------------------: |
-| <img src="assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="440"> | <img src="assets/telas/estoque/item.png" alt="Object Page do item cadastrado" width="440"> |
-
-</details>
-
-<details>
-<summary><b>Pedidos de Compras: do rascunho à finalização</b></summary>
-<br>
-
-| Lista de pedidos | Rascunho com itens inline | Efetuar Pagamento |
-| :--------------: | :-----------------------: | :---------------: |
-| <img src="assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
-
-| Pedido finalizado (snapshot do cliente) | Itens, pagamento e finalização |
-| :-------------------------------------: | :----------------------------: |
-| <img src="assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="440"> |
-
-</details>
-
-<details>
-<summary><b>Cancelamento com pagamento aprovado e Gestão de Reembolsos</b></summary>
-<br>
-
-| Cancelar pedido (motivo) | Pedido em processamento de reembolso | Lista de reembolsos |
-| :----------------------: | :----------------------------------: | :-----------------: |
-| <img src="assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="290"> | <img src="assets/telas/pedidos/processando-reembolso.png" alt="Pedido com status Processando reembolso" width="290"> | <img src="assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="290"> |
-
-| Solicitação pendente | Aprovar reembolso (motivo da decisão) | Reembolso aprovado |
-| :------------------: | :-----------------------------------: | :----------------: |
-| <img src="assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="290"> | <img src="assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="290"> | <img src="assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="290"> |
-
-<p align="center">
-  <img src="assets/telas/pedidos/cancelado.png" alt="Pedido cancelado pelo reembolso aprovado, com pagamento devolvido e o snapshot do cliente" width="700"><br>
-  <sub>Pedido aberto pelo link do reembolso (navegação entre apps): cancelado, pagamento devolvido e snapshot do cliente.</sub>
-</p>
-
-</details>
-
-<details>
-<summary><b>Análises</b></summary>
-<br>
-
-| Análise de Pedidos de Compras | Análise de Clientes |
-| :---------------------------: | :-----------------: |
-| <img src="assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="440"> | <img src="assets/telas/analises/clientes.png" alt="Painel da Análise de Clientes" width="440"> |
-
-| Análise de Itens do Estoque | Análise de Pedidos de Reembolsos |
-| :-------------------------: | :------------------------------: |
-| <img src="assets/telas/analises/estoque.png" alt="Painel da Análise de Itens do Estoque" width="440"> | <img src="assets/telas/analises/reembolsos.png" alt="Painel da Análise de Pedidos de Reembolsos" width="440"> |
-
-</details>
-
----
-
-## Funcionalidades
+| App                              | O que gerencia                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Gestão de Clientes               | Clientes e seus endereços, com preenchimento e cadastro automático via ViaCEP                      |
+| Gestão de Estoque                | Itens (SKU, foto, categoria, descrição) e quantidade disponível                                    |
+| Pedidos de Compras               | Pedidos, itens, pagamento simulado, cancelamento e histórico (snapshots)                           |
+| Gestão de Reembolsos             | Aprovação e rejeição das solicitações de reembolso de pedidos cancelados com pagamento aprovado    |
+| Análise de Pedidos de Compras    | Valores, quantidades, ticket médio, status e pagamentos dos pedidos (somente leitura)              |
+| Análise de Clientes              | Clientes por gênero, UF, faixa de score e mês de cadastro (somente leitura)                        |
+| Análise de Itens do Estoque      | Itens, quantidades reservada e disponível e valor em estoque por categoria (somente leitura)       |
+| Análise de Pedidos de Reembolsos | Valores e quantidades das solicitações de reembolso por status, mês, UF e motivo (somente leitura) |
 
 - **Clientes**: cadastro com draft, vários endereços por cliente (um principal), score exibido como barra
   de progresso e bloqueio da exclusão de cliente com pedido.
@@ -257,13 +174,52 @@ environment, executando os fluxos completos das apps.
 O funcionamento de cada regra no backend está no [`abap/README.md`](abap/README.md); as telas e a navegação,
 no [`ui5/README.md`](ui5/README.md).
 
----
+## Arquitetura do Sistema no SAP BTP ABAP Environment:
+
+<div>
+  <img src="assets/arquitetura.png" alt="Arquitetura: usuários e Work Zone, launchpad local e ferramentas de desenvolvimento acessando o SAP BTP, ABAP environment, com as 8 apps (BSP), os 5 serviços OData V4, os BOs RAP, a camada analítica, ZAVBS_PC_COMMON, SAP HANA e a API ViaCEP" width="100%">
+</div>
+
+## Arquitetura do Sistema no SAP S/4HANA On-Premise:
+
+<div>
+  <img src="assets/arquitetura-onpremise.png" alt="Arquitetura On-Premise: usuários via SAP Web Dispatcher, SAP Fiori launchpad e SAP Gateway embarcados no SAP S/4HANA 2025 FPS01, BOs RAP em pacotes Standard ABAP, ZCL_PC_VIACEP com SM59 e STRUST, proxy, firewall e API ViaCEP" width="100%">
+</div>
+
+## Diagramas
+
+| Página | Diagrama                                        | Imagem                                                          |
+| ------ | ----------------------------------------------- | --------------------------------------------------------------- |
+| 1      | Arquitetura (SAP BTP, ABAP environment)         | [`arquitetura.png`](assets/arquitetura.png)                     |
+| 2      | Fluxo do pedido de compra                       | [`fluxo-pedido.png`](assets/fluxo-pedido.png)                   |
+| 3      | Fluxo de reembolso                              | [`fluxo-reembolso.png`](assets/fluxo-reembolso.png)             |
+| 4      | Endereço e consulta de CEP (ViaCEP)             | [`fluxo-endereco-viacep.png`](assets/fluxo-endereco-viacep.png) |
+| 5      | Importação em massa por planilha                | [`fluxo-importacao.png`](assets/fluxo-importacao.png)           |
+| 6      | Apps de análise                                 | [`fluxo-analises.png`](assets/fluxo-analises.png)               |
+| 7      | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](assets/arquitetura-onpremise.png) |
+
+Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP, num único arquivo
+([`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)) com uma página por diagrama, onde foram exportadas as imagens e salvas no diretório de [`assets/`](assets).
+
+## Fluxogramas das operações dos BOs
+
+| Arquivo                                                                         | BO                                   | Páginas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`fluxos-bo-cliente.drawio`](docs/fluxos-bo/fluxos-bo-cliente.drawio)           | Cliente e Endereço (`ZR_PC_CLIENTE`) | [criar cliente](assets/fluxos-bo/cliente-1-criar-cliente.png) · [editar cliente](assets/fluxos-bo/cliente-2-editar-cliente.png) · [excluir cliente](assets/fluxos-bo/cliente-3-excluir-cliente.png) · [endereço e cep](assets/fluxos-bo/cliente-4-endereco-e-cep.png) · [endereço principal](assets/fluxos-bo/cliente-5-endereco-principal.png) · [importar planilha](assets/fluxos-bo/cliente-6-importar-planilha.png)                                                                                                            |
+| [`fluxos-bo-item-estoque.drawio`](docs/fluxos-bo/fluxos-bo-item-estoque.drawio) | Item de Estoque (`ZR_PC_ITEM`)       | [criar item](assets/fluxos-bo/item-estoque-1-criar-item.png) · [editar e inativar item](assets/fluxos-bo/item-estoque-2-editar-e-inativar-item.png) · [excluir item](assets/fluxos-bo/item-estoque-3-excluir-item.png) · [movimentar estoque](assets/fluxos-bo/item-estoque-4-movimentar-estoque.png) · [importar planilha](assets/fluxos-bo/item-estoque-5-importar-planilha.png)                                                                                                                                                 |
+| [`fluxos-bo-pedido.drawio`](docs/fluxos-bo/fluxos-bo-pedido.drawio)             | Pedido (`ZR_PC_PEDIDO`)              | [criar e registrar pedido](assets/fluxos-bo/pedido-1-criar-e-registrar-pedido.png) · [editar itens do pedido](assets/fluxos-bo/pedido-2-editar-itens-do-pedido.png) · [simular pagamento](assets/fluxos-bo/pedido-3-simular-pagamento.png) · [aprovar pedido](assets/fluxos-bo/pedido-4-aprovar-pedido.png) · [cancelar pedido](assets/fluxos-bo/pedido-5-cancelar-pedido.png) · [decisão do reembolso](assets/fluxos-bo/pedido-6-decisao-do-reembolso.png) · [importar planilha](assets/fluxos-bo/pedido-7-importar-planilha.png) |
+| [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo/fluxos-bo-reembolso.drawio)       | Reembolso (`ZR_PC_REEMBOLSO`)        | [abrir solicitação](assets/fluxos-bo/reembolso-1-abrir-solicitacao.png) · [aprovar reembolso](assets/fluxos-bo/reembolso-2-aprovar-reembolso.png) · [rejeitar reembolso](assets/fluxos-bo/reembolso-3-rejeitar-reembolso.png)                                                                                                                                                                                                                                                                                                      |
+
+As operações de cada business object também foram desenhados no **draw.io** com as formas oficiais da SAP e estão em um arquivo próprio em [`docs/fluxos-bo/`](docs/fluxos-bo), com uma página por fluxo desenhada na horizontal: autorização, feature control, determinations, validations,
+chamadas EML entre BOs e os caminhos de erro. Cada página tem a sua imagem em [`assets/fluxos-bo/`](assets/fluxos-bo).
 
 ## Como começar
 
-**Pré-requisitos:** um SAP BTP, ABAP environment (Trial serve) ou um SAP S/4HANA On-Premise com RAP;
-ADT no Eclipse ou no VS Code (extensão *ABAP Development Tools*); Node.js 20+; VS Code com SAP Fiori tools ou
-SAP Business Application Studio.
+- **Pré-requisitos:**
+  - Ter acesso ao sistema **SAP**, pode ser o **ABAP Environment** do **SAP BTP** (Trial serve) ou a um sistema **SAP S/4HANA (On-Premise ou Cloud)**
+  - Ter instalado o plugin do ADT no Eclipse ou, para quem prefere o VS Code, utilizar a extensão **ABAP Development Tools**.
+  - Ter instalado o **Node.js 20+**.
+  - Ter instalado o **VS Code** junto com o pack de extensão **SAP Fiori Tools** ou ter acesso ao **SAP Business Application Studio**.
 
 1. **Backend** — siga o [`abap/README.md`](abap/README.md): objetos criados à mão, ordem de ativação,
    roteiro de cada ambiente (BTP ou On-Premise), ViaCEP e autorização.
@@ -277,8 +233,6 @@ SAP Business Application Studio.
    npm start          # dados do sistema ABAP configurado no ui5.yaml
    npm run start-mock # sem backend
    ```
-
----
 
 ## Histórico de versões
 
@@ -306,11 +260,3 @@ SAP Business Application Studio.
 
 O detalhe das correções do backend (v1.1, v1.2 e v1.5) está no
 [`abap/README.md`](abap/README.md#13-histórico-de-correções-do-backend).
-
----
-
-## Autor
-
-Desenvolvido por **Adriano Bispo**.
-
-[![GitHub](https://img.shields.io/badge/GitHub-AdrianoBispo-181717?style=for-the-badge&logo=github)](https://github.com/AdrianoBispo)
