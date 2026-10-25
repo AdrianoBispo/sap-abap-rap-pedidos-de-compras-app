@@ -198,8 +198,10 @@ no [`ui5/README.md`](ui5/README.md).
 | 6      | Apps de análise                                 | [`fluxo-analises.png`](assets/fluxo-analises.png)               |
 | 7      | Arquitetura On-Premise (SAP S/4HANA 2025 FPS01) | [`arquitetura-onpremise.png`](assets/arquitetura-onpremise.png) |
 
-Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP, num único arquivo
-([`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)) com uma página por diagrama, onde foram exportadas as imagens e salvas no diretório de [`assets/`](assets).
+> [!NOTE]
+> Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP, num único arquivo
+> ([`docs/pedidos-de-compras.drawio`](docs/pedidos-de-compras.drawio)) com uma página por diagrama,
+> onde foram exportadas as imagens e salvas no diretório de [`assets/`](assets).
 
 ## Fluxogramas das operações dos BOs
 
@@ -210,8 +212,11 @@ Os diagramas foram desenhados no **draw.io** com as formas oficiais da SAP, num 
 | [`fluxos-bo-pedido.drawio`](docs/fluxos-bo/fluxos-bo-pedido.drawio)             | Pedido (`ZR_PC_PEDIDO`)              | [criar e registrar pedido](assets/fluxos-bo/pedido-1-criar-e-registrar-pedido.png) · [editar itens do pedido](assets/fluxos-bo/pedido-2-editar-itens-do-pedido.png) · [simular pagamento](assets/fluxos-bo/pedido-3-simular-pagamento.png) · [aprovar pedido](assets/fluxos-bo/pedido-4-aprovar-pedido.png) · [cancelar pedido](assets/fluxos-bo/pedido-5-cancelar-pedido.png) · [decisão do reembolso](assets/fluxos-bo/pedido-6-decisao-do-reembolso.png) · [importar planilha](assets/fluxos-bo/pedido-7-importar-planilha.png) |
 | [`fluxos-bo-reembolso.drawio`](docs/fluxos-bo/fluxos-bo-reembolso.drawio)       | Reembolso (`ZR_PC_REEMBOLSO`)        | [abrir solicitação](assets/fluxos-bo/reembolso-1-abrir-solicitacao.png) · [aprovar reembolso](assets/fluxos-bo/reembolso-2-aprovar-reembolso.png) · [rejeitar reembolso](assets/fluxos-bo/reembolso-3-rejeitar-reembolso.png)                                                                                                                                                                                                                                                                                                      |
 
-As operações de cada business object também foram desenhados no **draw.io** com as formas oficiais da SAP e estão em um arquivo próprio em [`docs/fluxos-bo/`](docs/fluxos-bo), com uma página por fluxo desenhada na horizontal: autorização, feature control, determinations, validations,
-chamadas EML entre BOs e os caminhos de erro. Cada página tem a sua imagem em [`assets/fluxos-bo/`](assets/fluxos-bo).
+> [!NOTE]
+> As operações de cada business object também foram desenhados no **draw.io** com as formas oficiais da SAP 
+> e estão em um arquivo próprio em [`docs/fluxos-bo/`](docs/fluxos-bo), com uma página por fluxo desenhada na horizontal:
+> autorização, feature control, determinations, validations, chamadas EML entre BOs e os caminhos de erro.
+> Cada página tem a sua imagem em [`assets/fluxos-bo/`](assets/fluxos-bo).
 
 ## Como começar
 
