@@ -165,10 +165,35 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "EfetuarPagamento": {
+                      "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
+                      "enabled": "pedidoscompras.ext.AcoesPedido.podePagar",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoEfetuarPagamento}",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                      }
+                    },
+                    "CancelarPedido": {
+                      "press": "pedidoscompras.ext.AcoesPedido.cancelarPedido",
+                      "enabled": "pedidoscompras.ext.AcoesPedido.podeCancelar",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoCancelarPedido}",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                      }
+                    }
                   }
                 }
               },
-              "initialLoad": "Enabled"
+              "initialLoad": "Enabled",
+              "enhanceI18n": [
+                "i18n"
+              ]
             }
           }
         },
@@ -201,7 +226,36 @@
                     }
                   }
                 }
-              }
+              },
+              "content": {
+                "header": {
+                  "actions": {
+                    "EfetuarPagamento": {
+                      "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
+                      "text": "{i18n>acaoEfetuarPagamento}",
+                      "visible": "{= ${IsActiveEntity} === true }",
+                      "enabled": "{= ${IsActiveEntity} === true && ${StatusPedido} === 'ABERTO' }",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                      }
+                    },
+                    "CancelarPedido": {
+                      "press": "pedidoscompras.ext.AcoesPedido.cancelarPedido",
+                      "text": "{i18n>acaoCancelarPedido}",
+                      "visible": "{= ${IsActiveEntity} === true }",
+                      "enabled": "{= ${IsActiveEntity} === true && ( ${StatusPedido} === 'ABERTO' || ${StatusPedido} === 'AGUARDANDO_APROVACAO' ) }",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                      }
+                    }
+                  }
+                }
+              },
+              "enhanceI18n": [
+                "i18n"
+              ]
             }
           }
         },
