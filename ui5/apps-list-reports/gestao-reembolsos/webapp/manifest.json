@@ -153,6 +153,24 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "AprovarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
+                      "enabled": "gestaoreembolsos.ext.AcoesReembolso.podeDecidir",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoAprovarReembolso}"
+                    },
+                    "RejeitarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
+                      "enabled": "gestaoreembolsos.ext.AcoesReembolso.podeDecidir",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoRejeitarReembolso}",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "AprovarReembolso"
+                      }
+                    }
                   }
                 }
               },
@@ -167,7 +185,27 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Reembolso"
+              "contextPath": "/Reembolso",
+              "content": {
+                "header": {
+                  "actions": {
+                    "AprovarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
+                      "text": "{i18n>acaoAprovarReembolso}",
+                      "enabled": "{= ${StatusReembolso} === 'PENDENTE' }"
+                    },
+                    "RejeitarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
+                      "text": "{i18n>acaoRejeitarReembolso}",
+                      "enabled": "{= ${StatusReembolso} === 'PENDENTE' }",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "AprovarReembolso"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
