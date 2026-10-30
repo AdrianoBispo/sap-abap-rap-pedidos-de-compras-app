@@ -155,11 +155,11 @@
                     "type": "ResponsiveTable"
                   },
                   "actions": {
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.AprovarReembolso::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.ReembolsoType": {
-                      "visible": false
-                    },
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.RejeitarReembolso::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.ReembolsoType": {
-                      "visible": false
+                    "DataFieldForActionGroup::AcoesReembolso": {
+                      "menu": [
+                        "AprovarReembolso",
+                        "RejeitarReembolso"
+                      ]
                     },
                     "AprovarReembolso": {
                       "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
@@ -171,11 +171,7 @@
                       "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
                       "enabled": "gestaoreembolsos.ext.AcoesReembolso.podeRejeitar",
                       "requiresSelection": true,
-                      "text": "{i18n>acaoRejeitarReembolso}",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "AprovarReembolso"
-                      }
+                      "text": "{i18n>acaoRejeitarReembolso}"
                     }
                   }
                 }
@@ -195,11 +191,11 @@
               "content": {
                 "header": {
                   "actions": {
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.AprovarReembolso::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.ReembolsoType": {
-                      "visible": false
-                    },
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.RejeitarReembolso::com.sap.gateway.srvd.zui_pc_reembolsos.v0001.ReembolsoType": {
-                      "visible": false
+                    "DataFieldForActionGroup::AcoesReembolso": {
+                      "menu": [
+                        "AprovarReembolso",
+                        "RejeitarReembolso"
+                      ]
                     },
                     "AprovarReembolso": {
                       "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
@@ -209,11 +205,7 @@
                     "RejeitarReembolso": {
                       "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
                       "text": "{i18n>acaoRejeitarReembolso}",
-                      "enabled": "{__OperationControl/RejeitarReembolso}",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "AprovarReembolso"
-                      }
+                      "enabled": "{__OperationControl/RejeitarReembolso}"
                     }
                   }
                 }

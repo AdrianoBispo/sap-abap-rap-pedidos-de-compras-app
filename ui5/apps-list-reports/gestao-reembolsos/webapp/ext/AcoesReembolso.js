@@ -6,8 +6,9 @@
  * diálogo de parâmetros, por isso os botões padrão foram trocados por estes,
  * que pedem a confirmação e depois executam a action do RAP via
  * editFlow.invokeAction (que abre o diálogo padrão do motivo).
- * Os botões padrão continuam na DDLX ZC_PC_REEMBOLSO_APP (para o Preview do
- * serviço) e ficam ocultos neste app pelo manifest (visible: false).
+ * A DDLX ZC_PC_REEMBOLSO_APP agrupa Aprovar e Rejeitar no menu "Ações"
+ * (AcoesReembolso), usado no Preview do serviço. Neste app o manifest
+ * substitui os itens desse menu pelos botões daqui.
  *
  * Os handlers são chamados pelo Fiori Elements com this = ExtensionAPI.
  */
