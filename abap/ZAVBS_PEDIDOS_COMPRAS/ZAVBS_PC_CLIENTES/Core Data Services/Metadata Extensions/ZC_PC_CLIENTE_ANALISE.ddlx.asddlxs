@@ -1,7 +1,9 @@
 @Metadata.layer: #CORE
+
 @UI: {
   headerInfo: { typeName:       'Cliente',
                 typeNamePlural: 'Clientes' },
+                
   chart: [{ qualifier:           'ClientesPorGenero',
             title:               'Clientes por gênero',
             chartType:           #DONUT,
@@ -9,20 +11,15 @@
             measures:            [ 'QtdeClientes' ],
             dimensionAttributes: [{ dimension: 'Genero', role: #CATEGORY }],
             measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] },
-          { qualifier:           'ScoreMedioPorUf',
-            title:               'Score médio por UF',
+
+          { qualifier:           'ClientesPorUf',
+            title:               'Clientes por UF',
             chartType:           #COLUMN,
             dimensions:          [ 'Uf' ],
-            measures:            [ 'ScoreMedio' ],
-            dimensionAttributes: [{ dimension: 'Uf', role: #CATEGORY }],
-            measureAttributes:   [{ measure: 'ScoreMedio', role: #AXIS_1 }] },
-          { qualifier:           'CadastrosPorMes',
-            title:               'Cadastros de clientes por mês',
-            chartType:           #COLUMN,
-            dimensions:          [ 'MesCadastro' ],
             measures:            [ 'QtdeClientes' ],
-            dimensionAttributes: [{ dimension: 'MesCadastro', role: #CATEGORY }],
+            dimensionAttributes: [{ dimension: 'Uf', role: #CATEGORY }],
             measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] },
+
           { qualifier:           'ClientesPorFaixaScore',
             title:               'Clientes por faixa de score',
             chartType:           #DONUT,
@@ -30,23 +27,41 @@
             measures:            [ 'QtdeClientes' ],
             dimensionAttributes: [{ dimension: 'FaixaScore', role: #CATEGORY }],
             measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] },
-          { qualifier:           'ClientesPorUf',
-            title:               'Clientes por UF',
+
+          { qualifier:           'CadastrosPorMes',
+            title:               'Cadastros de clientes por mês',
+            chartType:           #COLUMN,
+            dimensions:          [ 'MesCadastro' ],
+            measures:            [ 'QtdeClientes' ],
+            dimensionAttributes: [{ dimension: 'MesCadastro', role: #CATEGORY }],
+            measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] },
+
+          { qualifier:           'ScoreMedioPorUf',
+            title:               'Score médio por UF',
             chartType:           #COLUMN,
             dimensions:          [ 'Uf' ],
-            measures:            [ 'QtdeClientes' ],
+            measures:            [ 'ScoreMedio' ],
             dimensionAttributes: [{ dimension: 'Uf', role: #CATEGORY }],
-            measureAttributes:   [{ measure: 'QtdeClientes', role: #AXIS_1 }] }],
-  presentationVariant: [{ sortOrder: [{ by: 'QtdeClientes', direction: #DESC }],
+            measureAttributes:   [{ measure: 'ScoreMedio', role: #AXIS_1 }] }],
+            
+  presentationVariant: [{ sortOrder:      [{ by: 'QtdeClientes', direction: #DESC }],
                           visualizations: [{ type: #AS_CHART, qualifier: 'ClientesPorGenero' }] },
-                         { qualifier: 'ScoreMedioPorUf', sortOrder: [{ by: 'ScoreMedio', direction: #DESC }],
-                          visualizations: [{ type: #AS_CHART, qualifier: 'ScoreMedioPorUf' }] },
-                         { qualifier: 'CadastrosPorMes', sortOrder: [{ by: 'MesCadastro', direction: #ASC }],
-                          visualizations: [{ type: #AS_CHART, qualifier: 'CadastrosPorMes' }] },
-                         { qualifier: 'ClientesPorFaixaScore', sortOrder: [{ by: 'QtdeClientes', direction: #DESC }],
+
+                        { qualifier:      'ClientesPorUf',
+                          sortOrder:      [{ by: 'QtdeClientes', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ClientesPorUf' }] },
+
+                        { qualifier:      'ClientesPorFaixaScore',
+                          sortOrder:      [{ by: 'QtdeClientes', direction: #DESC }],
                           visualizations: [{ type: #AS_CHART, qualifier: 'ClientesPorFaixaScore' }] },
-                         { qualifier: 'ClientesPorUf', sortOrder: [{ by: 'QtdeClientes', direction: #DESC }],
-                          visualizations: [{ type: #AS_CHART, qualifier: 'ClientesPorUf' }] }]
+
+                        { qualifier:      'CadastrosPorMes',
+                          sortOrder:      [{ by: 'MesCadastro', direction: #ASC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'CadastrosPorMes' }] },
+
+                        { qualifier:      'ScoreMedioPorUf',
+                          sortOrder:      [{ by: 'ScoreMedio', direction: #DESC }],
+                          visualizations: [{ type: #AS_CHART, qualifier: 'ScoreMedioPorUf' }] }]
 }
 annotate entity ZC_PC_CLIENTE_ANALISE with
 {

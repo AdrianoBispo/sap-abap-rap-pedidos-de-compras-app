@@ -1,9 +1,7 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Pedidos - consulta analítica'
 @Metadata.allowExtensions: true
-@Analytics.dataCategory: #CUBE
-@ObjectModel.modelingPattern: #ANALYTICAL_CUBE
-@ObjectModel.supportedCapabilities: [ #ANALYTICAL_PROVIDER ]
+@OData.applySupportedForAggregation: #FULL
 
 define view entity ZC_PC_PEDIDO_ANALISE
   as select from ZI_PC_PEDIDO_CUBE

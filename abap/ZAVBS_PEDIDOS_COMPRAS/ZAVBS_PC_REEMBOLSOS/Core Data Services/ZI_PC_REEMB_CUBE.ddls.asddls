@@ -16,7 +16,6 @@ define view entity ZI_PC_REEMB_CUBE
       _StatusTxt.Descricao              as StatusReembolsoTexto,
 
       MotivoSolicitacao,
-
       _Cliente._EnderecoPrincipal.Uf    as Uf,
 
       @Semantics.calendar.yearMonth: true

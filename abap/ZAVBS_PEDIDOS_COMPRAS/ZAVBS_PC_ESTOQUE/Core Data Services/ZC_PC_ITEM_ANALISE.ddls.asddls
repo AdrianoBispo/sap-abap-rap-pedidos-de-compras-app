@@ -1,9 +1,7 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Estoque - consulta analítica'
 @Metadata.allowExtensions: true
-@Analytics.dataCategory: #CUBE
-@ObjectModel.modelingPattern: #ANALYTICAL_CUBE
-@ObjectModel.supportedCapabilities: [ #ANALYTICAL_PROVIDER ]
+@OData.applySupportedForAggregation: #FULL
 
 define view entity ZC_PC_ITEM_ANALISE
   as select from ZI_PC_ITEM_CUBE
