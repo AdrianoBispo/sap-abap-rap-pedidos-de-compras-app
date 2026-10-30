@@ -3,8 +3,17 @@ strict ( 2 );
 use draft;
 use side effects;
 
-/* As actions ReservarEstoque, LiberarReserva e BaixarEstoque NÃO são
-   expostas: o estoque só é movimentado pelas actions do BO Pedido. */
+/* ---------------------------------------------------------------------
+   Behavior projection do BO Item (ZR_PC_ITEM) para o app Gestão de
+   Estoque. Só expõe o que o app usa: CRUD, o ciclo de draft (Edit,
+   Activate, Discard, Resume, Prepare) e a action estática ImportarPlanilha.
+
+   O estoque só é movimentado pelas actions do BO Pedido. No BO base as
+   actions internas (ReservarEstoque, LiberarReserva e BaixarEstoque) são
+   executadas somente pelo BO Pedido via EML, na mesma LUW e sob o lock
+   do item, o que garante o controle de concorrência. Expô-las aqui abriria
+   um caminho de movimentação de estoque fora do fluxo do pedido.
+ --------------------------------------------------------------------- */
 define behavior for ZC_PC_ITEM_APP alias Item
 use etag
 {

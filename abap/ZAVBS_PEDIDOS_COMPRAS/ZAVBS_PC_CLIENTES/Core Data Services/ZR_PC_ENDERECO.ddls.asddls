@@ -19,6 +19,8 @@ define view entity ZR_PC_ENDERECO
       cep_geral             as CepGeral,
       cep_status            as CepStatus,
       endereco_principal    as EnderecoPrincipal,
+      
+      /* Campos de auditoria e de controle do RAP */
       @Semantics.user.createdBy: true
       created_by            as CreatedBy,
       @Semantics.systemDateTime.createdAt: true

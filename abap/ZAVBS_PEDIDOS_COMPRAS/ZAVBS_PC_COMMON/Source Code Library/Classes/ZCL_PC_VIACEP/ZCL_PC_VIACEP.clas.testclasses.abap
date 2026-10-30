@@ -1,8 +1,8 @@
 *"* Test Classes da classe ZCL_PC_VIACEP (versão SAP BTP, ABAP environment)
+
 *"* Nenhum teste chama o ViaCEP: o parse do JSON (EXTRAIR_CAMPO) e o cache da
 *"* sessão são acessados como amigos locais, e CEP fora do formato é recusado
 *"* antes da chamada HTTP. Mesmos testes da versão On-Premise (ZCL_PC_VIACEP_T2).
-
 CLASS ltcl_viacep DEFINITION DEFERRED.
 CLASS zcl_pc_viacep DEFINITION LOCAL FRIENDS ltcl_viacep.
 

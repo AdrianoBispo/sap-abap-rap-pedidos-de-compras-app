@@ -2,6 +2,10 @@ abstract;
 strict ( 2 );
 with hierarchy;
 
+/* ---------------------------------------------------------------------
+ BDEF abstrato: raiz do parâmetro profundo (deep) da action estática ImportarPlanilha,
+ usada em ZR_PC_CLIENTE, ZR_PC_ITEM e ZR_PC_PEDIDO. Não tem persistência nem ciclo de vida.
+ --------------------------------------------------------------------- */
 define behavior for ZPC_A_UPLOAD_INPUT
 {
   association _StreamProperties with hierarchy;

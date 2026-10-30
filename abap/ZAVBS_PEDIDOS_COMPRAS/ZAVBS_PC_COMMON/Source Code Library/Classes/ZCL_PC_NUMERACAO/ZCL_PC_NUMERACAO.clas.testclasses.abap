@@ -1,6 +1,6 @@
 *"* Test Classes da classe ZCL_PC_NUMERACAO
 
-*"* Prefixo do SKU: regra pura, sem objeto de numeração.
+"! Prefixo do SKU: regra pura, sem objeto de numeração.
 CLASS ltcl_prefixo DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
@@ -46,8 +46,8 @@ CLASS ltcl_prefixo IMPLEMENTATION.
 ENDCLASS.
 
 
-*"* Números do objeto ZPC_NR (intervalos 01 e 02). Exigem o objeto configurado
-*"* (ZCL_PC_SETUP) e consomem números, como o registro de pedidos e itens.
+"! Números do objeto {@link ZPC_NR} (intervalos 01 e 02). Exigem o objeto configurado
+"! {@link ZCL_PC_SETUP} e consomem números, como o registro de pedidos e itens.
 CLASS ltcl_intervalos DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
@@ -67,8 +67,10 @@ CLASS ltcl_intervalos IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( act = strlen( lv_numero ) exp = 10
                                         msg = |Número do pedido deve ter 10 posições: { lv_numero }| ).
+
     cl_abap_unit_assert=>assert_true( act = xsdbool( lv_numero CO '0123456789' )
                                       msg = |Número do pedido deve ter só dígitos: { lv_numero }| ).
+
     cl_abap_unit_assert=>assert_true(
       act = xsdbool( CONV int8( lv_numero ) BETWEEN CONV int8( zif_pc_constants=>c_numeracao-pedido_de )
                                                 AND CONV int8( zif_pc_constants=>c_numeracao-pedido_ate ) )
@@ -88,8 +90,10 @@ CLASS ltcl_intervalos IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_true( act = xsdbool( lv_sku CP 'SKU-ELE-*' )
                                       msg = |SKU deveria começar com SKU-ELE-: { lv_sku }| ).
+
     cl_abap_unit_assert=>assert_equals( act = strlen( lv_sku ) exp = 18
                                         msg = |SKU deve ter 18 caracteres: { lv_sku }| ).
+
     cl_abap_unit_assert=>assert_true( act = xsdbool( lv_sku+8(10) CO '0123456789' )
                                       msg = |Sequencial do SKU deve ter 10 dígitos: { lv_sku }| ).
   ENDMETHOD.

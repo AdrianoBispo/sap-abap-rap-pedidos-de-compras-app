@@ -8,9 +8,11 @@ define root view entity ZR_PC_CLIENTE
   association [0..1] to ZR_PC_ENDERECO as _EnderecoPrincipal on  _EnderecoPrincipal.ClienteUUID       = $projection.ClienteUUID
                                                              and _EnderecoPrincipal.EnderecoPrincipal = 'X'
   association [0..1] to ZR_PC_CODELIST as _GeneroTxt on  _GeneroTxt.Lista  = 'GENERO'
-                                                    and _GeneroTxt.Codigo = $projection.Genero
+                                                     and _GeneroTxt.Codigo = $projection.Genero
 {
   key cliente_uuid          as ClienteUUID,
+  
+      /* Campos da foto do cliente */
       @Semantics.largeObject: { mimeType: 'FotoMimeType',
                                 fileName: 'FotoFileName',
                                 acceptableMimeTypes: [ 'image/jpeg', 'image/png', 'image/webp' ],
@@ -19,6 +21,7 @@ define root view entity ZR_PC_CLIENTE
       @Semantics.mimeType: true
       foto_mime_type        as FotoMimeType,
       foto_file_name        as FotoFileName,
+      
       cpf                   as Cpf,
       nome                  as Nome,
       email                 as Email,
@@ -27,6 +30,9 @@ define root view entity ZR_PC_CLIENTE
       data_nascimento       as DataNascimento,
       cliente_ativo         as ClienteAtivo,
       score_cliente         as ScoreCliente,
+      
+      
+      /* --- Campos de auditoria e de controle do RAP --- */
       @Semantics.user.createdBy: true
       created_by            as CreatedBy,
       @Semantics.systemDateTime.createdAt: true
@@ -38,7 +44,7 @@ define root view entity ZR_PC_CLIENTE
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       local_last_changed_at as LocalLastChangedAt,
 
-      /* Associações */
+      /* --- Associações --- */
       _Endereco,
       _EnderecoPrincipal,
       _GeneroTxt

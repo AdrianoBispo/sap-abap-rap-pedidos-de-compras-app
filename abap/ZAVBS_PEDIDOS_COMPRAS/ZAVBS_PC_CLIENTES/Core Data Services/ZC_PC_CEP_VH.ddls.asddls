@@ -5,7 +5,7 @@
 @ObjectModel.usageType: { serviceQuality: #A, sizeCategory: #M, dataClass: #MASTER }
 @Metadata.ignorePropagatedAnnotations: true
 
-/* Um registro por CEP já validado no cadastro de endereços. Ao escolher um
+/* Ajuda de pesquisa para os CEPs já cadastrados. Ao escolher um
    CEP, a determination PreencherEnderecoViaCep reaproveita estes dados e só
    consulta o ViaCEP quando o CEP ainda não existe no cadastro. CEP geral de
    município fica de fora: logradouro e bairro variam de endereço para endereço. */
