@@ -6,6 +6,8 @@
  * diálogo de parâmetros, por isso os botões padrão foram trocados por estes,
  * que pedem a confirmação e depois executam a action do RAP via
  * editFlow.invokeAction (que abre o diálogo padrão do motivo).
+ * Os botões padrão continuam na DDLX ZC_PC_REEMBOLSO_APP (para o Preview do
+ * serviço) e ficam ocultos neste app pelo manifest (visible: false).
  *
  * Os handlers são chamados pelo Fiori Elements com this = ExtensionAPI.
  */
@@ -16,9 +18,6 @@ sap.ui.define([
 
     // Namespace do serviço OData V4 (ZUI_PC_REEMBOLSOS_O4)
     const SERVICO = "com.sap.gateway.srvd.zui_pc_reembolsos.v0001.";
-
-    // Valor de ZIF_PC_CONSTANTS=>c_status_reembolso-pendente
-    const PENDENTE = "PENDENTE";
 
     /** Texto do i18n do app. */
     function texto(oExtensionAPI, sChave, aParametros) {
@@ -31,6 +30,15 @@ sap.ui.define([
             return aSelecionados;
         }
         return oContexto ? [oContexto] : [];
+    }
+
+    /**
+     * Há seleção e o feature control do RAP (features : instance →
+     * __OperationControl) permite a action em todas as solicitações.
+     */
+    function todasPermitem(aSelecionados, sAction) {
+        return !!aSelecionados && aSelecionados.length > 0
+            && aSelecionados.every((oSelecionado) => oSelecionado.getProperty("__OperationControl/" + sAction) === true);
     }
 
     /** Números dos pedidos das solicitações, para as mensagens de confirmação. */
@@ -78,10 +86,14 @@ sap.ui.define([
                 "RejeitarReembolso", "confirmarRejeicao", "acaoRejeitarReembolso");
         },
 
-        /** Habilita as decisões na tabela: todas as solicitações ainda pendentes. */
-        podeDecidir: function (oContexto, aSelecionados) {
-            return !!aSelecionados && aSelecionados.length > 0
-                && aSelecionados.every((oSelecionado) => oSelecionado.getProperty("StatusReembolso") === PENDENTE);
+        /** Habilita Aprovar na tabela: todas as solicitações com AprovarReembolso permitido. */
+        podeAprovar: function (oContexto, aSelecionados) {
+            return todasPermitem(aSelecionados, "AprovarReembolso");
+        },
+
+        /** Habilita Rejeitar na tabela: todas as solicitações com RejeitarReembolso permitido. */
+        podeRejeitar: function (oContexto, aSelecionados) {
+            return todasPermitem(aSelecionados, "RejeitarReembolso");
         }
     };
 });
