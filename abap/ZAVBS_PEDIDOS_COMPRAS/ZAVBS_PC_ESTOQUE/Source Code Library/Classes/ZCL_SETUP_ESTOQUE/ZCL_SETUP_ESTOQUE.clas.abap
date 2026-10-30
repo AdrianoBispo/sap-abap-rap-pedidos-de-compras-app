@@ -1,19 +1,18 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Carga de estoque de demonstração</p>
-"! Insere 100 itens (25 produtos-base x 4 linhas) com SKU gerado pela numeração.
-"! Estoque variado: 5 itens sem estoque, 5 acabando e os demais em estoque.
-"! Pode ser executada mais de uma vez: itens com o mesmo nome são ignorados.
-"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_ESTOQUE.
+"! <h1>Classe para carga de dados na tabela de estoque</h1>
+"! <ul>
+"!  <li>Insere 100 itens (25 produtos-base x 4 linhas) com SKU gerado pela numeração.</li>
+"!  <li>Estoque variado: 5 itens sem estoque, 5 acabando e os demais em estoque.</li>
+"!  <li>Pode ser executada mais de uma vez: itens com o mesmo nome são ignorados.</li>
+"! </ul>
 CLASS zcl_setup_estoque DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    INTERFACES zif_setup_estoque.
+    INTERFACES zif_pc_constants.
+    ALIASES carregar_dados FOR zif_pc_constants~carregar_dados.
 
-    ALIASES carregar_dados FOR zif_setup_estoque~carregar_dados.
-
-  PROTECTED SECTION.
   PRIVATE SECTION.
     TYPES:
       BEGIN OF ty_base,
@@ -21,8 +20,8 @@ CLASS zcl_setup_estoque DEFINITION
         descricao TYPE zta_pc_item-descricao,
         categoria TYPE zta_pc_item-categoria,
         preco     TYPE zta_pc_item-preco_unitario,
-      END OF ty_base.
-    TYPES:
+      END OF ty_base,
+
       BEGIN OF ty_variante,
         nome  TYPE string,
         fator TYPE p LENGTH 3 DECIMALS 2,
@@ -33,7 +32,7 @@ ENDCLASS.
 
 CLASS zcl_setup_estoque IMPLEMENTATION.
 
-  METHOD zif_setup_estoque~carregar_dados.
+  METHOD zif_pc_constants~carregar_dados.
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
@@ -83,7 +82,7 @@ CLASS zcl_setup_estoque IMPLEMENTATION.
 
     SELECT nome FROM zta_pc_item INTO TABLE @DATA(lt_nomes_existentes).
 
-    DO zif_setup_estoque=>c_quantidade TIMES.
+    DO zif_pc_constants=>c_quantidade TIMES.
       DATA(lv_i) = sy-index - 1.
 
       DATA(ls_base)     = lt_base[ lv_i MOD lines( lt_base ) + 1 ].
