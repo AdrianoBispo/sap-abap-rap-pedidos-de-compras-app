@@ -5,8 +5,10 @@
  * mostra o pop-up de confirmação (Common.IsActionCritical) em ações com diálogo
  * de parâmetros, por isso os botões padrão foram trocados por estes, que pedem
  * a confirmação e depois executam a action do RAP via editFlow.invokeAction.
- * Os botões padrão continuam na DDLX ZC_PC_PEDIDO_APP (para o Preview do
- * serviço) e ficam ocultos neste app pelo manifest (visible: false).
+ * A DDLX ZC_PC_PEDIDO_APP agrupa as actions do pedido no menu "Ações"
+ * (AcoesPedido), usado no Preview do serviço. Neste app o manifest substitui
+ * os itens desse menu: Efetuar Pagamento e Cancelar pedido daqui e o Aprovar
+ * pedido padrão.
  * Aprovar pedido não tem parâmetros e usa o botão padrão com IsActionCritical
  * (annotations/annotation.xml).
  *

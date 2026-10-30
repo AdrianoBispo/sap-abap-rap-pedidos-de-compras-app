@@ -167,31 +167,24 @@
                     "type": "ResponsiveTable"
                   },
                   "actions": {
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
-                      "visible": false
-                    },
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
-                      "visible": false
+                    "DataFieldForActionGroup::AcoesPedido": {
+                      "menu": [
+                        "EfetuarPagamento",
+                        "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType",
+                        "CancelarPedido"
+                      ]
                     },
                     "EfetuarPagamento": {
                       "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
                       "enabled": "pedidoscompras.ext.AcoesPedido.podePagar",
                       "requiresSelection": true,
-                      "text": "{i18n>acaoEfetuarPagamento}",
-                      "position": {
-                        "placement": "Before",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
-                      }
+                      "text": "{i18n>acaoEfetuarPagamento}"
                     },
                     "CancelarPedido": {
                       "press": "pedidoscompras.ext.AcoesPedido.cancelarPedido",
                       "enabled": "pedidoscompras.ext.AcoesPedido.podeCancelar",
                       "requiresSelection": true,
-                      "text": "{i18n>acaoCancelarPedido}",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
-                      }
+                      "text": "{i18n>acaoCancelarPedido}"
                     }
                   }
                 }
@@ -236,31 +229,24 @@
               "content": {
                 "header": {
                   "actions": {
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
-                      "visible": false
-                    },
-                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
-                      "visible": false
+                    "DataFieldForActionGroup::AcoesPedido": {
+                      "menu": [
+                        "EfetuarPagamento",
+                        "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType",
+                        "CancelarPedido"
+                      ]
                     },
                     "EfetuarPagamento": {
                       "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
                       "text": "{i18n>acaoEfetuarPagamento}",
                       "visible": "{= ${IsActiveEntity} === true }",
-                      "enabled": "{__OperationControl/SimularPagamento}",
-                      "position": {
-                        "placement": "Before",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
-                      }
+                      "enabled": "{__OperationControl/SimularPagamento}"
                     },
                     "CancelarPedido": {
                       "press": "pedidoscompras.ext.AcoesPedido.cancelarPedido",
                       "text": "{i18n>acaoCancelarPedido}",
                       "visible": "{= ${IsActiveEntity} === true }",
-                      "enabled": "{__OperationControl/CancelarPedido}",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
-                      }
+                      "enabled": "{__OperationControl/CancelarPedido}"
                     }
                   }
                 }
