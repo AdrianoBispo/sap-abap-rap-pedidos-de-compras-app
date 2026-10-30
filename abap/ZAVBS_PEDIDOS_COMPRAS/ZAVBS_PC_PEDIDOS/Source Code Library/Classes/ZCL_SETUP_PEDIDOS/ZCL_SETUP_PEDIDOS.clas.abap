@@ -1,4 +1,4 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Carga de pedidos de demonstração</p>
+"! <h1>Classe para carga de dados de demonstração de pedidos</h1>
 "! Insere 100 pedidos sobre os clientes e itens já carregados (executar depois de
 "! ZCL_SETUP_CLIENTE e ZCL_SETUP_ESTOQUE). Os registros seguem o fluxo real:
 "!  - status distribuídos entre ABERTO, AGUARDANDO_APROVACAO, FINALIZADO e CANCELADO;
@@ -7,19 +7,37 @@
 "!  - pagamento, snapshots (finalizados/cancelados) e estoque (reserva/baixa)
 "!    coerentes com o status.
 "! Não roda de novo se já houver pedidos de demonstração.
-"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_PEDIDOS.
 CLASS zcl_setup_pedidos DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    INTERFACES zif_setup_pedidos.
-
-    ALIASES carregar_dados FOR zif_setup_pedidos~carregar_dados.
+    INTERFACES zif_pc_constants.
+    ALIASES carregar_dados FOR zif_pc_constants~carregar_dados.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    TYPES tt_pedidos TYPE STANDARD TABLE OF zta_pc_pedido WITH EMPTY KEY.
+
+    METHODS:
+      ts_passado
+        IMPORTING iv_dias      TYPE i
+                  iv_horas     TYPE i
+        RETURNING VALUE(rv_ts) TYPE timestampl,
+
+      contar
+        IMPORTING it_pedidos    TYPE tt_pedidos
+                  iv_status     TYPE zif_pc_constants=>ty_status_pedido
+        RETURNING VALUE(rv_qtd) TYPE i.
+ENDCLASS.
+
+
+
+CLASS zcl_setup_pedidos IMPLEMENTATION.
+
+  METHOD zif_pc_constants~carregar_dados.
+
     TYPES:
       BEGIN OF ty_item,
         item_uuid      TYPE zta_pc_item-item_uuid,
@@ -32,31 +50,15 @@ CLASS zcl_setup_pedidos DEFINITION
         preco_unitario TYPE zta_pc_item-preco_unitario,
         currency       TYPE zta_pc_item-currency,
         alterado       TYPE abap_boolean,
-      END OF ty_item.
-    TYPES:
+      END OF ty_item,
+
       BEGIN OF ty_linha,
         item_idx TYPE i,
         qtde     TYPE i,
-      END OF ty_linha.
-    TYPES tt_pedidos TYPE STANDARD TABLE OF zta_pc_pedido WITH EMPTY KEY.
-    TYPES tt_status  TYPE STANDARD TABLE OF zif_pc_constants=>ty_status_pedido WITH EMPTY KEY.
+      END OF ty_linha,
 
-    METHODS ts_passado
-      IMPORTING iv_dias      TYPE i
-                iv_horas     TYPE i
-      RETURNING VALUE(rv_ts) TYPE timestampl.
+      tt_status  TYPE STANDARD TABLE OF zif_pc_constants=>ty_status_pedido WITH EMPTY KEY.
 
-    METHODS contar
-      IMPORTING it_pedidos    TYPE tt_pedidos
-                iv_status     TYPE zif_pc_constants=>ty_status_pedido
-      RETURNING VALUE(rv_qtd) TYPE i.
-ENDCLASS.
-
-
-
-CLASS zcl_setup_pedidos IMPLEMENTATION.
-
-  METHOD zif_setup_pedidos~carregar_dados.
     FIELD-SYMBOLS <ls_item> TYPE ty_item.
 
     DATA lt_pedidos    TYPE tt_pedidos.
@@ -71,7 +73,9 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
     DATA lv_reembolsos TYPE i.
     DATA lv_total      TYPE zta_pc_pedido-valor_total.
 
-    DATA(lv_padrao_obs) = zif_setup_pedidos=>c_marcador && `%`.
+    CONSTANTS c_marcador TYPE string VALUE `Pedido de demonstração`.
+
+    DATA(lv_padrao_obs) = c_marcador && `%`.
     SELECT COUNT( * ) FROM zta_pc_pedido
       WHERE observacao LIKE @lv_padrao_obs
       INTO @DATA(lv_qtd_demo).
@@ -142,7 +146,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
       ( `Encontrei preço menor em outra loja` )
       ( `Cobrança não reconhecida` ) ).
 
-    DO zif_setup_pedidos=>c_quantidade TIMES.
+    DO zif_pc_constants=>c_quantidade TIMES.
       DATA(lv_i)      = sy-index.
       DATA(lv_status) = lt_padrao[ ( lv_i - 1 ) MOD lines( lt_padrao ) + 1 ].
       DATA(ls_cli)    = lt_clientes[ ( lv_i - 1 ) MOD lines( lt_clientes ) + 1 ].
@@ -174,7 +178,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
       ENDIF.
 
       " ---- Datas: do mais antigo (~90 dias) ao mais recente (~2 dias)
-      DATA(lv_dias)   = 2 + ( zif_setup_pedidos=>c_quantidade - lv_i ) * 88 DIV zif_setup_pedidos=>c_quantidade.
+      DATA(lv_dias)   = 2 + ( zif_pc_constants=>c_quantidade - lv_i ) * 88 DIV zif_pc_constants=>c_quantidade.
       DATA(lv_criado) = ts_passado( iv_dias = lv_dias iv_horas = lv_i MOD 24 ).
       DATA(lv_evento) = ts_passado( iv_dias = lv_dias - 1 iv_horas = lv_i MOD 24 ).
 
@@ -257,7 +261,7 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
                                                                 iv_cep         = ls_cli-cep )
         status_pedido         = lv_status
         status_pagamento      = lv_status_pag
-        observacao            = |{ zif_setup_pedidos=>c_marcador } { lv_i }|
+        observacao            = |{ c_marcador } { lv_i }|
         currency              = zif_pc_constants=>c_moeda_padrao
         valor_total           = lv_total
         pedido_encerrado      = xsdbool( lv_fin = abap_true OR lv_canc = abap_true )
@@ -371,20 +375,36 @@ CLASS zcl_setup_pedidos IMPLEMENTATION.
     INSERT zta_pc_snap_cli  FROM TABLE @lt_snap_cli.
     INSERT zta_pc_snap_itm  FROM TABLE @lt_snap_itm.
 
-    " Reflete no estoque as reservas (pedidos em andamento) e baixas (finalizados)
-    LOOP AT lt_itens ASSIGNING <ls_item> WHERE alterado = abap_true.
-      DATA(lv_disponivel)     = <ls_item>-qtde_estoque - <ls_item>-qtde_reservada.
-      DATA(lv_status_estoque) = zcl_pc_util=>calcular_status_estoque( lv_disponivel ).
-      UPDATE zta_pc_item
-        SET qtde_estoque          = @<ls_item>-qtde_estoque,
-            qtde_reservada        = @<ls_item>-qtde_reservada,
-            qtde_disponivel       = @lv_disponivel,
-            status_estoque        = @lv_status_estoque,
-            last_changed_by       = @lv_usuario,
-            last_changed_at       = @lv_agora,
-            local_last_changed_at = @lv_agora
-        WHERE item_uuid = @<ls_item>-item_uuid.
+*---------------------------------------------------------------------*
+    " Reflete no estoque as reservas (pedidos em andamento) e baixas
+    " (finalizados): linhas lidas e gravadas de uma vez (UPDATE FROM TABLE)
+*---------------------------------------------------------------------*
+
+    DATA lt_upd_itens TYPE STANDARD TABLE OF zta_pc_item WITH EMPTY KEY.
+    DATA lt_alterados TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
+
+    lt_alterados = VALUE #( FOR a IN lt_itens WHERE ( alterado = abap_true ) ( a-item_uuid ) ).
+    IF lt_alterados IS NOT INITIAL.
+      SELECT *
+        FROM zta_pc_item
+        FOR ALL ENTRIES IN @lt_alterados
+        WHERE item_uuid = @lt_alterados-table_line
+        INTO TABLE @lt_upd_itens.
+    ENDIF.
+
+    LOOP AT lt_upd_itens ASSIGNING FIELD-SYMBOL(<ls_upd>).
+      " Saldo calculado em memória durante a geração dos pedidos
+      ASSIGN lt_itens[ item_uuid = <ls_upd>-item_uuid ] TO <ls_item>.
+      <ls_upd>-qtde_estoque          = <ls_item>-qtde_estoque.
+      <ls_upd>-qtde_reservada        = <ls_item>-qtde_reservada.
+      <ls_upd>-qtde_disponivel       = <ls_item>-qtde_estoque - <ls_item>-qtde_reservada.
+      <ls_upd>-status_estoque        = zcl_pc_util=>calcular_status_estoque( <ls_upd>-qtde_disponivel ).
+      <ls_upd>-last_changed_by       = lv_usuario.
+      <ls_upd>-last_changed_at       = lv_agora.
+      <ls_upd>-local_last_changed_at = lv_agora.
     ENDLOOP.
+
+    UPDATE zta_pc_item FROM TABLE @lt_upd_itens.
 
     io_out->write( |Pedidos de demonstração criados: { lines( lt_pedidos ) }.| ).
     DATA(lt_resumo) = VALUE tt_status( ( lc_ped-aberto ) ( lc_ped-aguardando_aprovacao )
