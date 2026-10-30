@@ -60,15 +60,20 @@ annotate entity ZC_PC_PEDIDO_APP with
   @UI.hidden: true
   PedidoNaoCancelado;
 
-  /* Efetuar Pagamento (SimularPagamento) e Cancelar pedido (CancelarPedido) são
-     botões customizados do app Pedidos de Compras (ext/AcoesPedido.js): pedem
+  /* Efetuar Pagamento (SimularPagamento) e Cancelar pedido (CancelarPedido) ficam
+     aqui para o Preview do serviço. O app Pedidos de Compras oculta esses botões
+     padrão no manifest e usa botões customizados (ext/AcoesPedido.js), que pedem
      confirmação antes da action, o que o Fiori Elements não faz em actions com
      parâmetros. Aprovar pedido usa a confirmação padrão (IsActionCritical). */
   @UI: { lineItem:       [{ position: 10, label: 'Pedido', importance: #HIGH },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido', position: 20 },
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',    position: 20 },
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',   position: 30 },
                           { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 10, label: 'Número do pedido' },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido', position: 20 }] }
+                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',    position: 20 },
+                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',   position: 30 }] }
   @EndUserText.label: 'Pedido'
   NumeroPedido;
 

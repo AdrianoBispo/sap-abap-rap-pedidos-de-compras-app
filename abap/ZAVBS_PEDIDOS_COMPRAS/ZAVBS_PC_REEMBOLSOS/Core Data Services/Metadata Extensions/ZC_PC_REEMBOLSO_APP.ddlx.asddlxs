@@ -20,15 +20,24 @@ annotate entity ZC_PC_REEMBOLSO_APP with
   @UI.hidden: true
   ClienteUUID;
 
-  /* Aprovar e Rejeitar reembolso são botões customizados do app Gestão de
-     Reembolsos (ext/AcoesReembolso.js): pedem confirmação antes da action, o que
-     o Fiori Elements não faz em actions com parâmetros (MotivoDecisao). */
-  @UI: { lineItem:       [/* Link direto (sem popover) para a Object Page do pedido na app
+  /* Aprovar e Rejeitar reembolso ficam aqui para o Preview do serviço. O app
+     Gestão de Reembolsos oculta esses botões padrão no manifest e usa botões
+     customizados (ext/AcoesReembolso.js), que pedem confirmação antes da action,
+     o que o Fiori Elements não faz em actions com parâmetros (MotivoDecisao). */
+  @UI: { lineItem:       [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar', position: 10,
+                            importance: #HIGH },
+                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar', position: 20,
+                            importance: #HIGH },
+                          /* Link direto (sem popover) para a Object Page do pedido na app
                              Pedidos de Compras: intent ZPCPedidoCompra-manage com
                              PedidoUUID/NumeroPedido do reembolso */
                           { type: #WITH_INTENT_BASED_NAVIGATION, semanticObjectAction: 'manage',
                             position: 10, label: 'Pedido', importance: #HIGH }],
-         identification: [{ type: #WITH_INTENT_BASED_NAVIGATION, semanticObjectAction: 'manage',
+         identification: [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar reembolso',
+                            position: 1 },
+                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso',
+                            position: 2 },
+                          { type: #WITH_INTENT_BASED_NAVIGATION, semanticObjectAction: 'manage',
                             position: 5, label: 'Pedido' }],
          selectionField: [{ position: 10 }] }
   @EndUserText.label: 'Pedido'
