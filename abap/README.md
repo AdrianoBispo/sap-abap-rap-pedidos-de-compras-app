@@ -1134,6 +1134,10 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
    | 047 | Já existe um endereço cadastrado com este CEP para este cliente. | `CEP_DUPLICADO_CLIENTE` |
    | 048 | Item &1 está sem estoque disponível e não pode ser adicionado ao pedido. | `ITEM_SEM_ESTOQUE` |
    | 049 | `&1&2&3&4` | `TEXTO_LIVRE` |
+   | 050 | Cliente possui pedido em andamento. Inativação bloqueada. | `CLIENTE_INATIVACAO_BLOQUEADA` |
+   | 051 | Selecione apenas um endereço para definir como principal. | `ENDERECO_PRINCIPAL_UNICO` |
+   | 052 | Este endereço já é o endereço principal do cliente. | `ENDERECO_JA_PRINCIPAL` |
+   | 053 | Endereço com CEP não validado não pode ser o principal. | `ENDERECO_PRINCIPAL_CEP_INVAL` |
 
    A mensagem 049 não tem texto fixo: `ZCX_PC_MSG=>texto( )` reparte um texto livre de até 200 caracteres
    pelas quatro variáveis (50 caracteres cada), usada no resumo e nos erros da importação por planilha.
@@ -1225,9 +1229,9 @@ válidas, mas tipos e constantes são lidos da interface, ex.: `zif_pc_planilha=
 | `ZCL_PC_RESET` | `ZIF_PC_RESET` | `ZAVBS_PC_COMMON` |
 | `ZCL_PC_UTIL` | `ZIF_PC_UTIL` | `ZAVBS_PC_COMMON` |
 | `ZCL_PC_VIACEP` (as duas versões) | `ZIF_PC_VIACEP` | `ZAVBS_PC_COMMON` |
-| `ZCL_SETUP_CLIENTE` | `ZIF_SETUP_CLIENTE` | `ZAVBS_PC_CLIENTES` |
-| `ZCL_SETUP_ESTOQUE` | `ZIF_SETUP_ESTOQUE` | `ZAVBS_PC_ESTOQUE` |
-| `ZCL_SETUP_PEDIDOS` | `ZIF_SETUP_PEDIDOS` | `ZAVBS_PC_PEDIDOS` |
+| `ZCL_SETUP_CLIENTE` | `ZIF_PC_CONSTANTS` (método `carregar_dados`) | `ZAVBS_PC_CLIENTES` |
+| `ZCL_SETUP_ESTOQUE` | `ZIF_PC_CONSTANTS` (método `carregar_dados`) | `ZAVBS_PC_ESTOQUE` |
+| `ZCL_SETUP_PEDIDOS` | `ZIF_PC_CONSTANTS` (método `carregar_dados`) | `ZAVBS_PC_PEDIDOS` |
 | `ZCL_PC_PAGAMENTO_SIM` | `ZIF_PC_PAGAMENTO_SIM` | `ZAVBS_PC_PEDIDOS_PAGAMENTOS` |
 
 > [!IMPORTANT]
@@ -1262,12 +1266,16 @@ As tabelas draft dos snapshots são apenas técnicas e ficam vazias: os snapshot
 ### 9.1. Clientes, estoque e pedidos
 
 - **Cliente**: CRUD com draft, endereços como composição, ação *Definir endereço principal* e exclusão
-  bloqueada para cliente com pedido (`delete ( features : instance, precheck )`). O score é somente leitura,
+  bloqueada para cliente com pedido (`delete ( features : instance, precheck )`). A inativação de cliente com
+  pedido em andamento é recusada já na alteração (`update ( precheck )`, mensagem 050) e de novo no Save
+  (validation `ValidarInativacaoCliente`). *Definir endereço principal* tem precheck: recusa vários endereços
+  do mesmo cliente na chamada (051), o que já é principal (052) e CEP não validado (053). O score é somente leitura,
   sorteado na criação, com criticidade vermelha (até 40), amarela (40 a 70) e verde (a partir de 70).
 - **Fotos** de clientes e itens: JPEG, PNG ou WEBP; `ZCL_PC_UTIL` valida MIME, extensão e assinatura binária.
 - **Estoque**: SKU gerado no Save (determination `GerarSku`, também no Prepare) com as 3 primeiras letras da
   categoria (`SKU-ELE-0000000001`), sequencial do intervalo 02 de `ZPC_NR`; quantidade disponível persistida
-  (para filtrar e ordenar) e status de estoque recalculado a cada movimentação.
+  (para filtrar e ordenar) e status de estoque recalculado a cada movimentação. A inativação com saldo
+  disponível ou pedido ativo é recusada já na alteração (`update ( precheck )`, mensagem 014) e de novo no Save.
 - **Precheck de estoque zerado**: ao incluir um item no pedido, o precheck da associação `_Itens` bloqueia a
   linha se o item não tiver quantidade disponível, antes de qualquer determination.
 - **Registro do pedido no Save**: não há ação de confirmação. `ValidarRegistro` (no Prepare) exige endereço
@@ -1285,7 +1293,15 @@ As tabelas draft dos snapshots são apenas técnicas e ficam vazias: os snapshot
   (lock master) e o saldo é relido sob o lock. Item em edição no Estoque impede o registro do pedido
   (`ITEM_ESTOQUE_CONCORRENTE`). Em falha parcial, as reservas já feitas são compensadas.
 - **Pagamento simulado** (`ZCL_PC_PAGAMENTO_SIM`): grava só bandeira, últimos 4 dígitos e máscara; número,
-  validade e CVV ficam apenas em memória.
+  validade e CVV ficam apenas em memória. O precheck de `SimularPagamento` usa `ZCL_PC_PAGAMENTO_SIM=>validar`
+  para devolver todos os erros dos campos de uma vez; a recusa (021) tem severidade de informação, porque um
+  aviso numa action faz o Fiori Elements abrir um segundo pop-up ("Continuar?").
+- **Processamento em lote**: nenhum `SELECT`, `INSERT`, `UPDATE`, `DELETE` ou EML fica dentro de `LOOP`. As
+  consultas usam `FOR ALL ENTRIES` ou `UNION` com tabela de faixa, as CodeLists são lidas uma vez por chamada e
+  as ações do pedido processam todas as chaves juntas: o estoque é movimentado numa única chamada ao BO Item
+  por tipo de movimento (com compensação se uma parte falhar), e snapshots e solicitações de reembolso são
+  criados numa única chamada EML. Ficam em laço, por natureza, o ViaCEP (uma vez por CEP distinto), a
+  numeração (`ZPC_NR`) e o processamento de cada arquivo importado.
 - **Textos e navegação**: os campos de cliente, endereço e item mostram o texto (`@UI.textArrangement:
   #TEXT_ONLY`); `CpfCliente` é mapeado para `Cpf` com `@Consumption.semanticObjectMapping`.
 
@@ -1424,23 +1440,23 @@ de demonstração (`ZCL_PC_SETUP`).
 
 **As classes de teste são permanentes**: ficam no SAP e neste repositório e são ajustadas quando a
 funcionalidade que cobrem muda. Cada classe e cada behavior pool tem a sua aba *Test Classes*
-(`*.clas.testclasses.abap`): são **204 testes em 13 classes**. Execute com `Ctrl+Shift+F10` no ADT, por
+(`*.clas.testclasses.abap`): são **226 testes em 13 classes**. Execute com `Ctrl+Shift+F10` no ADT, por
 classe ou no pacote `ZAVBS_PEDIDOS_COMPRAS` inteiro.
 
 | Pacote | Classe | Testes | Tipo |
 | --- | --- | --- | --- |
-| `ZAVBS_PC_COMMON` | `ZCL_PC_UTIL` | 50 | Regras puras e integração dos BOs (tabela abaixo) |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_UTIL` | 53 | Regras puras e integração dos BOs (tabela abaixo) |
 | `ZAVBS_PC_COMMON` | `ZCX_PC_MSG` | 10 | Regra pura |
 | `ZAVBS_PC_COMMON` | `ZCL_PC_NUMERACAO` | 8 | Regra pura e objeto `ZPC_NR` |
 | `ZAVBS_PC_COMMON` | `ZCL_PC_AUTH` | 6 | Modo trial ou `CL_AUNIT_AUTHORITY_CHECK` |
 | `ZAVBS_PC_COMMON` | `ZCL_PC_VIACEP` | 9 | Regra pura, sem chamada HTTP (mesmos testes nas duas versões) |
 | `ZAVBS_PC_COMMON` | `ZCL_PC_PLANILHA` | 17 | Leitor XLSX/CSV |
-| `ZAVBS_PC_COMMON` | `ZCL_PC_IMPORTACAO` | 17 | As três actions `ImportarPlanilha` via EML |
+| `ZAVBS_PC_COMMON` | `ZCL_PC_IMPORTACAO` | 21 | As três actions `ImportarPlanilha` via EML |
 | `ZAVBS_PC_CLIENTES` | `ZCL_PC_VE_CLIENTE` | 8 | Virtual elements, sem banco |
-| `ZAVBS_PC_CLIENTES` | `ZBP_R_PC_CLIENTE` | 19 | EML sobre test doubles |
-| `ZAVBS_PC_ESTOQUE` | `ZBP_R_PC_ITEM` | 24 | EML sobre test doubles |
-| `ZAVBS_PC_PEDIDOS` | `ZBP_R_PC_PEDIDO` | 17 | EML sobre test doubles |
-| `ZAVBS_PC_PEDIDOS_PAGAMENTOS` | `ZCL_PC_PAGAMENTO_SIM` | 14 | Regra pura |
+| `ZAVBS_PC_CLIENTES` | `ZBP_R_PC_CLIENTE` | 28 | EML sobre test doubles |
+| `ZAVBS_PC_ESTOQUE` | `ZBP_R_PC_ITEM` | 26 | EML sobre test doubles |
+| `ZAVBS_PC_PEDIDOS` | `ZBP_R_PC_PEDIDO` | 18 | EML sobre test doubles |
+| `ZAVBS_PC_PEDIDOS_PAGAMENTOS` | `ZCL_PC_PAGAMENTO_SIM` | 17 | Regra pura |
 | `ZAVBS_PC_REEMBOLSOS` | `ZBP_R_PC_REEMBOLSO` | 5 | EML sobre test doubles |
 
 `ZCL_PC_SETUP` e `ZCL_PC_RESET` não têm testes de propósito: gravam ou apagam dados com `COMMIT WORK` e são
@@ -1478,14 +1494,15 @@ cenários manuais da [seção 11.2](#112-cenários-de-teste-manuais).
 | `ltcl_viacep` | `ZCL_PC_VIACEP` | parse do JSON (texto, literal, `null`, campo ausente ou vazio); CEP fora do formato sem consulta; cache da sessão |
 | `ltcl_ve_cliente` | `ZCL_PC_VE_CLIENTE` | CPF e telefone formatados, unidade `%` e criticidade do score (até 40, de 40 a 70, a partir de 70); campos originais pedidos ao SADL |
 | `ltcl_cliente_validacoes` | `ZBP_R_PC_CLIENTE` | cliente nasce ativo com score; normalização de telefone e e-mail; CPF inválido (001) e duplicado (002), e-mail (024), telefone (026), nascimento futuro (025), gênero (041), foto (009) |
-| `ltcl_cliente_endereco` | `ZBP_R_PC_CLIENTE` | CEP já cadastrado preenche o endereço sem ViaCEP; um único principal; CEP incompleto (007), CEP repetido no cliente (047), número obrigatório |
+| `ltcl_cliente_endereco` | `ZBP_R_PC_CLIENTE` | CEP já cadastrado preenche o endereço sem ViaCEP; um único principal; CEP incompleto (007), CEP repetido no cliente (047), número obrigatório; precheck de *Definir endereço principal*: dois endereços do cliente (051), já principal (052), CEP não validado (053) e endereço válido aceito |
+| `ltcl_cliente_inativacao` | `ZBP_R_PC_CLIENTE` | inativação bloqueada com pedido aberto ou em rascunho (050); permitida sem pedido ou com pedido finalizado; reativação permitida |
 | `ltcl_cliente_exclusao` | `ZBP_R_PC_CLIENTE` | exclusão livre sem pedido; bloqueada com pedido ativo ou em rascunho |
 | `ltcl_item_movimentacao` | `ZBP_R_PC_ITEM` | reservar, liberar e baixar estoque com recálculo de disponível e status; estoque insuficiente (011), item inativo (013), quantidade zero (028), reserva inconsistente (038) |
 | `ltcl_item_validacoes` | `ZBP_R_PC_ITEM` | valores iniciais (BRL, ativo, disponível), status acompanha o estoque; categoria (041), preço (029), estoque negativo (030), foto (009) |
-| `ltcl_item_inativacao` | `ZBP_R_PC_ITEM` | inativação bloqueada com saldo ou pedido em andamento (014); permitida sem saldo ou com pedido encerrado |
+| `ltcl_item_inativacao` | `ZBP_R_PC_ITEM` | inativação bloqueada com saldo ou pedido em andamento (014), já no precheck do update; permitida sem saldo ou com pedido encerrado; reativação permitida |
 | `ltcl_item_exclusao` | `ZBP_R_PC_ITEM` | exclusão livre; bloqueada com reserva ou com o item em pedido (ativo ou rascunho) |
 | `ltcl_pedido_rascunho` | `ZBP_R_PC_PEDIDO` | rascunho `ABERTO` com número e endereço principal; valor da linha e total; cliente inativo (003), sem endereço principal (005), sem itens (027), estoque insuficiente (011), item inativo (013), quantidade zero; precheck de item sem estoque (048) |
-| `ltcl_pedido_acoes` | `ZBP_R_PC_PEDIDO` | cartão inválido (032); só o cartão mascarado é gravado; pagamento só com pedido `ABERTO`; aprovar gera os snapshots `FINALIZACAO`; aprovar sem reserva (038); cancelar gera o snapshot `CANCELAMENTO` e libera a reserva; pedido `FINALIZADO` não é cancelado |
+| `ltcl_pedido_acoes` | `ZBP_R_PC_PEDIDO` | cartão inválido (032); precheck do pagamento recusa os campos vazios de uma vez (023); só o cartão mascarado é gravado; pagamento só com pedido `ABERTO`; aprovar gera os snapshots `FINALIZACAO`; aprovar sem reserva (038); cancelar gera o snapshot `CANCELAMENTO` e libera a reserva; pedido `FINALIZADO` não é cancelado |
 | `ltcl_reembolso_decisao` | `ZBP_R_PC_REEMBOLSO` | aprovar (decisão gravada, pedido `CANCELADO`, pagamento `DEVOLVIDO`, reserva liberada); rejeitar (motivo, pedido volta ao status anterior); solicitação já decidida; pedido fora de `PROCESSANDO_REEMBOLSO` mantém a solicitação `PENDENTE` |
 
 - Os testes dos behavior pools usam `cl_cds_test_environment` para as entidades `ZR_*` e
@@ -1556,6 +1573,21 @@ Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 ---
 
 ## 13. Histórico de correções do backend
+
+<details>
+<summary><b>v2.15 — Confirmações, prechecks e processamento em lote</b></summary>
+
+| Ajuste | Objetos |
+| --- | --- |
+| Inativação de cliente com pedido em andamento bloqueada no precheck do update e no Save (mensagem 050) | `ZR_PC_CLIENTE`, `ZBP_R_PC_CLIENTE` (`precheck_update`, `ValidarInativacaoCliente`), `ZPC_MSG`, `ZIF_PC_MSG` |
+| Precheck de *Definir endereço principal* (mensagens 051 a 053) | `ZR_PC_CLIENTE`, `ZBP_R_PC_CLIENTE` (`precheck_definir_principal`) |
+| Inativação de item barrada já no precheck do update | `ZR_PC_ITEM`, `ZBP_R_PC_ITEM` (`precheck_update`) |
+| Precheck de `SimularPagamento` com todos os erros dos campos de uma vez; recusa (021) como informação | `ZR_PC_PEDIDO`, `ZBP_R_PC_PEDIDO`, `ZCL_PC_PAGAMENTO_SIM` / `ZIF_PC_PAGAMENTO_SIM` (`validar`) |
+| SQL e EML fora de laços: leituras em lote, actions do pedido e decisões do reembolso processadas juntas, buffer de CodeList na importação, `UPDATE ... FROM TABLE` no setup | `ZBP_R_PC_CLIENTE`, `ZBP_R_PC_ITEM`, `ZBP_R_PC_PEDIDO`, `ZBP_R_PC_REEMBOLSO`, `ZCL_PC_IMPORTACAO`, `ZCL_SETUP_PEDIDOS` |
+| Ações padrão agrupadas no menu "Ações" (Preview do serviço); as apps usam botões customizados com confirmação | `ZC_PC_PEDIDO_APP`, `ZC_PC_REEMBOLSO_APP` (MDE) |
+| Classes de dados demo implementam `ZIF_PC_CONSTANTS~carregar_dados`; `ZIF_SETUP_*` removidas | `ZCL_SETUP_CLIENTE`, `ZCL_SETUP_ESTOQUE`, `ZCL_SETUP_PEDIDOS`, `ZIF_PC_CONSTANTS` |
+
+</details>
 
 <details>
 <summary><b>v1.5 — Ajustes de UX, integridade de dados e reembolso</b></summary>
