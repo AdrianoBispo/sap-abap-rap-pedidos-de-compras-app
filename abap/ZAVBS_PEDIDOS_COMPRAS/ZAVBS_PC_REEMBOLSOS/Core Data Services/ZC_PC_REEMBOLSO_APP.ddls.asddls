@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Reembolso - Projection (App Gestão de Reembolsos)'
+@EndUserText.label: 'Projection - App Gestão de Reembolsos'
 @Metadata.allowExtensions: true
 @Search.searchable: true
 @ObjectModel.semanticKey: [ 'NumeroPedido' ]
