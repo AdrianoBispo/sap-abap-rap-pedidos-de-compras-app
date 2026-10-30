@@ -1,36 +1,76 @@
 *"* Local Types da behavior pool ZBP_R_PC_ITEM
 
+"! <h1>Handler da entidade Item (BO {@link ZR_PC_ITEM})</h1>
+"! Regras do item de estoque: autorização, feature control, prechecks
+"! (exclusão e inativação), movimentação de estoque chamada pelo BO Pedido,
+"! determinations, validations e importação por planilha.
 CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     CONSTANTS:
+      "! State areas das validations (mensagens de estado no rascunho)
       BEGIN OF c_area,
+        "! {@link .METH:ValidarItem}
         item       TYPE string VALUE `VALIDAR_ITEM`,
+        "! {@link .METH:ValidarQuantidades}
         quantidade TYPE string VALUE `VALIDAR_QUANTIDADES`,
+        "! {@link .METH:ValidarInativacaoItem}
         inativacao TYPE string VALUE `VALIDAR_INATIVACAO`,
+        "! {@link .METH:ValidarSkuUnico}
         sku        TYPE string VALUE `VALIDAR_SKU`,
+        "! {@link .METH:ValidarFoto}
         foto       TYPE string VALUE `VALIDAR_FOTO`,
       END OF c_area.
 
     CONSTANTS:
+      "! Tipos de movimento de estoque de {@link .METH:movimentar}
       BEGIN OF c_movimento,
+        "! Reserva (QtdeReservada aumenta)
         reservar TYPE c LENGTH 1 VALUE 'R',
+        "! Liberação da reserva (QtdeReservada diminui)
         liberar  TYPE c LENGTH 1 VALUE 'L',
+        "! Baixa (QtdeEstoque e QtdeReservada diminuem)
         baixar   TYPE c LENGTH 1 VALUE 'B',
       END OF c_movimento.
 
     TYPES:
+      "! Movimento de estoque solicitado para um item
       BEGIN OF ty_movimento,
+        "! Instância em rascunho ou ativa
         is_draft  TYPE abp_behv_flag,
+        "! Item movimentado
         item_uuid TYPE sysuuid_x16,
+        "! Quantidade do movimento
         qtde      TYPE i,
+        "! Preenchido por {@link .METH:movimentar}: abap_true se o movimento foi aplicado
         ok        TYPE abap_boolean,
       END OF ty_movimento,
 
+      "! Movimentos processados em sequência por {@link .METH:movimentar}
       tt_movimento TYPE STANDARD TABLE OF ty_movimento WITH EMPTY KEY,
-      tt_uuid TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line,
+      "! Conjunto de UUIDs de itens
+      tt_uuid TYPE SORTED TABLE OF sysuuid_x16 WITH NON-UNIQUE KEY table_line,
+      "! Range de UUIDs (consultas com IN, sem FOR ALL ENTRIES)
+      tt_range_uuid TYPE RANGE OF sysuuid_x16,
+      "! FAILED do BO Item
       s_failed TYPE RESPONSE FOR FAILED EARLY zr_pc_item,
+      "! REPORTED do BO Item
       s_reported  TYPE RESPONSE FOR REPORTED EARLY zr_pc_item.
 
+    TYPES:
+      "! Saldo usado na regra de inativação (valor novo do request ou o atual)
+      BEGIN OF ty_saldo_item,
+        "! Item avaliado
+        item_uuid TYPE sysuuid_x16,
+        "! Quantidade em estoque
+        estoque   TYPE i,
+        "! Quantidade reservada
+        reservada TYPE i,
+      END OF ty_saldo_item,
+      "! Saldos avaliados por {@link .METH:inativacao_bloqueada}
+      tt_saldo_item TYPE STANDARD TABLE OF ty_saldo_item WITH EMPTY KEY.
+
+    "! Autorização global: cada operação confere sua atividade em {@link ZCL_PC_AUTH}
+    "! (somente administrador cria, altera, exclui e importa).
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Item RESULT result.
 
@@ -52,42 +92,76 @@ CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING iv_cid          TYPE csequence
       RETURNING VALUE(rv_texto) TYPE string.
 
+    "! Feature control: exclusão desabilitada para item com reserva ou vinculado
+    "! a pedido (ativo ou rascunho), ver {@link .METH:itens_em_pedidos}.
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Item RESULT result.
 
+    "! Precheck da exclusão: mesma regra do feature control, para chamadas via
+    "! EML/API (mensagem 031).
     METHODS precheck_delete FOR PRECHECK
       IMPORTING keys FOR DELETE Item.
 
+    "! Precheck da inativação: recusa na hora (ao alterar ItemAtivo no rascunho
+    "! ou via EML) a inativação de item com estoque disponível ou pedido em
+    "! andamento. A mesma regra roda no save (ValidarInativacaoItem).
+    METHODS precheck_update FOR PRECHECK
+      IMPORTING entities FOR UPDATE Item.
+
+    "! Itens (entre os informados) cuja inativação é bloqueada: estoque
+    "! disponível maior que zero ou vínculo com pedido em andamento.
+    METHODS inativacao_bloqueada
+      IMPORTING it_saldo             TYPE tt_saldo_item
+      RETURNING VALUE(rt_bloqueados) TYPE tt_uuid.
+
+    "! Action interna (chamada pelo BO Pedido via EML): reserva a quantidade
+    "! informada, ver {@link .METH:movimentar}.
     METHODS ReservarEstoque FOR MODIFY
       IMPORTING keys FOR ACTION Item~ReservarEstoque RESULT result.
 
+    "! Action interna (chamada pelo BO Pedido via EML): libera a reserva,
+    "! ver {@link .METH:movimentar}.
     METHODS LiberarReserva FOR MODIFY
       IMPORTING keys FOR ACTION Item~LiberarReserva RESULT result.
 
+    "! Action interna (chamada pelo BO Pedido via EML na aprovação): baixa estoque
+    "! e reserva, ver {@link .METH:movimentar}.
     METHODS BaixarEstoque FOR MODIFY
       IMPORTING keys FOR ACTION Item~BaixarEstoque RESULT result.
 
+    "! Item novo: moeda padrão, ativo, sem reserva e status de estoque calculado.
     METHODS DefinirValoresIniciais FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Item~DefinirValoresIniciais.
 
+    "! Recalcula QtdeDisponivel e StatusEstoque quando QtdeEstoque muda
+    "! ({@link ZCL_PC_UTIL.METH:calcular_status_estoque}).
     METHODS RecalcularStatusEstoque FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Item~RecalcularStatusEstoque.
 
+    "! Gera o SKU com o prefixo da categoria ({@link ZCL_PC_NUMERACAO}); gera de
+    "! novo se a categoria mudou depois da primeira geração.
     METHODS GerarSku FOR DETERMINE ON SAVE
       IMPORTING keys FOR Item~GerarSku.
 
+    "! Nome, categoria (CodeList lida uma vez), preço e moeda.
     METHODS ValidarItem FOR VALIDATE ON SAVE
       IMPORTING keys FOR Item~ValidarItem.
 
+    "! QtdeEstoque não negativa e não menor que a reservada (mensagem 030).
     METHODS ValidarQuantidades FOR VALIDATE ON SAVE
       IMPORTING keys FOR Item~ValidarQuantidades.
 
+    "! Inativação no save: mesma regra de {@link .METH:precheck_update}
+    "! (ver {@link .METH:inativacao_bloqueada}, mensagem 014).
     METHODS ValidarInativacaoItem FOR VALIDATE ON SAVE
       IMPORTING keys FOR Item~ValidarInativacaoItem.
 
+    "! SKU obrigatório na instância ativa e único (SKUs gravados lidos numa
+    "! única consulta).
     METHODS ValidarSkuUnico FOR VALIDATE ON SAVE
       IMPORTING keys FOR Item~ValidarSkuUnico.
 
+    "! Foto JPEG/PNG/WEBP coerente com o MIME type ({@link ZCL_PC_UTIL.METH:validar_imagem}).
     METHODS ValidarFoto FOR VALIDATE ON SAVE
       IMPORTING keys FOR Item~ValidarFoto.
 
@@ -144,18 +218,13 @@ CLASS lhc_item IMPLEMENTATION.
 
 
   METHOD get_instance_features.
-    DATA lt_ids TYPE tt_uuid.
-
     READ ENTITIES OF zr_pc_item IN LOCAL MODE
       ENTITY Item
         FIELDS ( QtdeReservada )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
-    LOOP AT lt_itens INTO DATA(ls_i).
-      INSERT ls_i-ItemUUID INTO TABLE lt_ids.
-    ENDLOOP.
-    DATA(lt_vinculados) = itens_em_pedidos( lt_ids ).
+    DATA(lt_vinculados) = itens_em_pedidos( VALUE #( FOR i IN lt_itens ( i-ItemUUID ) ) ).
 
     result = VALUE #( FOR i IN lt_itens
                       ( %tky    = i-%tky
@@ -167,18 +236,13 @@ CLASS lhc_item IMPLEMENTATION.
 
 
   METHOD precheck_delete.
-    DATA lt_ids TYPE tt_uuid.
-
     READ ENTITIES OF zr_pc_item IN LOCAL MODE
       ENTITY Item
         FIELDS ( QtdeReservada )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
-    LOOP AT lt_itens INTO DATA(ls_i).
-      INSERT ls_i-ItemUUID INTO TABLE lt_ids.
-    ENDLOOP.
-    DATA(lt_vinculados) = itens_em_pedidos( lt_ids ).
+    DATA(lt_vinculados) = itens_em_pedidos( VALUE #( FOR i IN lt_itens ( i-ItemUUID ) ) ).
 
     LOOP AT lt_itens INTO DATA(ls_item).
       IF ls_item-QtdeReservada > 0 OR line_exists( lt_vinculados[ table_line = ls_item-ItemUUID ] ).
@@ -193,53 +257,90 @@ CLASS lhc_item IMPLEMENTATION.
   METHOD itens_em_pedidos.
     CHECK it_itens IS NOT INITIAL.
 
+    DATA(lt_range) = VALUE tt_range_uuid( FOR i IN it_itens ( sign = 'I' option = 'EQ' low = i ) ).
+
+    " Pedidos gravados e rascunhos numa única consulta
     SELECT item_uuid
       FROM zta_pc_item_ped
-      FOR ALL ENTRIES IN @it_itens
-      WHERE item_uuid = @it_itens-table_line
-      INTO TABLE @DATA(lt_ativos).
-
-    SELECT itemuuid
+      WHERE item_uuid IN @lt_range
+    UNION DISTINCT
+    SELECT itemuuid AS item_uuid
       FROM zta_pc_itped_d
-      FOR ALL ENTRIES IN @it_itens
-      WHERE itemuuid = @it_itens-table_line
-      INTO TABLE @DATA(lt_drafts).
-
-    LOOP AT lt_ativos INTO DATA(ls_a).
-      INSERT ls_a-item_uuid INTO TABLE rt_itens.
-    ENDLOOP.
-    LOOP AT lt_drafts INTO DATA(ls_d).
-      INSERT ls_d-itemuuid INTO TABLE rt_itens.
-    ENDLOOP.
+      WHERE itemuuid IN @lt_range
+      INTO TABLE @rt_itens.
   ENDMETHOD.
 
 
   METHOD itens_em_pedidos_ativos.
     CHECK it_itens IS NOT INITIAL.
 
+    DATA(lt_range) = VALUE tt_range_uuid( FOR i IN it_itens ( sign = 'I' option = 'EQ' low = i ) ).
+
+    " Pedidos em andamento e pedidos em draft (ainda não ativados) numa única consulta
     SELECT ip~item_uuid
       FROM zta_pc_item_ped AS ip
       INNER JOIN zta_pc_pedido AS p ON p~pedido_uuid = ip~pedido_uuid
-      FOR ALL ENTRIES IN @it_itens
-      WHERE ip~item_uuid = @it_itens-table_line
+      WHERE ip~item_uuid IN @lt_range
         AND p~status_pedido IN ( @zif_pc_constants=>c_status_pedido-aberto,
                                  @zif_pc_constants=>c_status_pedido-aguardando_aprovacao,
                                  @zif_pc_constants=>c_status_pedido-processando_reembolso )
-      INTO TABLE @DATA(lt_ativos).
-
-    " Pedidos em draft (ainda não ativados) também contam como ativos
-    SELECT itemuuid
+    UNION DISTINCT
+    SELECT itemuuid AS item_uuid
       FROM zta_pc_itped_d
-      FOR ALL ENTRIES IN @it_itens
-      WHERE itemuuid = @it_itens-table_line
-      INTO TABLE @DATA(lt_drafts).
+      WHERE itemuuid IN @lt_range
+      INTO TABLE @rt_itens.
+  ENDMETHOD.
 
-    LOOP AT lt_ativos INTO DATA(ls_a).
-      INSERT ls_a-item_uuid INTO TABLE rt_itens.
-    ENDLOOP.
-    LOOP AT lt_drafts INTO DATA(ls_d).
-      INSERT ls_d-itemuuid INTO TABLE rt_itens.
-    ENDLOOP.
+
+  METHOD inativacao_bloqueada.
+    CHECK it_saldo IS NOT INITIAL.
+
+    DATA(lt_em_pedido_ativo) = itens_em_pedidos_ativos( VALUE #( FOR s IN it_saldo ( s-item_uuid ) ) ).
+
+    " Regra: não inativar item com estoque disponível ou pedido ativo vinculado
+    rt_bloqueados = VALUE #( FOR s IN it_saldo
+                             ( LINES OF COND tt_uuid( WHEN s-estoque > s-reservada
+                                                      THEN VALUE #( ( s-item_uuid ) ) ) ) ).
+    INSERT LINES OF lt_em_pedido_ativo INTO TABLE rt_bloqueados.
+  ENDMETHOD.
+
+
+  METHOD precheck_update.
+    " Só interessa a troca de ItemAtivo para inativo
+    DATA(lt_inativar) = VALUE tt_saldo_item( FOR e IN entities
+                                             WHERE ( %control-ItemAtivo = if_abap_behv=>mk-on
+                                                     AND ItemAtivo      = abap_false )
+                                             ( item_uuid = e-ItemUUID ) ).
+    CHECK lt_inativar IS NOT INITIAL.
+
+    READ ENTITIES OF zr_pc_item IN LOCAL MODE
+      ENTITY Item
+        FIELDS ( QtdeEstoque QtdeReservada )
+        WITH CORRESPONDING #( entities )
+      RESULT DATA(lt_atuais).
+
+    " Estoque informado no mesmo request prevalece sobre o atual
+    DATA(lt_saldo) = VALUE tt_saldo_item(
+      FOR e IN entities
+      WHERE ( %control-ItemAtivo = if_abap_behv=>mk-on AND ItemAtivo = abap_false )
+      LET ls_atual = VALUE #( lt_atuais[ %tky = e-%tky ] OPTIONAL )
+      IN ( item_uuid = e-ItemUUID
+           estoque   = COND #( WHEN e-%control-QtdeEstoque = if_abap_behv=>mk-on
+                               THEN e-QtdeEstoque ELSE ls_atual-QtdeEstoque )
+           reservada = ls_atual-QtdeReservada ) ).
+
+    DATA(lt_bloqueados) = inativacao_bloqueada( lt_saldo ).
+    CHECK lt_bloqueados IS NOT INITIAL.
+
+    failed-item = VALUE #( FOR e IN entities
+                           WHERE ( %control-ItemAtivo = if_abap_behv=>mk-on AND ItemAtivo = abap_false )
+                           FOR b IN lt_bloqueados WHERE ( table_line = e-ItemUUID )
+                           ( %tky = e-%tky ) ).
+
+    reported-item = VALUE #( FOR f IN failed-item
+                             ( %tky               = f-%tky
+                               %msg               = NEW zcx_pc_msg( textid = zif_pc_msg=>item_inativacao_bloqueada )
+                               %element-ItemAtivo = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
 
 
@@ -550,6 +651,12 @@ CLASS lhc_item IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    " Categorias válidas lidas uma única vez (fora do laço)
+    SELECT Codigo
+      FROM zr_pc_codelist
+      WHERE Lista = @zif_pc_constants=>c_codelist-categoria
+      INTO TABLE @DATA(lt_categorias).
+
     LOOP AT lt_itens INTO DATA(ls_item).
       APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item ) TO reported-item.
 
@@ -565,19 +672,11 @@ CLASS lhc_item IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
                         %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Categoria' )
                         %element-Categoria = if_abap_behv=>mk-on ) TO reported-item.
-      ELSE.
-        SELECT SINGLE @abap_true
-          FROM zr_pc_codelist
-          WHERE Lista  = @zif_pc_constants=>c_codelist-categoria
-            AND Codigo = @ls_item-Categoria
-          INTO @DATA(lv_categoria_ok).
-        IF lv_categoria_ok = abap_false.
-          APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
-          APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
-                          %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>valor_invalido attr1 = 'Categoria' )
-                          %element-Categoria = if_abap_behv=>mk-on ) TO reported-item.
-        ENDIF.
-        CLEAR lv_categoria_ok.
+      ELSEIF NOT line_exists( lt_categorias[ Codigo = ls_item-Categoria ] ).
+        APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
+        APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-item
+                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>valor_invalido attr1 = 'Categoria' )
+                        %element-Categoria = if_abap_behv=>mk-on ) TO reported-item.
       ENDIF.
 
       IF ls_item-PrecoUnitario < 0.
@@ -621,27 +720,24 @@ CLASS lhc_item IMPLEMENTATION.
 
 
   METHOD ValidarInativacaoItem.
-    DATA lt_ids TYPE tt_uuid.
-
     READ ENTITIES OF zr_pc_item IN LOCAL MODE
       ENTITY Item
         FIELDS ( ItemAtivo QtdeEstoque QtdeReservada )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
-    LOOP AT lt_itens INTO DATA(ls_i) WHERE ItemAtivo = abap_false.
-      INSERT ls_i-ItemUUID INTO TABLE lt_ids.
-    ENDLOOP.
-    DATA(lt_em_pedido_ativo) = itens_em_pedidos_ativos( lt_ids ).
+    " Mesma regra do precheck_update (estoque disponível ou pedido em andamento)
+    DATA(lt_bloqueados) = inativacao_bloqueada( VALUE #( FOR i IN lt_itens WHERE ( ItemAtivo = abap_false )
+                                                         ( item_uuid = i-ItemUUID
+                                                           estoque   = i-QtdeEstoque
+                                                           reservada = i-QtdeReservada ) ) ).
 
     LOOP AT lt_itens INTO DATA(ls_item).
       APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-inativacao ) TO reported-item.
 
       CHECK ls_item-ItemAtivo = abap_false.
 
-      " Regra: não inativar item com estoque disponível ou pedido ativo vinculado
-      IF ls_item-QtdeEstoque - ls_item-QtdeReservada > 0
-         OR line_exists( lt_em_pedido_ativo[ table_line = ls_item-ItemUUID ] ).
+      IF line_exists( lt_bloqueados[ table_line = ls_item-ItemUUID ] ).
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
         APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-inativacao
                         %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>item_inativacao_bloqueada )
@@ -658,6 +754,17 @@ CLASS lhc_item IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    " SKUs já gravados: uma única consulta para todos os itens validados
+    DATA lt_chaves_sku TYPE STANDARD TABLE OF zta_pc_item-sku WITH EMPTY KEY.
+    lt_chaves_sku = VALUE #( FOR i IN lt_itens WHERE ( Sku IS NOT INITIAL ) ( i-Sku ) ).
+    IF lt_chaves_sku IS NOT INITIAL.
+      SELECT item_uuid, sku
+        FROM zta_pc_item
+        FOR ALL ENTRIES IN @lt_chaves_sku
+        WHERE sku = @lt_chaves_sku-table_line
+        INTO TABLE @DATA(lt_sku_db).
+    ENDIF.
+
     LOOP AT lt_itens INTO DATA(ls_item).
       APPEND VALUE #( %tky = ls_item-%tky %state_area = c_area-sku ) TO reported-item.
 
@@ -673,11 +780,10 @@ CLASS lhc_item IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      SELECT SINGLE @abap_true
-        FROM zta_pc_item
-        WHERE sku       =  @ls_item-Sku
-          AND item_uuid <> @ls_item-ItemUUID
-        INTO @DATA(lv_duplicado).
+      DATA(lv_duplicado) = xsdbool( REDUCE i( INIT n = 0
+                                              FOR d IN lt_sku_db
+                                              WHERE ( sku = ls_item-Sku AND item_uuid <> ls_item-ItemUUID )
+                                              NEXT n = n + 1 ) > 0 ).
 
       IF lv_duplicado = abap_true.
         APPEND VALUE #( %tky = ls_item-%tky ) TO failed-item.
@@ -725,6 +831,11 @@ CLASS lhc_item IMPLEMENTATION.
       ( campo = c_col-preco     sinonimos = `PRECO|VALOR|VALORUNITARIO|PRECOUNIT`             obrigatoria = abap_true )
       ( campo = c_col-moeda     sinonimos = `CURRENCY|MOEDACODIGO` ) ).
 
+    " Dados de referência lidos uma única vez, fora dos laços: nomes já
+    " cadastrados (evita duplicar o item ao reenviar a planilha) e moedas ISO
+    SELECT nome FROM zta_pc_item INTO TABLE @DATA(lt_nomes_db).
+    SELECT Currency FROM i_currency INTO TABLE @DATA(lt_moedas).
+
     LOOP AT keys INTO DATA(ls_key).
       CLEAR: lt_erros, lt_itens, lt_nomes_arq.
 
@@ -746,8 +857,6 @@ CLASS lhc_item IMPLEMENTATION.
       ENDIF.
 
       " 2) Validação linha a linha (todas as linhas são avaliadas antes de gravar)
-      SELECT nome FROM zta_pc_item INTO TABLE @DATA(lt_nomes_db).
-
       LOOP AT lt_registros INTO DATA(ls_reg).
         DATA(lv_pref)  = |Linha { ls_reg-linha }: |.
         DATA(lv_antes) = lines( lt_erros ).
@@ -811,13 +920,11 @@ CLASS lhc_item IMPLEMENTATION.
         IF lv_moeda IS INITIAL.
           lv_moeda = zif_pc_constants=>c_moeda_padrao.
         ENDIF.
-        SELECT SINGLE @abap_true FROM i_currency WHERE Currency = @lv_moeda INTO @DATA(lv_moeda_ok).
-        IF lv_moeda_ok = abap_false.
+        IF NOT line_exists( lt_moedas[ Currency = lv_moeda ] ).
           APPEND |{ lv_pref }Moeda inválida ({ lv_moeda }). Use o código ISO, por exemplo BRL.| TO lt_erros.
         ELSE.
           ls_item-moeda = lv_moeda.
         ENDIF.
-        CLEAR lv_moeda_ok.
 
         IF lines( lt_erros ) = lv_antes.
           APPEND ls_item TO lt_itens.

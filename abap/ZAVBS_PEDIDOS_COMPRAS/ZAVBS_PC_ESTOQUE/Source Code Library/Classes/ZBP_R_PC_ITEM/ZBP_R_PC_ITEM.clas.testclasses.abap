@@ -7,8 +7,12 @@
 *"* Geração do SKU: ZCL_PC_UTIL, ltcl_sku_item.
 
 *"* Números T100 (Message Class ZPC_MSG) das mensagens de uma tabela REPORTED.
+"! Apoio dos testes: números T100 das mensagens de um REPORTED.
 CLASS lcl_msgs DEFINITION FINAL.
   PUBLIC SECTION.
+    "! Números T100 (Message Class ZPC_MSG) das mensagens com %msg.
+    "! @parameter it_reported | Tabela REPORTED de qualquer entidade
+    "! @parameter rt_numeros | Números das mensagens (ex.: 014)
     CLASS-METHODS numeros
       IMPORTING it_reported       TYPE ANY TABLE
       RETURNING VALUE(rt_numeros) TYPE string_table.
@@ -32,26 +36,39 @@ ENDCLASS.
 
 
 *"* Base: ambiente de test doubles, dados semeados e atalhos de EML.
+"! Base dos testes do BO {@link ZR_PC_ITEM}: ambiente de test doubles, dados
+"! semeados e atalhos de EML usados pelas classes de teste.
 CLASS lcl_base_item DEFINITION ABSTRACT FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PROTECTED SECTION.
+    "! FAILED do BO Item
     TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_item.
+    "! REPORTED do BO Item
     TYPES ty_reported TYPE RESPONSE FOR REPORTED EARLY zr_pc_item.
+    "! Item lido por READ ENTITIES
     TYPES ty_item     TYPE STRUCTURE FOR READ RESULT zr_pc_item\\Item.
 
     CONSTANTS:
+      "! Actions de movimento usadas em {@link .METH:movimentar}
       BEGIN OF c_mov,
+        "! ReservarEstoque
         reservar TYPE c LENGTH 1 VALUE 'R',
+        "! LiberarReserva
         liberar  TYPE c LENGTH 1 VALUE 'L',
+        "! BaixarEstoque
         baixar   TYPE c LENGTH 1 VALUE 'B',
       END OF c_mov.
 
+    "! Doubles das entidades CDS (Item, pedidos e CodeList)
     CLASS-DATA go_cds TYPE REF TO if_cds_test_environment.
+    "! Doubles das tabelas de rascunho
     CLASS-DATA go_sql TYPE REF TO if_osql_test_environment.
 
+    "! Cria os doubles (uma vez por classe de teste).
     CLASS-METHODS criar_ambiente.
+    "! Destrói os doubles ao final da classe de teste.
     CLASS-METHODS destruir_ambiente.
     "! Limpa os doubles e cadastra a categoria ELETRONICOS na CodeList.
     CLASS-METHODS limpar_ambiente.
@@ -77,6 +94,7 @@ CLASS lcl_base_item DEFINITION ABSTRACT FOR TESTING
                 iv_qtde     TYPE i
       EXPORTING ev_falhou   TYPE abap_boolean
                 et_numeros  TYPE string_table.
+    "! Lê o item ativo (ou o rascunho) pelo BO.
     METHODS ler_item
       IMPORTING iv_item        TYPE sysuuid_x16
                 iv_rascunho    TYPE abap_boolean DEFAULT abap_false
@@ -229,23 +247,37 @@ ENDCLASS.
 
 
 *"* Reserva, liberação e baixa de estoque (actions usadas pelo BO Pedido).
+"! Reserva, liberação e baixa de estoque: actions internas do BO Item
+"! chamadas pelo BO {@link ZR_PC_PEDIDO}.
 CLASS ltcl_item_movimentacao DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_item
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
 
+    "! Reserva dentro do disponível aumenta QtdeReservada.
     METHODS reserva_dentro_do_disponivel  FOR TESTING.
+    "! A reserva recalcula QtdeDisponivel e StatusEstoque.
     METHODS reserva_recalcula_status      FOR TESTING.
+    "! Reserva acima do disponível é recusada (011).
     METHODS reserva_acima_do_disponivel   FOR TESTING.
+    "! Item inativo não pode ser reservado (013).
     METHODS reserva_item_inativo          FOR TESTING.
+    "! Movimento com quantidade zero é recusado (028).
     METHODS quantidade_zero_recusada      FOR TESTING.
+    "! Liberar parte da reserva diminui QtdeReservada.
     METHODS libera_parte_da_reserva       FOR TESTING.
+    "! Liberar mais do que o reservado é recusado (038).
     METHODS libera_acima_da_reserva       FOR TESTING.
+    "! Baixa diminui estoque e reserva.
     METHODS baixa_estoque_e_reserva       FOR TESTING.
+    "! Baixa sem reserva suficiente é recusada (038).
     METHODS baixa_sem_reserva             FOR TESTING.
 ENDCLASS.
 
@@ -371,21 +403,32 @@ ENDCLASS.
 
 
 *"* Rascunho de item novo: valores iniciais, status de estoque e validations do Save.
+"! Determinations da criação e validations do Save do item.
 CLASS ltcl_item_validacoes DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_item
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
 
+    "! Item novo: moeda padrão, ativo e sem reserva.
     METHODS valores_iniciais             FOR TESTING.
+    "! StatusEstoque acompanha a quantidade em estoque.
     METHODS status_acompanha_estoque     FOR TESTING.
+    "! Rascunho válido passa no Prepare sem erros.
     METHODS item_valido_sem_erros        FOR TESTING.
+    "! Categoria fora da CodeList é recusada (041).
     METHODS categoria_fora_da_codelist   FOR TESTING.
+    "! Preço negativo é recusado (029).
     METHODS preco_negativo               FOR TESTING.
+    "! Estoque negativo é recusado (030).
     METHODS estoque_negativo             FOR TESTING.
+    "! Foto em formato não suportado é recusada (009).
     METHODS foto_formato_invalido        FOR TESTING.
 ENDCLASS.
 
@@ -493,24 +536,39 @@ ENDCLASS.
 
 *"* Inativação (Edit + ItemAtivo = falso + Save): só sem saldo disponível e
 *"* sem pedido em andamento com o item.
+"! Inativação do item: bloqueada com estoque disponível ou pedido em andamento,
+"! já no precheck do UPDATE e também no save.
 CLASS ltcl_item_inativacao DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_item
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
-    "! Edita o item ativo, marca como inativo e executa o Prepare.
+    "! Edita o item ativo e marca como inativo. Se o precheck do update recusar,
+    "! devolve essa falha (ev_no_update = abap_true); senão executa o Prepare.
     METHODS inativar
-      IMPORTING iv_item     TYPE sysuuid_x16
-      EXPORTING es_failed   TYPE ty_failed
-                es_reported TYPE ty_reported.
+      IMPORTING iv_item      TYPE sysuuid_x16
+      EXPORTING es_failed    TYPE ty_failed
+                es_reported  TYPE ty_reported
+                ev_no_update TYPE abap_boolean.
 
+    "! Item com estoque disponível não pode ser inativado (014).
     METHODS bloqueia_com_saldo_disponivel  FOR TESTING.
+    "! Sem saldo e sem pedido, a inativação é permitida.
     METHODS permite_sem_saldo_e_sem_pedido FOR TESTING.
+    "! Item em pedido ABERTO não pode ser inativado (014).
     METHODS bloqueia_com_pedido_aberto     FOR TESTING.
+    "! Pedido encerrado (FINALIZADO) não impede a inativação.
     METHODS permite_com_pedido_finalizado  FOR TESTING.
+    "! A inativação bloqueada é recusada já no UPDATE (precheck), sem esperar o save.
+    METHODS precheck_barra_no_update       FOR TESTING.
+    "! Reativar (ItemAtivo = true) não passa pela regra de bloqueio.
+    METHODS precheck_permite_reativar      FOR TESTING.
 ENDCLASS.
 
 
@@ -539,10 +597,47 @@ CLASS ltcl_item_inativacao IMPLEMENTATION.
       ENTITY Item
         UPDATE FIELDS ( ItemAtivo )
         WITH VALUE #( ( %tky = VALUE #( ItemUUID = iv_item %is_draft = if_abap_behv=>mk-on ) ItemAtivo = abap_false ) )
-      FAILED DATA(ls_failed_upd).
-    cl_abap_unit_assert=>assert_initial( act = ls_failed_upd msg = 'Falha ao inativar no rascunho' ).
+      FAILED DATA(ls_failed_upd)
+      REPORTED DATA(ls_reported_upd).
+
+    " Precheck do update recusou: a regra já foi aplicada, não há o que salvar
+    IF ls_failed_upd IS NOT INITIAL.
+      es_failed    = CORRESPONDING #( DEEP ls_failed_upd ).
+      es_reported  = CORRESPONDING #( DEEP ls_reported_upd ).
+      ev_no_update = abap_true.
+      RETURN.
+    ENDIF.
 
     preparar( EXPORTING iv_item = iv_item IMPORTING es_failed = es_failed es_reported = es_reported ).
+  ENDMETHOD.
+
+  METHOD precheck_barra_no_update.
+    inativar( EXPORTING iv_item = semear_item( 5 ) IMPORTING es_reported  = DATA(ls_reported)
+                                                             ev_no_update = DATA(lv_no_update) ).
+
+    cl_abap_unit_assert=>assert_true( act = lv_no_update
+                                      msg = 'Inativação bloqueada deve ser recusada no precheck do UPDATE' ).
+    DATA(lt_numeros) = lcl_msgs=>numeros( ls_reported-item ).
+    cl_abap_unit_assert=>assert_true( act = xsdbool( line_exists( lt_numeros[ table_line = '014' ] ) )
+                                      msg = 'Precheck deve devolver a mensagem 014' ).
+  ENDMETHOD.
+
+  METHOD precheck_permite_reativar.
+    DATA(lv_item) = semear_item( iv_estoque = 5 iv_ativo = abap_false ).
+
+    MODIFY ENTITIES OF zr_pc_item
+      ENTITY Item
+        EXECUTE Edit FROM VALUE #( ( %cid = 'ED' %key-ItemUUID = lv_item ) )
+      FAILED DATA(ls_failed_ed).
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_ed msg = 'Edit do item falhou' ).
+
+    MODIFY ENTITIES OF zr_pc_item
+      ENTITY Item
+        UPDATE FIELDS ( ItemAtivo )
+        WITH VALUE #( ( %tky = VALUE #( ItemUUID = lv_item %is_draft = if_abap_behv=>mk-on ) ItemAtivo = abap_true ) )
+      FAILED DATA(ls_failed_upd).
+
+    cl_abap_unit_assert=>assert_initial( act = ls_failed_upd msg = 'Reativar item não é bloqueado pelo precheck' ).
   ENDMETHOD.
 
   METHOD bloqueia_com_saldo_disponivel.
@@ -583,22 +678,31 @@ ENDCLASS.
 
 
 *"* Exclusão: bloqueada para item com reserva ou ligado a pedido (ativo ou rascunho).
+"! Exclusão do item: bloqueada com reserva ou vínculo com pedido (feature
+"! control de delete + precheck).
 CLASS ltcl_item_exclusao DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_item
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
     "! Exclui o item ativo; devolve abap_true se a exclusão foi recusada.
     METHODS excluir
       IMPORTING iv_item          TYPE sysuuid_x16
       RETURNING VALUE(rv_falhou) TYPE abap_boolean.
 
+    "! Item sem reserva e sem pedido pode ser excluído.
     METHODS exclui_item_livre             FOR TESTING.
+    "! Item com reserva não pode ser excluído (031).
     METHODS bloqueia_com_reserva          FOR TESTING.
+    "! Item em pedido gravado não pode ser excluído (031).
     METHODS bloqueia_em_pedido            FOR TESTING.
+    "! Item em pedido ainda em rascunho também não pode ser excluído (031).
     METHODS bloqueia_em_pedido_rascunho   FOR TESTING.
 ENDCLASS.
 
