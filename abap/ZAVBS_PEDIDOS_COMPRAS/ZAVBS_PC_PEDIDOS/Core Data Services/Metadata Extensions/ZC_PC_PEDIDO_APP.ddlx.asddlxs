@@ -38,7 +38,7 @@ annotate entity ZC_PC_PEDIDO_APP with
     /* Composições [0..1] viram seções de formulário: Fiori Elements V4 só
        renderiza tabela (LINEITEM) para navegações de cardinalidade N. */
     { id: 'Pagamento',        purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
-      label: 'Pagamento (última tentativa)', position: 40, targetElement: '_Pagamento' },
+      label: 'Pagamento', position: 40, targetElement: '_Pagamento' },
     { id: 'Finalizacao',      purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       label: 'Finalização', position: 50, targetQualifier: 'Finalizacao',
       hidden: #(PedidoNaoFinalizado) },
@@ -60,23 +60,15 @@ annotate entity ZC_PC_PEDIDO_APP with
   @UI.hidden: true
   PedidoNaoCancelado;
 
+  /* Efetuar Pagamento (SimularPagamento) e Cancelar pedido (CancelarPedido) são
+     botões customizados do app Pedidos de Compras (ext/AcoesPedido.js): pedem
+     confirmação antes da action, o que o Fiori Elements não faz em actions com
+     parâmetros. Aprovar pedido usa a confirmação padrão (IsActionCritical). */
   @UI: { lineItem:       [{ position: 10, label: 'Pedido', importance: #HIGH },
-                          { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento',
-                            actionGroupId: 'AcoesPedido', position: 10 },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',
-                            actionGroupId: 'AcoesPedido', position: 20 },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
-                            actionGroupId: 'AcoesPedido', position: 30 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido', position: 20 },
                           { type: #FOR_ACTION, dataAction: 'ImportarPlanilha', label: 'Importar planilha' }],
          identification: [{ position: 10, label: 'Número do pedido' },
-                          { type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesPedido', label: 'Ações', position: 100 },
-                          { type: #FOR_ACTION, dataAction: 'SimularPagamento', label: 'Efetuar Pagamento',
-                            actionGroupId: 'AcoesPedido', position: 10 },
-                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido',
-                            actionGroupId: 'AcoesPedido', position: 20 },
-                          { type: #FOR_ACTION, dataAction: 'CancelarPedido',   label: 'Cancelar pedido',
-                            actionGroupId: 'AcoesPedido', position: 30 }] }
+                          { type: #FOR_ACTION, dataAction: 'AprovarPedido',    label: 'Aprovar pedido', position: 20 }] }
   @EndUserText.label: 'Pedido'
   NumeroPedido;
 

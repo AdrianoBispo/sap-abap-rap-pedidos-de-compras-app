@@ -4,14 +4,33 @@ with draft;
 
 /* ---------------------------------------------------------------------
    BO Pedido de Compra
-   - Draft somente para criação/edição no status ABERTO
-   - Ações de ciclo de vida executadas apenas sobre a instância ATIVA
-     (disponibilidade por status = feature control, não autorização)
-   - Pagamento e snapshots: filhos de composição, criados apenas
-     internamente pelas actions (sem create/update/delete externos).
-     Como o BO é draft, as tabelas draft técnicas ZTA_PC_SNPCLI_D e
-     ZTA_PC_SNPITM_D são obrigatórias e permanecem vazias.
+   - Draft só para criação/edição no status ABERTO; as ações de ciclo de
+     vida rodam só na instância ATIVA (feature control, não autorização)
+   - Pagamento e snapshots: filhos criados só internamente pelas actions.
+     As tabelas draft ZTA_PC_SNPCLI_D e ZTA_PC_SNPITM_D são exigidas pelo
+     draft e ficam vazias
    - Estoque movimentado via EML nas actions do BO Item (mesma LUW)
+   - Cliente: escolhido na criação; depois só os itens podem ser alterados
+   - ImportarPlanilha (.xlsx ou .csv): uma linha por item; a mesma
+     referência forma um pedido. Cria pedidos ABERTO e reserva o estoque,
+     como o registro pela tela. Tudo ou nada
+   - ReferenciaImportacao: gravada só por ImportarPlanilha; impede
+     reimportar o mesmo pedido
+   - PedidoEncerrado, PedidoAtivoSemHistorico, PedidoNaoFinalizado e
+     PedidoNaoCancelado: mantidos por AtualizarFlagsStatus; dirigem as
+     seções da Object Page (ver ZC_PC_PEDIDO_APP.ddlx)
+   - CancelarPorReembolso e RetomarPedido: chamadas só pelo BO Reembolso
+     via EML; não expostas na projection
+   - GerarNumeroPedido: numeração antecipada (early numbering). O GET NUMBER
+     de ZPC_NR faz COMMIT e, no on save, geraria o dump
+     BEHAVIOR_ILLEGAL_STATEMENT; por isso roda na fase de interação
+   - ReservarEstoqueRegistro: roda ao salvar o rascunho e ao alterar itens
+     de pedido aberto; aplica só a diferença já reservada
+   - ValidarRegistro: endereço, itens e estoque, no Prepare, antes da reserva
+   - SimularPagamento: precheck confere todos os campos do parâmetro
+     (método, número do cartão, validade e CVV) antes da action
+   - Ações do ciclo de vida processam vários pedidos em lote: estoque
+     movimentado numa única chamada ao BO Item por tipo de movimento
    --------------------------------------------------------------------- */
 define behavior for ZR_PC_PEDIDO alias Pedido
 persistent table zta_pc_pedido
@@ -33,52 +52,30 @@ authorization master ( global )
   field ( readonly ) NumeroPedido, EnderecoUUID, EnderecoPrincipalCompleto, StatusPedido, StatusPagamento,
                      Currency, ValorTotal, DataFinalizacao, MotivoCancelamento, DataCancelamento, CanceladoPor,
                      CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
-  /* Referência da planilha (coluna Pedido): gravada só por ImportarPlanilha
-     (EML em local mode) e usada para recusar a reimportação do mesmo pedido */
   field ( readonly ) ReferenciaImportacao;
-  /* Indicadores de status mantidos por AtualizarFlagsStatus: dirigem a
-     exibição dinâmica das seções da Object Page (ver ZC_PC_PEDIDO_APP.ddlx) */
   field ( readonly ) PedidoEncerrado, PedidoAtivoSemHistorico, PedidoNaoFinalizado, PedidoNaoCancelado;
-  /* O cliente é escolhido na criação; depois só os itens podem ser alterados */
   field ( mandatory : create ) ClienteUUID;
   field ( readonly : update ) ClienteUUID;
 
-  action ( features : instance ) SimularPagamento parameter ZPC_A_PAGAMENTO_INPUT result [1] $self;
+  action ( features : instance, precheck ) SimularPagamento parameter ZPC_A_PAGAMENTO_INPUT result [1] $self;
   action ( features : instance ) AprovarPedido result [1] $self;
   action ( features : instance ) CancelarPedido parameter ZPC_A_CANCELAMENTO_INPUT result [1] $self;
 
-  /* Chamadas somente pelo BO Reembolso (ZR_PC_REEMBOLSO) via EML quando o
-     pedido em PROCESSANDO_REEMBOLSO é decidido. Não são expostas na projection. */
   action ( authorization : none ) CancelarPorReembolso result [1] $self;
   action ( authorization : none ) RetomarPedido parameter ZPC_A_RETOMADA_INPUT result [1] $self;
 
   internal action RecalcularTotal;
 
-  /* Importação em massa por planilha (.xlsx ou .csv): uma linha por item;
-     linhas com a mesma referência formam um pedido. Cria pedidos ativos
-     (ABERTO) e reserva o estoque, como o registro pela tela. Tudo ou nada. */
   static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
 
   determination DefinirStatusInicial on modify { create; }
   determination AtualizarEndereco on modify { field ClienteUUID; }
-  /* Numeração antecipada (early numbering): ZPC_NR não é bufferizado, e o
-     GET NUMBER faz um COMMIT síncrono na tabela NRIV. Rodar isso na fase
-     on save viola a restrição de transação do RAP (Late Save phase) e
-     gera o dump BEHAVIOR_ILLEGAL_STATEMENT (UPDATE <dbtab> is not allowed
-     with this status). Gerar o número já na fase de interação evita o dump. */
   determination GerarNumeroPedido on modify { create; }
   determination CalcularTotalPedido on save { create; update; }
-  /* Personalização dinâmica da Object Page (ver ZC_PC_PEDIDO_APP.ddlx). */
   determination AtualizarFlagsStatus on modify { create; field StatusPedido; }
-  /* Reserva do estoque: roda quando o rascunho é salvo e o pedido passa a
-     existir como instância ativa (status ABERTO) e também quando itens de um
-     pedido aberto são alterados (Edit + Save). Aplica só a diferença entre
-     o que já estava reservado e os itens atuais. */
   determination ReservarEstoqueRegistro on modify { create; update; }
 
   validation ValidarCliente on save { create; field ClienteUUID; }
-  /* Endereço principal, itens e disponibilidade de estoque, checados no
-     Save (Prepare) do rascunho, antes da reserva. */
   validation ValidarRegistro on save { create; update; }
 
   draft action ( features : instance ) Edit;
@@ -129,6 +126,15 @@ authorization master ( global )
   }
 }
 
+/* ---------------------------------------------------------------------
+   Item do Pedido
+   - Filho de Pedido (_Itens); lock e authorization dependentes dele. O
+     create vem de _Itens, aqui só update e delete
+   - ItemUUID e QtdeItemPedido obrigatórios; preço, Currency e ValorTotal
+     readonly, preenchidos no backend
+   - CalcularValorItem recalcula o valor; ValidarItemPedido roda no Save e
+     no Prepare do Pedido
+   --------------------------------------------------------------------- */
 define behavior for ZR_PC_ITEM_PEDIDO alias ItemPedido
 persistent table zta_pc_item_ped
 draft table zta_pc_itped_d
@@ -174,6 +180,14 @@ authorization dependent by _Pedido
   }
 }
 
+/* ---------------------------------------------------------------------
+   BO Pagamento
+   - Filho de Pedido (_Pagamento); lock e authorization dependentes dele
+   - Criado e atualizado só internamente pelas actions do Pedido (ex.:
+     SimularPagamento); mantém só a última tentativa segura
+   - Campos readonly; cartão só mascarado (CartaoMascarado e
+     Ultimos4DigitosCartao)
+   --------------------------------------------------------------------- */
 define behavior for ZR_PC_PAGAMENTO alias Pagamento
 persistent table zta_pc_pagamento
 draft table zta_pc_pagto_d
@@ -181,7 +195,6 @@ etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
 {
-  /* Somente a última tentativa segura é mantida (atualizada pela action) */
   internal update;
 
   association _Pedido { with draft; }
@@ -211,6 +224,14 @@ authorization dependent by _Pedido
   }
 }
 
+/* ---------------------------------------------------------------------
+   Snapshot do Cliente
+   - Filho de Pedido (_ClienteSnapshot); lock e authorization dependentes dele
+   - Histórico imutável (sem update/delete), criado só internamente pelas
+     actions do Pedido (ver side effects de AprovarPedido e CancelarPedido)
+   - Guarda cliente e endereço no momento do snapshot (MotivoSnapshot).
+     A tabela draft ZTA_PC_SNPCLI_D é exigida pelo draft e fica vazia
+   --------------------------------------------------------------------- */
 define behavior for ZR_PC_PED_CLI_SNAP alias ClienteSnapshot
 persistent table zta_pc_snap_cli
 draft table zta_pc_snpcli_d
@@ -218,7 +239,6 @@ etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
 {
-  /* Histórico imutável: sem update/delete */
   association _Pedido { with draft; }
 
   field ( numbering : managed, readonly ) SnapshotUUID;
@@ -259,6 +279,15 @@ authorization dependent by _Pedido
   }
 }
 
+/* ---------------------------------------------------------------------
+   Snapshot dos Itens
+   - Filho de Pedido (_ItensSnapshot); lock e authorization dependentes dele
+   - Histórico imutável (sem update/delete), criado só internamente pelas
+     actions do Pedido (ver side effects de AprovarPedido e CancelarPedido)
+   - Guarda os dados de cada item (Sku, Nome, Categoria, Quantidade, preço e
+     valor) no momento do snapshot. A tabela draft ZTA_PC_SNPITM_D é exigida
+     pelo draft e fica vazia
+   --------------------------------------------------------------------- */
 define behavior for ZR_PC_PED_ITEM_SNAP alias ItemSnapshot
 persistent table zta_pc_snap_itm
 draft table zta_pc_snpitm_d
@@ -266,7 +295,6 @@ etag master LocalLastChangedAt
 lock dependent by _Pedido
 authorization dependent by _Pedido
 {
-  /* Histórico imutável: sem update/delete */
   association _Pedido { with draft; }
 
   field ( numbering : managed, readonly ) SnapshotItemUUID;
