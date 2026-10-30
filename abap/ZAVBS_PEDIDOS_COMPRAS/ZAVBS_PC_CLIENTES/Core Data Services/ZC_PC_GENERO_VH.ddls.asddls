@@ -10,11 +10,14 @@ define view entity ZC_PC_GENERO_VH
       @UI.textArrangement: #TEXT_ONLY
       @EndUserText.label: 'Gênero'
   key Codigo,
+  
       @Semantics.text: true
       @EndUserText.label: 'Descrição'
       Descricao,
+      
       @UI.hidden: true
       Criticality,
+      
       @UI.hidden: true
       Ordem
 }

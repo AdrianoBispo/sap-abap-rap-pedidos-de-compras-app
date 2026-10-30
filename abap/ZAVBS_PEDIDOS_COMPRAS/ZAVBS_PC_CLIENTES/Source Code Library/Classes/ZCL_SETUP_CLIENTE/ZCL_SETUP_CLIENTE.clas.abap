@@ -1,25 +1,24 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Carga de clientes de demonstração</p>
-"! Insere 100 clientes (cada um com um endereço principal já validado).
-"! Pode ser executada mais de uma vez: CPFs já existentes são ignorados.
-"! Constantes, tipos e métodos públicos: interface ZIF_SETUP_CLIENTE.
+"! <strong> Classe para carga de dados na tabela de clientes</strong>
+"! <ul>
+"!  <li>Insere 100 clientes (cada um com um endereço principal já validado).</li>
+"!  <li>Pode ser executada mais de uma vez: CPFs já existentes são ignorados.</li>
+"! </ul>
 CLASS zcl_setup_cliente DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    INTERFACES zif_setup_cliente.
+    INTERFACES zif_pc_constants.
+    ALIASES carregar_dados FOR zif_pc_constants~carregar_dados.
 
-    ALIASES carregar_dados FOR zif_setup_cliente~carregar_dados.
-
-  PROTECTED SECTION.
   PRIVATE SECTION.
     TYPES:
       BEGIN OF ty_nome,
         nome   TYPE string,
         genero TYPE zta_pc_cliente-genero,
-      END OF ty_nome.
-    TYPES:
+      END OF ty_nome,
+
       BEGIN OF ty_cep,
         cep        TYPE zta_pc_endereco-cep,
         logradouro TYPE zta_pc_endereco-logradouro,
@@ -28,19 +27,22 @@ CLASS zcl_setup_cliente DEFINITION
         uf         TYPE zta_pc_endereco-uf,
         estado     TYPE zta_pc_endereco-estado,
       END OF ty_cep.
-ENDCLASS.
 
+ENDCLASS.
 
 
 CLASS zcl_setup_cliente IMPLEMENTATION.
 
-  METHOD zif_setup_cliente~carregar_dados.
+  METHOD zif_pc_constants~carregar_dados.
+
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
     DATA(lv_usuario) = CONV abp_creation_user( 'SETUP' ).
+
     TRY.
         lv_usuario = cl_abap_context_info=>get_user_technical_name( ).
+
       CATCH cx_abap_context_info_error.
         " mantém 'SETUP'
     ENDTRY.
@@ -70,11 +72,10 @@ CLASS zcl_setup_cliente IMPLEMENTATION.
       ( nome = `Renata`    genero = 'FEMININO' )
       ( nome = `Eduardo`   genero = 'MASCULINO' ) ).
 
-    DATA(lt_sobrenomes) = VALUE string_table(
-      ( `Silva` ) ( `Souza` ) ( `Oliveira` ) ( `Santos` ) ( `Pereira` )
-      ( `Costa` ) ( `Rodrigues` ) ( `Almeida` ) ( `Nascimento` ) ( `Lima` )
-      ( `Araújo` ) ( `Fernandes` ) ( `Carvalho` ) ( `Gomes` ) ( `Martins` )
-      ( `Rocha` ) ( `Ribeiro` ) ( `Barbosa` ) ( `Moreira` ) ( `Cardoso` ) ).
+    DATA(lt_sobrenomes) = VALUE string_table( ( `Silva` ) ( `Souza` ) ( `Oliveira` ) ( `Santos` ) ( `Pereira` )
+                                              ( `Costa` ) ( `Rodrigues` ) ( `Almeida` ) ( `Nascimento` ) ( `Lima` )
+                                              ( `Araújo` ) ( `Fernandes` ) ( `Carvalho` ) ( `Gomes` ) ( `Martins` )
+                                              ( `Rocha` ) ( `Ribeiro` ) ( `Barbosa` ) ( `Moreira` ) ( `Cardoso` )    ).
 
     lt_ceps = VALUE #(
       ( cep = '01001000' logradouro = 'Praça da Sé'                   bairro = 'Sé'               cidade = 'São Paulo'      uf = 'SP' estado = 'São Paulo' )
@@ -94,11 +95,13 @@ CLASS zcl_setup_cliente IMPLEMENTATION.
     DATA lt_clientes  TYPE STANDARD TABLE OF zta_pc_cliente WITH EMPTY KEY.
     DATA lt_enderecos TYPE STANDARD TABLE OF zta_pc_endereco WITH EMPTY KEY.
 
-    DO zif_setup_cliente=>c_quantidade TIMES.
+    DO zif_pc_constants=>c_quantidade TIMES.
+
       DATA(lv_i) = sy-index.
 
       " CPF válido e determinístico: base de 9 dígitos + dígitos verificadores
       DATA(lv_cpf) = zcl_pc_util=>calcular_dv_cpf( |{ 100000000 + lv_i * 3571 }| ).
+
       IF line_exists( lt_cpf_existentes[ cpf = lv_cpf ] ).
         CONTINUE.
       ENDIF.
@@ -112,11 +115,11 @@ CLASS zcl_setup_cliente IMPLEMENTATION.
       DATA(lv_email) = translate( val  = to_lower( lv_nome )
                                   from = 'áàâãäéèêëíìîïóòôõöúùûüç '
                                   to   = 'aaaaaeeeeiiiiooooouuuuc.' ).
+
       lv_email = |{ lv_email }.{ lv_i }@example.com|.
 
-      DATA(lv_genero) = COND zta_pc_cliente-genero(
-        WHEN lv_i MOD 17 = 0 THEN 'NAO_INFORMADO'
-        ELSE ls_nome-genero ).
+      DATA(lv_genero) = COND zta_pc_cliente-genero( WHEN lv_i MOD 17 = 0 THEN 'NAO_INFORMADO'
+                                                    ELSE ls_nome-genero ).
 
       DATA(lv_nascimento) = CONV d( |{ 1960 + lv_i MOD 44 }| &&
                                     |{ 1 + lv_i MOD 12 WIDTH = 2 ALIGN = RIGHT PAD = '0' }| &&
@@ -141,6 +144,7 @@ CLASS zcl_setup_cliente IMPLEMENTATION.
         local_last_changed_at = lv_agora ) TO lt_clientes.
 
       DATA(ls_cep) = lt_ceps[ ( lv_i - 1 ) MOD lines( lt_ceps ) + 1 ].
+
       APPEND VALUE #(
         endereco_uuid         = cl_system_uuid=>create_uuid_x16_static( )
         cliente_uuid          = lv_cliente_uuid

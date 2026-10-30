@@ -35,7 +35,9 @@ As colunas, filtros, seções e ações vêm das metadata extensions do backend 
   `PreencherEnderecoViaCep` preenche logradouro, bairro, cidade e UF, e os side effects recarregam esses
   campos na tela. CEP inválido, CEP geral sem logradouro e CEP repetido no mesmo cliente são recusados no
   *Salvar*. Depois de gravado, o CEP fica somente leitura (para trocar, exclua o endereço e crie outro).
-- **Definir endereço principal**: ação na tabela de endereços e na página do endereço.
+- **Definir endereço principal**: ação na tabela de endereços (seleção única, com radio button) e na página
+  do endereço. O backend recusa o endereço que já é o principal e endereço com CEP não validado.
+- **Inativar** (desmarcar *Ativo*) é recusado na hora para cliente com pedido em andamento.
 - **Score**: somente leitura, sorteado na criação e exibido como indicador em %: vermelho até 40,
   amarelo de 40 a 70 e verde a partir de 70.
 - **Foto** (JPEG, PNG ou WEBP) na página do cliente; sem foto, aparece um avatar.

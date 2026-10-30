@@ -1,4 +1,5 @@
 @Metadata.layer: #CORE
+
 @UI: {
   headerInfo: { typeName:       'Cliente',
                 typeNamePlural: 'Clientes',
@@ -6,9 +7,11 @@
                 description:    { type: #STANDARD, value: 'CpfFormatado' },
                 imageUrl:       'FotoCliente',
                 typeImageUrl:   'sap-icon://person-placeholder' },
+
   presentationVariant: [{ sortOrder:      [{ by: 'Nome', direction: #ASC }],
                           visualizations: [{ type: #AS_LINEITEM }] }]
 }
+
 annotate entity ZC_PC_CLIENTE_APP with
 {
   @UI.facet: [
@@ -65,6 +68,9 @@ annotate entity ZC_PC_CLIENTE_APP with
 
   @UI: { identification: [{ position: 60, label: 'Gênero' }] }
   @EndUserText.label: 'Gênero'
+  @UI.textArrangement: #TEXT_ONLY
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_PC_GENERO_VH', element: 'Codigo' },
+                                       useForValidation: true }]
   Genero;
 
   @UI.hidden: true
@@ -82,7 +88,10 @@ annotate entity ZC_PC_CLIENTE_APP with
 
   /* Score 0-100 em %. Cor da barra pelo campo ScoreCriticality: até 40 vermelho,
      de 40 a 70 amarelo, a partir de 70 verde. */
-  @UI.dataPoint: { qualifier: 'Score', title: 'Score do cliente', visualization: #PROGRESS, targetValue: 100,
+  @UI.dataPoint: { qualifier: 'Score',
+                   title: 'Score do cliente',
+                   visualization: #PROGRESS,
+                   targetValue: 100,
                    valueFormat: { numberOfFractionalDigits: 0 },
                    criticality: 'ScoreCriticality' }
   @EndUserText.label: 'Score (%)'

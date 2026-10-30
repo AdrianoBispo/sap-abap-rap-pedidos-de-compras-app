@@ -1,5 +1,5 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Utilitários</p>
-"! Constantes, tipos e métodos públicos de ZCL_PC_UTIL, que implementa esta interface.
+"! <h1>Interface para Objetos Utilitários</h1>
+"! Interface onde é declarada as constantes, tipos e métodos públicos da classe {@link ZCL_PC_UTIL}
 INTERFACE zif_pc_util PUBLIC.
 
   "! Remove tudo que não for dígito (CPF, CEP, telefone, cartão).

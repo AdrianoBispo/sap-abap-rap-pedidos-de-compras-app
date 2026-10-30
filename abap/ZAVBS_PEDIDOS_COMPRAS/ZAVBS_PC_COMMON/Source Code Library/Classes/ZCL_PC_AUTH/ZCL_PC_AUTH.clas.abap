@@ -1,16 +1,16 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Verificação de perfil</p>
-"! Centraliza as verificações usadas em get_global_authorizations dos BOs.
+"! <h1>Classe que implementa Verificação de Autorização</h1>
+"!
+"! <p>Centraliza as verificações usadas em <strong><em>get_global_authorizations</em></strong> dos BOs.</p>
 "!
 "! Objetos de autorização (criar no ADT, campo ACTVT):
-"!  - ZPC_ADMIN  : 01 criar, 02 alterar, 06 excluir -> Clientes e Estoque
-"!  - ZPC_PEDIDO : 01 criar, 02 alterar, 06 excluir, 16 executar -> Pedidos,
-"!                 actions do pedido e Reembolsos
-"! Os objetos são atribuídos às IAM Apps (aba Authorizations) e as restrições
-"! são mantidas nas Business Roles ZPC_BR_ADMIN / ZPC_BR_COMUM.
+"! <ul>
+"!  <li><strong>ZPC_ADMIN</strong>  : 01 Criar, 02 Alterar, 06 Excluir -> Clientes e Estoque</li>
+"!  <li><strong>ZPC_PEDIDO</strong> : 01 Criar, 02 Alterar, 06 Excluir, 16 Executar -> Pedidos, actions do Pedido e Reembolsos</li>
+"! </ul>
 "!
 "! Cada operação verifica a atividade correspondente: nunca usar uma única
 "! atividade genérica para criar/alterar/excluir.
-"! Constantes, tipos e métodos públicos: interface ZIF_PC_AUTH.
+"! <p>Constantes, tipos e métodos públicos são definidos na interface <strong>{@link ZIF_PC_AUTH}</strong></p>
 CLASS zcl_pc_auth DEFINITION
   PUBLIC
   FINAL
@@ -19,20 +19,44 @@ CLASS zcl_pc_auth DEFINITION
   PUBLIC SECTION.
     INTERFACES zif_pc_auth.
 
-    ALIASES admin_pode_criar FOR zif_pc_auth~admin_pode_criar.
-    ALIASES admin_pode_alterar FOR zif_pc_auth~admin_pode_alterar.
-    ALIASES admin_pode_excluir FOR zif_pc_auth~admin_pode_excluir.
-    ALIASES pedido_pode_criar FOR zif_pc_auth~pedido_pode_criar.
-    ALIASES pedido_pode_alterar FOR zif_pc_auth~pedido_pode_alterar.
-    ALIASES pedido_pode_excluir FOR zif_pc_auth~pedido_pode_excluir.
+    ALIASES admin_pode_criar     FOR zif_pc_auth~admin_pode_criar.
+    ALIASES admin_pode_alterar   FOR zif_pc_auth~admin_pode_alterar.
+    ALIASES admin_pode_excluir   FOR zif_pc_auth~admin_pode_excluir.
+    ALIASES pedido_pode_criar    FOR zif_pc_auth~pedido_pode_criar.
+    ALIASES pedido_pode_alterar  FOR zif_pc_auth~pedido_pode_alterar.
+    ALIASES pedido_pode_excluir  FOR zif_pc_auth~pedido_pode_excluir.
     ALIASES pedido_pode_executar FOR zif_pc_auth~pedido_pode_executar.
 
-  PROTECTED SECTION.
   PRIVATE SECTION.
+
+    "! <p>
+    "!  Verifica se o usuário possui autorização para a área administrativa
+    "!  do objeto <strong>ZPC_ADMIN</strong> e valida a atividade informada no
+    "!  parâmetro {@link .METH:verificar_admin.DATA:iv_actvt}.
+    "! </p>
+    "!
+    "! <p>
+    "!  Retorna <strong>abap_true</strong> quando o usuário está autorizado a
+    "!  executar a ação correspondente ao ACTVT informado.
+    "! </p>
+    "!
+    "! <p>Utilizado nas validações pelas classes locais das Classes Behavior Pool: {@link ZBP_R_PC_CLIENTE} e {@link zbp_r_pc_item}</p>
     CLASS-METHODS verificar_admin
       IMPORTING iv_actvt             TYPE c
       RETURNING VALUE(rv_autorizado) TYPE abap_boolean.
 
+    "! <p>
+    "!  Verifica se o usuário possui autorização para a área de pedidos no
+    "!  objeto <strong>ZPC_PEDIDO</strong> e valida a atividade informada em
+    "!  {@link .METH:verificar_pedido.DATA:iv_actvt}.
+    "! </p>
+    "!
+    "! <p>
+    "!  São aceitos valores de ACTVT para criação, alteração, exclusão e execução,
+    "!  conforme as operações do processo de pedidos e reembolsos.
+    "! </p>
+    "!
+    "! <p>Utilizado nas validações pelas classes locais das Classes Behavior Pool: {@link zbp_r_pc_pedido} e {@link zbp_r_pc_reembolso}</p>
     CLASS-METHODS verificar_pedido
       IMPORTING iv_actvt             TYPE c
       RETURNING VALUE(rv_autorizado) TYPE abap_boolean.

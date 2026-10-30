@@ -1,9 +1,11 @@
 @Metadata.layer: #CORE
+
 @UI: {
   headerInfo: { typeName:       'Endereço',
                 typeNamePlural: 'Endereços',
                 title:          { type: #STANDARD, value: 'Logradouro' },
                 description:    { type: #STANDARD, value: 'Cidade' } },
+                
   presentationVariant: [{ sortOrder:      [{ by: 'EnderecoPrincipal', direction: #DESC }],
                           visualizations: [{ type: #AS_LINEITEM }] }]
 }
@@ -23,6 +25,7 @@ annotate entity ZC_PC_ENDERECO_APP with
   @UI: { lineItem:       [{ position: 10, label: 'CEP', importance: #HIGH },
                           { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
                             label: 'Definir como principal' }],
+                            
          identification: [{ position: 10, label: 'CEP (somente números)' },
                           { type: #FOR_ACTION, dataAction: 'DefinirEnderecoPrincipal',
                             label: 'Definir como principal' }] }

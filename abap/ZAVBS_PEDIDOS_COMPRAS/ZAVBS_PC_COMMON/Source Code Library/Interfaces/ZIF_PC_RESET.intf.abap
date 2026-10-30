@@ -1,5 +1,4 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Reset dos dados do banco</p>
-"! Constantes, tipos e métodos públicos de ZCL_PC_RESET, que implementa esta interface.
+"! Interface onde é declarada as constantes, tipos e métodos públicos da classe {@link ZCL_PC_RESET}
 INTERFACE zif_pc_reset PUBLIC.
 
   TYPES:
@@ -7,10 +6,11 @@ INTERFACE zif_pc_reset PUBLIC.
       tabela    TYPE string,
       apagados  TYPE i,
     END OF ty_resultado.
+
   TYPES tt_resultado TYPE STANDARD TABLE OF ty_resultado WITH EMPTY KEY.
 
-  "! Apaga os dados e confirma (COMMIT WORK). Devolve a quantidade apagada
-  "! por tabela. Em ambiente que não é de demonstração não apaga nada.
+  "! <p>Apaga os dados e devolve a quantidade apagada por tabela.</p>
+  "! <p>OBS: Em ambiente que não é de demonstração não apaga nada.<p>
   CLASS-METHODS resetar
     EXPORTING et_resultado TYPE tt_resultado
               ev_executado TYPE abap_boolean.

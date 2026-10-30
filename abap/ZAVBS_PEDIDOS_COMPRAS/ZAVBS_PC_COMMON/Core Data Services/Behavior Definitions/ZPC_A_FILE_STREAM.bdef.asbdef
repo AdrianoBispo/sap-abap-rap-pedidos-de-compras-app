@@ -2,6 +2,11 @@ abstract;
 strict ( 2 );
 with hierarchy;
 
+/* ---------------------------------------------------------------------
+ BDEF abstrato: folha da hierarquia do parâmetro de ZPC_A_UPLOAD_INPUT (arquivo da planilha).
+ As chaves ficam vazias de propósito: os campos vêm da entidade CDS abstrata e não há persistência
+ e nem associations filhas a declarar. O BDEF só habilita o uso como parâmetro profundo.
+ --------------------------------------------------------------------- */
 define behavior for ZPC_A_FILE_STREAM
 {
 }

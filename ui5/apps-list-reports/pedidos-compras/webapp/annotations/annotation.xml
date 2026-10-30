@@ -13,6 +13,12 @@
     </edmx:Reference>
     <edmx:DataServices>
         <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="local">
+            <!-- Aprovar pedido (sem parâmetros): o Fiori Elements pede confirmação
+                 antes de executar. Texto em i18n (C_OPERATIONS_ACTION_CONFIRM_*|Pedido|AprovarPedido).
+                 Efetuar Pagamento e Cancelar pedido têm parâmetros e confirmam em ext/AcoesPedido.js. -->
+            <Annotations Target="SAP__self.AprovarPedido(SAP__self.PedidoType)">
+                <Annotation Term="Common.IsActionCritical" Bool="true"/>
+            </Annotations>
             <!-- Navegação para a app Gestão de Clientes (semantic object ZPCCliente):
                  a chave semântica do Cliente é Cpf; no pedido o campo chama CpfCliente. -->
             <Annotations Target="SAP__self.PedidoType/NomeCliente">

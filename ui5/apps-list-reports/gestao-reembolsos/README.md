@@ -18,25 +18,33 @@ já pago; aqui não há criação, edição nem exclusão.
 
 | Página | Rota | Conteúdo |
 | --- | --- | --- |
-| Lista de reembolsos | `#/` | Filtros pedido, cliente, CPF e status; colunas pedido, cliente, CPF, status, valor, motivo da solicitação, data da solicitação e motivo da decisão; botões **Aprovar** e **Rejeitar** |
-| Reembolso | `#/Reembolso(...)` | Identificação, motivos e datas da solicitação e da decisão; botões **Aprovar reembolso** e **Rejeitar reembolso** |
+| Lista de reembolsos | `#/` | Filtros pedido, cliente, CPF e status; colunas pedido, cliente, CPF, status, valor, motivo da solicitação, data da solicitação e motivo da decisão; menu **Ações** com Aprovar e Rejeitar |
+| Reembolso | `#/Reembolso(...)` | Identificação, motivos e datas da solicitação e da decisão; menu **Ações** com Aprovar e Rejeitar reembolso |
 
 | Lista | Pendente | Decisão | Aprovado |
 | --- | --- | --- | --- |
 | <img src="../../../assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="215"> | <img src="../../../assets/telas/reembolsos/pendente.png" alt="Reembolso pendente" width="215"> | <img src="../../../assets/telas/reembolsos/aprovacao.png" alt="Diálogo Aprovar reembolso" width="215"> | <img src="../../../assets/telas/reembolsos/aprovado.png" alt="Reembolso aprovado" width="215"> |
 
+| Menu Ações | Confirmação antes da decisão |
+| --- | --- |
+| <img src="../../../assets/telas/reembolsos/acoes-menu.png" alt="Menu Ações aberto na Object Page do reembolso" width="440"> | <img src="../../../assets/telas/reembolsos/confirmacao.png" alt="Confirmação antes de aprovar o reembolso" width="440"> |
+
 ## Comportamento
 
-As colunas, filtros, seções e ações vêm da metadata extension `ZC_PC_REEMBOLSO_APP` do backend; a app não
-tem extensões de código.
+As colunas, filtros, seções e ações vêm da metadata extension `ZC_PC_REEMBOLSO_APP` do backend. A única
+extensão de código são os botões *Aprovar reembolso* e *Rejeitar reembolso* (`webapp/ext/AcoesReembolso.js`),
+que pedem confirmação antes da decisão: o Fiori Elements não confirma ações com parâmetros. O `manifest.json`
+sobrescreve o grupo anotado `DataFieldForActionGroup::AcoesReembolso` (menu "Ações") com esses botões; a DDLX
+mantém as ações padrão para o Preview do serviço.
 
 | Ação | Disponível com | Efeito no reembolso | Efeito no pedido |
 | --- | --- | --- | --- |
 | *Aprovar reembolso* | Status `PENDENTE` | `APROVADO` | `CANCELADO`, pagamento `DEVOLVIDO`, reserva liberada e snapshots gravados |
 | *Rejeitar reembolso* (motivo obrigatório) | Status `PENDENTE` | `REJEITADO` | Volta ao status anterior ao cancelamento |
 
-- Os botões ficam desabilitados fora do status `PENDENTE` (feature control do backend). O diálogo de decisão
-  vem da abstract entity `ZPC_A_REEMB_DECISAO_INPUT`.
+- Os botões ficam desabilitados fora do status `PENDENTE`: seguem o feature control do backend
+  (`__OperationControl`), na lista e na Object Page. Depois da confirmação abre o diálogo de decisão, que vem
+  da abstract entity `ZPC_A_REEMB_DECISAO_INPUT`.
 - A solicitação é criada pelo *Cancelar pedido* da app Pedidos de Compras quando o pagamento está aprovado;
   enquanto isso o pedido fica em `PROCESSANDO_REEMBOLSO`, com o estoque reservado.
 
@@ -73,6 +81,7 @@ gestao-reembolsos/
     ├── index.html          página standalone (abre sem launchpad)
     ├── clearLaunchpadIntent.js   descarta o intent que tiles do tipo URL acrescentam ao hash
     ├── annotations/annotation.xml   anotações locais (vazio)
+    ├── ext/AcoesReembolso.js   botões Aprovar e Rejeitar reembolso, com confirmação
     └── i18n/i18n.properties textos pt-BR
 ```
 

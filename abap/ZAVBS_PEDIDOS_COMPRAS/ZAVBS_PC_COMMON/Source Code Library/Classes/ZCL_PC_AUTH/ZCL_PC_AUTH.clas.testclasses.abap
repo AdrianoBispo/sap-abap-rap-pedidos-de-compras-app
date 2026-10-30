@@ -1,8 +1,8 @@
 *"* Test Classes da classe ZCL_PC_AUTH
-*"* O comportamento depende de ZIF_PC_CONSTANTS=>C_MODO_TRIAL: cada classe abaixo
-*"* só verifica o modo em que o sistema está e retorna sem asserções no outro.
 
-*"* Modo trial (BTP Trial, abap_true): todas as operações são liberadas.
+"! O comportamento depende de <strong>ZIF_PC_CONSTANTS=>C_MODO_TRIAL</strong>: cada classe abaixo
+"! só verifica o modo em que o sistema está e retorna sem asserções no outro.
+"! Modo trial (BTP Trial, abap_true): todas as operações são liberadas
 CLASS ltcl_modo_trial DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
@@ -31,9 +31,9 @@ CLASS ltcl_modo_trial IMPLEMENTATION.
 ENDCLASS.
 
 
-*"* Modo real (On-Premise ou BTP com Business Roles, abap_false): o AUTHORITY-CHECK
-*"* é testado com CL_AUNIT_AUTHORITY_CHECK, sem depender das roles de quem executa.
-*"* Cada método verifica só a atividade (ACTVT) do seu objeto.
+"! Modo real (On-Premise ou BTP com Business Roles, abap_false): o AUTHORITY-CHECK
+"! é testado com CL_AUNIT_AUTHORITY_CHECK, sem depender das roles de quem executa.
+"! Cada método verifica só a atividade (ACTVT) do seu objeto.
 CLASS ltcl_authority_check DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
@@ -56,7 +56,9 @@ ENDCLASS.
 CLASS ltcl_authority_check IMPLEMENTATION.
 
   METHOD restringir.
+
     DATA(lo_ctrl) = cl_aunit_authority_check=>get_controller( ).
+
     IF iv_objeto IS INITIAL.
       lo_ctrl->restrict_authorizations_to( cl_aunit_authority_check=>create_auth_object_set( VALUE #( ) ) ).
       RETURN.
@@ -73,10 +75,11 @@ CLASS ltcl_authority_check IMPLEMENTATION.
 
   METHOD admin_somente_criar.
     CHECK zif_pc_constants=>c_modo_trial = abap_false.
+
     restringir( iv_objeto = zif_pc_constants=>c_auth-objeto_admin
                 it_actvt  = VALUE #( ( `01` ) ) ).
 
-    cl_abap_unit_assert=>assert_true( act = zcl_pc_auth=>admin_pode_criar( ) msg = '01 autoriza criar' ).
+    cl_abap_unit_assert=>assert_true(  act = zcl_pc_auth=>admin_pode_criar( )   msg = '01 autoriza criar' ).
     cl_abap_unit_assert=>assert_false( act = zcl_pc_auth=>admin_pode_alterar( ) msg = '01 não autoriza alterar' ).
     cl_abap_unit_assert=>assert_false( act = zcl_pc_auth=>admin_pode_excluir( ) msg = '01 não autoriza excluir' ).
     cl_abap_unit_assert=>assert_false( act = zcl_pc_auth=>pedido_pode_criar( )
@@ -85,12 +88,13 @@ CLASS ltcl_authority_check IMPLEMENTATION.
 
   METHOD admin_completo.
     CHECK zif_pc_constants=>c_modo_trial = abap_false.
+
     restringir( iv_objeto = zif_pc_constants=>c_auth-objeto_admin
                 it_actvt  = VALUE #( ( `01` ) ( `02` ) ( `06` ) ) ).
 
-    cl_abap_unit_assert=>assert_true( act = zcl_pc_auth=>admin_pode_criar( )   msg = 'Criar' ).
-    cl_abap_unit_assert=>assert_true( act = zcl_pc_auth=>admin_pode_alterar( ) msg = 'Alterar' ).
-    cl_abap_unit_assert=>assert_true( act = zcl_pc_auth=>admin_pode_excluir( ) msg = 'Excluir' ).
+    cl_abap_unit_assert=>assert_true(  act = zcl_pc_auth=>admin_pode_criar( )   msg = 'Criar' ).
+    cl_abap_unit_assert=>assert_true(  act = zcl_pc_auth=>admin_pode_alterar( ) msg = 'Alterar' ).
+    cl_abap_unit_assert=>assert_true(  act = zcl_pc_auth=>admin_pode_excluir( ) msg = 'Excluir' ).
     cl_abap_unit_assert=>assert_false( act = zcl_pc_auth=>pedido_pode_executar( )
                                        msg = 'Administrador de cadastro não executa ações do pedido' ).
   ENDMETHOD.
@@ -98,6 +102,7 @@ CLASS ltcl_authority_check IMPLEMENTATION.
   METHOD pedido_sem_executar.
     " Perfil comum: cria e altera pedidos, mas não paga, aprova nem cancela
     CHECK zif_pc_constants=>c_modo_trial = abap_false.
+
     restringir( iv_objeto = zif_pc_constants=>c_auth-objeto_pedido
                 it_actvt  = VALUE #( ( `01` ) ( `02` ) ) ).
 
@@ -111,6 +116,7 @@ CLASS ltcl_authority_check IMPLEMENTATION.
 
   METHOD pedido_somente_executar.
     CHECK zif_pc_constants=>c_modo_trial = abap_false.
+
     restringir( iv_objeto = zif_pc_constants=>c_auth-objeto_pedido
                 it_actvt  = VALUE #( ( `16` ) ) ).
 
@@ -120,6 +126,7 @@ CLASS ltcl_authority_check IMPLEMENTATION.
 
   METHOD sem_autorizacao.
     CHECK zif_pc_constants=>c_modo_trial = abap_false.
+
     restringir( ).
 
     cl_abap_unit_assert=>assert_false( act = zcl_pc_auth=>admin_pode_criar( )     msg = 'ZPC_ADMIN 01' ).

@@ -181,6 +181,14 @@
                     "route": "Cliente__EnderecoObjectPage"
                   }
                 }
+              },
+              "controlConfiguration": {
+                "_Endereco/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Single"
+                  }
+                }
               }
             }
           }

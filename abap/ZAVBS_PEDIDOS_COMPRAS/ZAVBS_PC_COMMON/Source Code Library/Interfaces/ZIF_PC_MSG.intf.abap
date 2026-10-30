@@ -1,9 +1,5 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Mensagens RAP (T100)</p>
-"! Contrato público de ZCX_PC_MSG: chaves (T100KEY) das mensagens da Message Class
-"! ZPC_MSG, usadas como TEXTID da exceção (textos em abap/README.md, seção 8.1),
-"! e os métodos de atalho TEXTO e SUCESSO.
-"! As variáveis &1 a &4 vêm dos atributos MV_ATTR1 a MV_ATTR4 desta interface,
-"! preenchidos pelo construtor de ZCX_PC_MSG (nome dinâmico ZIF_PC_MSG~MV_ATTRn).
+"! <h1>Interface para Tratamento de Erros das Apps RAP</h1>
+"! Interface onde é declarada as constantes, tipos e métodos públicos da classe {@link ZCX_PC_MSG}
 INTERFACE zif_pc_msg PUBLIC.
 
   CONSTANTS:
@@ -16,6 +12,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cliente_cpf_invalido,
+
     "! 002 - Já existe um cliente cadastrado com este CPF.
     BEGIN OF cliente_cpf_duplicado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -25,6 +22,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cliente_cpf_duplicado,
+
     "! 003 - Cliente inativo não pode realizar pedido.
     BEGIN OF cliente_inativo,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -34,6 +32,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cliente_inativo,
+
     "! 004 - Cliente não pode ser excluído pois possui pedido vinculado.
     BEGIN OF cliente_com_pedido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -43,6 +42,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cliente_com_pedido,
+
     "! 005 - Cliente selecionado não possui endereço principal válido.
     BEGIN OF cliente_sem_endereco_principal,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -52,6 +52,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cliente_sem_endereco_principal,
+
     "! 006 - Não foi possível validar o CEP agora. Tente novamente em instantes.
     BEGIN OF cep_indisponivel,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -61,6 +62,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cep_indisponivel,
+
     "! 007 - CEP inválido ou não encontrado. Verifique o número informado.
     BEGIN OF cep_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -70,6 +72,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cep_invalido,
+
     "! 008 - Número do endereço é obrigatório.
     BEGIN OF endereco_numero_obrigatorio,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -79,6 +82,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF endereco_numero_obrigatorio,
+
     "! 009 - Formato de imagem inválido. Utilize JPEG, PNG ou WEBP.
     BEGIN OF foto_formato_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -88,6 +92,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF foto_formato_invalido,
+
     "! 010 - Já existe item cadastrado com este SKU.
     BEGIN OF item_sku_duplicado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -97,6 +102,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_sku_duplicado,
+
     "! 011 - Estoque insuficiente para o item &1 (disponível: &2).
     BEGIN OF item_estoque_insuficiente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -106,6 +112,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_estoque_insuficiente,
+
     "! 012 - Estoque do item &1 alterado por outra operação. Atualize e tente de novo.
     BEGIN OF item_estoque_concorrente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -115,6 +122,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_estoque_concorrente,
+
     "! 013 - Item &1 inativo não pode ser usado em novo pedido.
     BEGIN OF item_inativo,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -124,6 +132,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_inativo,
+
     "! 014 - Item possui estoque disponível ou pedido ativo. Inativação bloqueada.
     BEGIN OF item_inativacao_bloqueada,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -133,6 +142,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_inativacao_bloqueada,
+
     "! 015 - Transição de status não permitida (status atual: &1).
     BEGIN OF pedido_status_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -142,6 +152,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_status_invalido,
+
     "! 016 - Pagamento pendente. O pedido não pode ser finalizado.
     BEGIN OF pedido_pagamento_pendente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -151,6 +162,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_pagamento_pendente,
+
     "! 017 - Pedido finalizado não pode ser alterado.
     BEGIN OF pedido_finalizado_imutavel,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -160,6 +172,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_finalizado_imutavel,
+
     "! 018 - Pedido cancelado não pode ser alterado.
     BEGIN OF pedido_cancelado_imutavel,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -169,6 +182,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_cancelado_imutavel,
+
     "! 019 - Informe o motivo do cancelamento.
     BEGIN OF pedido_motivo_cancel_obrig,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -178,6 +192,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_motivo_cancel_obrig,
+
     "! 020 - Pagamento aprovado com sucesso.
     BEGIN OF pagamento_aprovado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -187,6 +202,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pagamento_aprovado,
+
     "! 021 - Pagamento recusado. O pedido permanecerá aguardando pagamento.
     BEGIN OF pagamento_recusado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -196,6 +212,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pagamento_recusado,
+
     "! 022 - Snapshot do pedido já foi gerado e não pode ser recriado.
     BEGIN OF snapshot_existente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -205,6 +222,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF snapshot_existente,
+
     "! 023 - Campo &1 é obrigatório.
     BEGIN OF campo_obrigatorio,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -214,6 +232,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF campo_obrigatorio,
+
     "! 024 - E-mail em formato inválido.
     BEGIN OF email_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -223,6 +242,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF email_invalido,
+
     "! 025 - Data de nascimento não pode ser futura.
     BEGIN OF data_nascimento_futura,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -232,6 +252,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF data_nascimento_futura,
+
     "! 026 - Telefone deve conter 10 ou 11 dígitos (DDD + número).
     BEGIN OF telefone_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -241,6 +262,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF telefone_invalido,
+
     "! 027 - Pedido deve possuir ao menos um item.
     BEGIN OF pedido_sem_itens,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -250,6 +272,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_sem_itens,
+
     "! 028 - Quantidade do item deve ser maior que zero.
     BEGIN OF item_qtde_invalida,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -259,6 +282,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_qtde_invalida,
+
     "! 029 - Preço unitário deve ser maior ou igual a zero.
     BEGIN OF item_preco_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -268,6 +292,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_preco_invalido,
+
     "! 030 - Qtde em estoque não pode ser negativa nem menor que a reservada (&1).
     BEGIN OF item_qtde_estoque_invalida,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -277,6 +302,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_qtde_estoque_invalida,
+
     "! 031 - Item não pode ser excluído pois está vinculado a pedido ou reserva.
     BEGIN OF item_exclusao_bloqueada,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -295,6 +321,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cartao_dados_invalidos,
+
     "! 033 - Pedido &1 confirmado. Estoque reservado.
     BEGIN OF pedido_confirmado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -304,6 +331,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_confirmado,
+
     "! 034 - Pedido &1 finalizado com sucesso.
     BEGIN OF pedido_finalizado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -313,6 +341,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_finalizado,
+
     "! 035 - Pedido &1 cancelado.
     BEGIN OF pedido_cancelado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -322,6 +351,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_cancelado,
+
     "! 036 - Erro ao obter numeração (&1). Verifique o intervalo de numeração.
     BEGIN OF numeracao_erro,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -331,6 +361,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF numeracao_erro,
+
     "! 037 - Usuário sem autorização para esta operação.
     BEGIN OF sem_autorizacao,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -340,6 +371,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF sem_autorizacao,
+
     "! 038 - Reserva do item &1 inconsistente com o pedido.
     BEGIN OF item_reserva_inconsistente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -349,6 +381,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_reserva_inconsistente,
+
     "! 039 - Pedido só pode ser editado ou excluído no status ABERTO.
     BEGIN OF pedido_edicao_bloqueada,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -358,6 +391,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_edicao_bloqueada,
+
     "! 040 - Peso e dimensões não podem ser negativos.
     BEGIN OF item_dimensao_invalida,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -367,6 +401,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_dimensao_invalida,
+
     "! 041 - Valor inválido para o campo &1.
     BEGIN OF valor_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -376,6 +411,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF valor_invalido,
+
     "! 042 - Pedido &1 enviado para processamento de reembolso.
     BEGIN OF pedido_reembolso_solicitado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -385,6 +421,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF pedido_reembolso_solicitado,
+
     "! 043 - Informe o motivo da decisão sobre o reembolso.
     BEGIN OF reembolso_motivo_decisao_obrig,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -394,6 +431,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF reembolso_motivo_decisao_obrig,
+
     "! 044 - Reembolso do pedido &1 aprovado. Pedido cancelado.
     BEGIN OF reembolso_aprovado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -403,6 +441,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF reembolso_aprovado,
+
     "! 045 - Reembolso do pedido &1 rejeitado. Pedido retomado.
     BEGIN OF reembolso_rejeitado,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -412,6 +451,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF reembolso_rejeitado,
+
     "! 046 - Solicitação de reembolso não está mais pendente.
     BEGIN OF reembolso_status_invalido,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -421,6 +461,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF reembolso_status_invalido,
+
     "! 047 - Já existe um endereço cadastrado com este CEP para este cliente.
     BEGIN OF cep_duplicado_cliente,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -430,6 +471,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF cep_duplicado_cliente,
+
     "! 048 - Item &1 está sem estoque disponível e não pode ser adicionado ao pedido.
     BEGIN OF item_sem_estoque,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -439,6 +481,7 @@ INTERFACE zif_pc_msg PUBLIC.
       attr3 TYPE scx_attrname VALUE '',
       attr4 TYPE scx_attrname VALUE '',
     END OF item_sem_estoque,
+
     "! 049 - &1&2&3&4 (texto livre de até 200 caracteres, em 4 blocos de 50)
     BEGIN OF texto_livre,
       msgid TYPE symsgid VALUE 'ZPC_MSG',
@@ -447,7 +490,47 @@ INTERFACE zif_pc_msg PUBLIC.
       attr2 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR2',
       attr3 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR3',
       attr4 TYPE scx_attrname VALUE 'ZIF_PC_MSG~MV_ATTR4',
-    END OF texto_livre.
+    END OF texto_livre,
+
+    "! 050 - Cliente possui pedido em andamento. Inativação bloqueada.
+    BEGIN OF cliente_inativacao_bloqueada,
+      msgid TYPE symsgid VALUE 'ZPC_MSG',
+      msgno TYPE symsgno VALUE '050',
+      attr1 TYPE scx_attrname VALUE '',
+      attr2 TYPE scx_attrname VALUE '',
+      attr3 TYPE scx_attrname VALUE '',
+      attr4 TYPE scx_attrname VALUE '',
+    END OF cliente_inativacao_bloqueada,
+
+    "! 051 - Selecione apenas um endereço para definir como principal.
+    BEGIN OF endereco_principal_unico,
+      msgid TYPE symsgid VALUE 'ZPC_MSG',
+      msgno TYPE symsgno VALUE '051',
+      attr1 TYPE scx_attrname VALUE '',
+      attr2 TYPE scx_attrname VALUE '',
+      attr3 TYPE scx_attrname VALUE '',
+      attr4 TYPE scx_attrname VALUE '',
+    END OF endereco_principal_unico,
+
+    "! 052 - Este endereço já é o endereço principal do cliente.
+    BEGIN OF endereco_ja_principal,
+      msgid TYPE symsgid VALUE 'ZPC_MSG',
+      msgno TYPE symsgno VALUE '052',
+      attr1 TYPE scx_attrname VALUE '',
+      attr2 TYPE scx_attrname VALUE '',
+      attr3 TYPE scx_attrname VALUE '',
+      attr4 TYPE scx_attrname VALUE '',
+    END OF endereco_ja_principal,
+
+    "! 053 - Endereço com CEP não validado não pode ser o principal.
+    BEGIN OF endereco_principal_cep_inval,
+      msgid TYPE symsgid VALUE 'ZPC_MSG',
+      msgno TYPE symsgno VALUE '053',
+      attr1 TYPE scx_attrname VALUE '',
+      attr2 TYPE scx_attrname VALUE '',
+      attr3 TYPE scx_attrname VALUE '',
+      attr4 TYPE scx_attrname VALUE '',
+    END OF endereco_principal_cep_inval.
 
   DATA mv_attr1 TYPE string READ-ONLY.
   DATA mv_attr2 TYPE string READ-ONLY.

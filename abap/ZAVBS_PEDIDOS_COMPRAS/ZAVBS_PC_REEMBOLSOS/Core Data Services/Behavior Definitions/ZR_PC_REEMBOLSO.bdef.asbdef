@@ -2,10 +2,11 @@ managed implementation in class zbp_r_pc_reembolso unique;
 strict ( 2 );
 
 /* ---------------------------------------------------------------------
-   BO Reembolso (solicitações de reembolso de pedidos com pagamento aprovado)
+   BO Reembolso
    - Root próprio, sem draft: não é filho do BO Pedido.
    - A solicitação é criada pelo BO Pedido (CancelarPedido com pagamento
-     aprovado) via EML; o create não é exposto na projection.
+     aprovado) via EML, que preenche os dados dela; imutáveis depois. O
+     create não é exposto na projection.
    - A decisão é tomada na app Gestão de Reembolsos (AprovarReembolso /
      RejeitarReembolso), que executam as actions CancelarPorReembolso /
      RetomarPedido do BO Pedido na mesma LUW.
@@ -20,7 +21,6 @@ authorization master ( global )
   internal update;
 
   field ( numbering : managed, readonly ) ReembolsoUUID;
-  /* Preenchidos na criação pelo BO Pedido; imutáveis depois */
   field ( readonly : update ) PedidoUUID, NumeroPedido, ClienteUUID, StatusReembolso,
                               StatusPedidoAnterior, Currency, ValorReembolso,
                               MotivoSolicitacao, DataSolicitacao, SolicitadoPor;

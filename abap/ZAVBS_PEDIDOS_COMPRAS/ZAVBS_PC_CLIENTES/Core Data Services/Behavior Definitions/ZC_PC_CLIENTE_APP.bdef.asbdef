@@ -3,6 +3,13 @@ strict ( 2 );
 use draft;
 use side effects;
 
+/* ---------------------------------------------------------------------
+   Projeção do BO ZR_PC_CLIENTE para o app Gestão de Clientes
+   - Cliente (root) e Endereço (child) expostos com draft
+   - Regras (determinations, validations, autorização) ficam no BO base
+   - Endereço só é criado pela composição a partir do Cliente
+   - ImportarPlanilha: importação em massa por planilha (.xlsx ou .csv)
+   --------------------------------------------------------------------- */
 define behavior for ZC_PC_CLIENTE_APP alias Cliente
 use etag
 {

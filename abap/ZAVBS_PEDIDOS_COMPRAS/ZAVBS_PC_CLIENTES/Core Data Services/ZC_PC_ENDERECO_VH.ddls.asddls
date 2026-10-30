@@ -6,8 +6,7 @@
 @Metadata.ignorePropagatedAnnotations: true
 
 /* View reutilizável consumida pela aplicação Pedidos de Compras.
-   Usar com additionalBinding em ClienteUUID.                          */
-
+   Usar com additionalBinding em ClienteUUID.                      */
 define view entity ZC_PC_ENDERECO_VH
   as select from ZR_PC_ENDERECO
 {

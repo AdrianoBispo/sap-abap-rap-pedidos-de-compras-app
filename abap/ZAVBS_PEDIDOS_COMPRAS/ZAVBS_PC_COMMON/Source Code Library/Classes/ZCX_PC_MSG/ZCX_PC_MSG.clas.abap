@@ -1,8 +1,8 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Mensagens RAP (T100)</p>
+"! <h1>Classe para Tratamento de Erros das Apps RAP</h1>
 "! Classe de mensagens usada em todos os BOs. Os textos ficam na
-"! Message Class ZPC_MSG (textos em abap/README.md, seção 8.1). As chaves de
-"! cada mensagem, os atributos MV_ATTR1 a MV_ATTR4 e os métodos TEXTO e SUCESSO
-"! ficam na interface ZIF_PC_MSG; o construtor não pode ir para uma interface.
+"! classe de mensagens <strong>ZPC_MSG</strong>. As chaves de cada mensagem,
+"! os atributos MV_ATTR1 a MV_ATTR4 e os métodos TEXTO e SUCESSO
+"! ficam na interface {@link ZIF_PC_MSG}.
 CLASS zcx_pc_msg DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
@@ -22,6 +22,14 @@ CLASS zcx_pc_msg DEFINITION
     ALIASES texto FOR zif_pc_msg~texto.
     ALIASES sucesso FOR zif_pc_msg~sucesso.
 
+    "! Construtor da classe de exceção para mensagens de erros
+    "! @parameter textid | Chave T100 da mensagem. Opcional; se vazia, usa a mensagem padrão.
+    "! @parameter previous | Exceção anterior que originou esta mensagem. Opcional.
+    "! @parameter severity | Severidade da mensagem exibida ao usuário (erro, aviso, sucesso etc.).
+    "! @parameter attr1 | Primeiro atributo dinâmico da mensagem. Opcional.
+    "! @parameter attr2 | Segundo atributo dinâmico da mensagem. Opcional.
+    "! @parameter attr3 | Terceiro atributo dinâmico da mensagem. Opcional.
+    "! @parameter attr4 | Quarto atributo dinâmico da mensagem. Opcional.
     METHODS constructor
       IMPORTING
         textid   LIKE if_t100_message=>t100key OPTIONAL
@@ -51,10 +59,13 @@ CLASS zcx_pc_msg IMPLEMENTATION.
     if_abap_behv_message~m_severity = severity.
 
     CLEAR me->textid.
+
     IF textid IS INITIAL.
       if_t100_message~t100key = if_t100_message=>default_textid.
+
     ELSE.
       if_t100_message~t100key = textid.
+
     ENDIF.
   ENDMETHOD.
 
@@ -71,10 +82,16 @@ CLASS zcx_pc_msg IMPLEMENTATION.
 
     DO 4 TIMES.
       DATA(lv_ini) = ( sy-index - 1 ) * 50.
+
       IF lv_ini >= strlen( lv_texto ).
         APPEND `` TO lt_blocos.
+
       ELSE.
-        APPEND substring( val = lv_texto off = lv_ini len = nmin( val1 = 50 val2 = strlen( lv_texto ) - lv_ini ) ) TO lt_blocos.
+        APPEND substring( val = lv_texto
+                          off = lv_ini
+                          len = nmin( val1 = 50
+                                      val2 = strlen( lv_texto ) - lv_ini ) ) TO lt_blocos.
+
       ENDIF.
     ENDDO.
 

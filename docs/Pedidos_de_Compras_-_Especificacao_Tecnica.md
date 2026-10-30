@@ -5,7 +5,7 @@
 | Item | Valor |
 | --- | --- |
 | Documento | Especificação técnica — requisitos de construção da solução |
-| Versão | 3.3 (22/10/2026) |
+| Versão | 3.4 (30/10/2026) |
 | Ambientes-alvo | SAP BTP, ABAP environment (ABAP Cloud) e SAP S/4HANA On-Premise 2025 ou superior (Standard ABAP) |
 | Diagramas | `docs/pedidos-de-compras.drawio` (uma página por diagrama), exportados em `assets/` |
 
@@ -499,6 +499,8 @@ A aplicação de destino deve abrir direto a Object Page ao receber a chave téc
 - Cliente inativo não pode ser usado em novos pedidos.
 - Cliente com pedido vinculado não pode ser excluído.
 - Ativação e inativação por edição do campo ClienteAtivo, só para administradores.
+- Cliente com pedido em andamento (`ABERTO`, `AGUARDANDO_APROVACAO`, `PROCESSANDO_REEMBOLSO` ou rascunho) não
+  pode ser inativado: o precheck do update barra a alteração do campo e uma validation repete a regra no Save.
 - Fotos apenas em JPEG, PNG ou WEBP, validando MIME, extensão e assinatura binária.
 
 ### 10.2 Endereços
@@ -508,12 +510,15 @@ A aplicação de destino deve abrir direto a Object Page ao receber a chave téc
 - O número é obrigatório.
 - Um CEP só pode aparecer uma vez por cliente; clientes diferentes podem compartilhar o mesmo CEP.
 - Ao marcar um endereço como principal, os demais do cliente são desmarcados.
+- A tabela de endereços aceita só uma linha selecionada (seleção única). O precheck da ação recusa mais de um
+  endereço do mesmo cliente na mesma chamada, o endereço que já é o principal e endereço com CEP não validado.
 
 ### 10.3 Itens e estoque
 
 - Cadastro e edição com draft; SKU obrigatório, único e gerado no backend.
 - QtdeDisponivel = QtdeEstoque − QtdeReservada, recalculada a cada movimentação.
-- Item inativo não entra em novos pedidos; a inativação é bloqueada com estoque disponível ou pedido ativo.
+- Item inativo não entra em novos pedidos; a inativação é bloqueada com estoque disponível ou pedido ativo,
+  já na alteração do campo (precheck do update) e novamente no Save (validation).
 
 | StatusEstoque | Regra |
 | --- | --- |
@@ -629,12 +634,17 @@ aprovado, passa por `PROCESSANDO_REEMBOLSO`.
 - Cartões iniciados por 4 simulam VISA e por 5 simulam Mastercard; CVV `000` simula recusa.
 - Dados em formato inválido (número com 13 a 19 dígitos, validade MM/AA não expirada, CVV com 3 ou 4 dígitos)
   geram erro `CARTAO_DADOS_INVALIDOS`, que não é recusa.
+- O precheck da action confere todos os campos de uma vez (obrigatórios e formato), antes da execução, com a
+  mesma regra usada na simulação.
 - Pagamento aprovado leva o pedido a `AGUARDANDO_APROVACAO`; recusado mantém `ABERTO` e permite nova tentativa.
+  A mensagem de recusa tem severidade de informação: um aviso numa action faz o Fiori Elements abrir um segundo
+  pop-up de confirmação.
 - Apenas a última tentativa é mantida.
-- Em cenário real, a captura deve usar componente dedicado ou tokenização do provedor de pagamento, porque os
-  parâmetros de action aparecem sem máscara no Fiori Elements.
+- A aplicação Pedidos de Compras coleta os dados num diálogo próprio, com máscaras de entrada: número
+  `9999 9999 9999 9999`, validade `99/99` e CVV `999`. Em cenário real, a captura deve usar componente dedicado
+  ou tokenização do provedor de pagamento.
 
-<p align="center"><img src="../assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="80%"><br><sub>Figura 11 — Diálogo Efetuar Pagamento</sub></p>
+<p align="center"><img src="../assets/telas/pedidos/pagamento.png" alt="Diálogo Efetuar Pagamento com máscaras no número do cartão, na validade e no CVV" width="80%"><br><sub>Figura 11 — Diálogo Efetuar Pagamento, com máscaras de entrada</sub></p>
 
 <p align="center"><img src="../assets/telas/pedidos/itens-pagamento.png" alt="Itens, pagamento aprovado com cartão mascarado e finalização" width="80%"><br><sub>Figura 12 — Pagamento aprovado com cartão mascarado</sub></p>
 
@@ -721,12 +731,28 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 
 | Object Page | Ações | Regras |
 | --- | --- | --- |
-| Cliente | Editar, Excluir, Definir endereço principal, Importar planilha | Escrita só para administrador |
+| Cliente | Editar, Excluir, Definir endereço principal (seleção única na tabela de endereços), Importar planilha | Escrita só para administrador |
 | Estoque | Editar, Excluir, Importar planilha | Escrita só para administrador |
 | Pedido | Efetuar Pagamento, Aprovar pedido, Cancelar pedido (agrupadas no menu "Ações"), Importar planilha | Por status e perfil, só na instância ativa; sem Excluir; Editar só em `ABERTO` |
-| Reembolso | Aprovar reembolso, Rejeitar reembolso | Só solicitações `PENDENTE`; sem criar, editar ou excluir |
+| Reembolso | Aprovar reembolso, Rejeitar reembolso (agrupadas no menu "Ações") | Só solicitações `PENDENTE`; sem criar, editar ou excluir |
 
-### 18.3 Apresentação
+### 18.3 Confirmações e ações customizadas
+
+- Toda ação que muda o ciclo de vida pede confirmação antes de executar: Efetuar Pagamento, Aprovar pedido,
+  Cancelar pedido, Aprovar reembolso e Rejeitar reembolso.
+- O Fiori Elements só confirma ações sem diálogo de parâmetros (`Common.IsActionCritical`). Aprovar pedido usa
+  essa confirmação padrão; as demais têm parâmetros e são botões customizados das aplicações, que pedem a
+  confirmação e então executam a action do RAP.
+- As metadata extensions mantêm as ações padrão no menu "Ações" (`#FOR_ACTION_GROUP`), para o Preview do
+  serviço. Nas aplicações, o `manifest.json` substitui os itens desse menu pelos botões customizados.
+- Os botões customizados seguem o mesmo feature control das ações padrão (`__OperationControl` de cada action),
+  na lista e na Object Page.
+
+<p align="center"><img src="../assets/telas/pedidos/acoes-menu.png" alt="Object Page do pedido com o menu Ações aberto: Efetuar Pagamento, Aprovar pedido e Cancelar pedido" width="80%"><br><sub>Figura 17 — Menu "Ações" do pedido, com os itens habilitados pelo status</sub></p>
+
+<p align="center"><img src="../assets/telas/pedidos/confirmacao.png" alt="Pop-up de confirmação antes de cancelar o pedido" width="80%"><br><sub>Figura 18 — Confirmação antes de cancelar o pedido</sub></p>
+
+### 18.4 Apresentação
 
 - Campos de cliente, endereço e item mostram o texto descritivo, sem o UUID técnico.
 - Códigos de CodeList aparecem só como texto, com criticidade nos status.
@@ -734,7 +760,7 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 - Fotos de cliente e item na Object Page; cliente sem foto mostra um avatar.
 - Itens do pedido são criados *inline* na tabela do rascunho.
 
-### 18.4 Object Page dinâmica do pedido
+### 18.5 Object Page dinâmica do pedido
 
 - Seções na ordem: Dados do Cliente, Dados do Pedido (com os campos administrativos), Itens, Pagamento e
   Finalização ou Cancelamento.
@@ -743,23 +769,23 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 - Em `FINALIZADO` ou `CANCELADO`, cliente e itens vêm dos snapshots; nos demais status, das tabelas principais.
 - Pagamento e snapshot do cliente (composições `[0..1]`) são exibidos como formulário.
 
-<p align="center"><img src="../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="80%"><br><sub>Figura 17 — Object Page do pedido finalizado</sub></p>
+<p align="center"><img src="../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="80%"><br><sub>Figura 19 — Object Page do pedido finalizado</sub></p>
 
-### 18.5 Telas das demais aplicações
+### 18.6 Telas das demais aplicações
 
-<p align="center"><img src="../assets/telas/clientes/lista.png" alt="Lista de clientes" width="80%"><br><sub>Figura 18 — Gestão de Clientes: lista</sub></p>
+<p align="center"><img src="../assets/telas/clientes/lista.png" alt="Lista de clientes" width="80%"><br><sub>Figura 20 — Gestão de Clientes: lista</sub></p>
 
-<p align="center"><img src="../assets/telas/clientes/cliente.png" alt="Object Page do cliente com score e endereços" width="80%"><br><sub>Figura 19 — Gestão de Clientes: Object Page</sub></p>
+<p align="center"><img src="../assets/telas/clientes/cliente.png" alt="Object Page do cliente com score e endereços" width="80%"><br><sub>Figura 21 — Gestão de Clientes: Object Page</sub></p>
 
-<p align="center"><img src="../assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="80%"><br><sub>Figura 20 — Gestão de Estoque: lista</sub></p>
+<p align="center"><img src="../assets/telas/estoque/lista.png" alt="Lista de itens de estoque" width="80%"><br><sub>Figura 22 — Gestão de Estoque: lista</sub></p>
 
-<p align="center"><img src="../assets/telas/estoque/item.png" alt="Object Page do item com SKU gerado no Save" width="80%"><br><sub>Figura 21 — Gestão de Estoque: Object Page</sub></p>
+<p align="center"><img src="../assets/telas/estoque/item.png" alt="Object Page do item com SKU gerado no Save" width="80%"><br><sub>Figura 23 — Gestão de Estoque: Object Page</sub></p>
 
-<p align="center"><img src="../assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="80%"><br><sub>Figura 22 — Gestão de Reembolsos: lista</sub></p>
+<p align="center"><img src="../assets/telas/reembolsos/lista.png" alt="Lista de reembolsos" width="80%"><br><sub>Figura 24 — Gestão de Reembolsos: lista</sub></p>
 
 ## 19. Camada analítica
 
-<p align="center"><img src="../assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, painel e detalhe" width="100%"><br><sub>Figura 23 — Apps de análise</sub></p>
+<p align="center"><img src="../assets/fluxo-analises.png" alt="Fluxograma dos apps de análise: catálogo do domínio, $apply com filter, groupby e aggregate, agregação no servidor, painel e detalhe" width="100%"><br><sub>Figura 25 — Apps de análise</sub></p>
 
 - Camada somente leitura e independente das aplicações de gestão: um cubo (`ZI_PC_*_CUBE`) e uma consulta
   (`ZC_PC_*_ANALISE`) por domínio, com `@Aggregation.default` nas medidas e
@@ -776,9 +802,9 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 | Análise de Itens do Estoque | `ItemAnalise` | `ZPCAnaliseItemEstoque-display` | Categoria, situação, nome, SKU | Disponível por categoria, itens por situação, valor por categoria, mais reservados, itens por categoria |
 | Análise de Pedidos de Reembolsos | `ReembolsoAnalise` | `ZPCAnaliseReembolso-display` | Status, UF, mês | Valor e quantidade por status, valor por mês, valor por UF, por motivo |
 
-<p align="center"><img src="../assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="80%"><br><sub>Figura 24 — Painel da Análise de Pedidos de Compras</sub></p>
+<p align="center"><img src="../assets/telas/analises/pedidos.png" alt="Painel da Análise de Pedidos de Compras" width="80%"><br><sub>Figura 26 — Painel da Análise de Pedidos de Compras</sub></p>
 
-<p align="center"><img src="../assets/telas/analises/detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="80%"><br><sub>Figura 25 — Página de detalhe de uma análise</sub></p>
+<p align="center"><img src="../assets/telas/analises/detalhe.png" alt="Detalhe da análise Valor dos reembolsos por status" width="80%"><br><sub>Figura 27 — Página de detalhe de uma análise</sub></p>
 
 ## 20. Actions, validations e determinations
 
@@ -786,25 +812,34 @@ backend; as aplicações guardam só o `manifest.json` (rotas, tabelas e tile) e
 | --- | --- | --- |
 | Clientes | Validations de CPF, dados, e-mail, telefone, nascimento, gênero e foto | Bloqueiam o Save com a mensagem correspondente |
 | Clientes | Feature control + precheck do delete | Bloqueia exclusão de cliente com pedido (ativo ou em draft) |
-| Endereços | Action `DefinirEnderecoPrincipal` | Define o principal e desmarca os demais |
+| Clientes | Precheck do update + validation `ValidarInativacaoCliente` | Bloqueia inativar cliente com pedido em andamento, na alteração e no Save |
+| Endereços | Action `DefinirEnderecoPrincipal` com precheck | Define o principal e desmarca os demais; recusa vários endereços do mesmo cliente, o que já é principal e CEP não validado |
 | Endereços | Determination `PreencherEnderecoViaCep` | Preenche o endereço a partir do CEP |
 | Endereços | Validations `ValidarCep`, `ValidarCepUnico`, `ValidarNumero` | CEP válido e único por cliente; número obrigatório |
 | Endereços | Feature control do campo Cep | Obrigatório no cadastro, somente leitura depois de gravado |
 | Estoque | Determination `GerarSku` (on save, também no Prepare) | SKU único com o prefixo da categoria |
 | Estoque | Determination `RecalcularStatusEstoque` | Disponível e status conforme a quantidade |
 | Estoque | Validations `ValidarItem`, `ValidarQuantidades`, `ValidarInativacaoItem`, `ValidarSkuUnico`, `ValidarFoto` | Dados, quantidades, inativação, unicidade e foto |
+| Estoque | Precheck do update | Barra a inativação com disponível ou pedido ativo já na alteração do campo |
 | Estoque | Actions internas `ReservarEstoque`, `LiberarReserva`, `BaixarEstoque` | Movimentam o estoque sob lock; só o BO Pedido as chama |
 | Pedidos | Validation `ValidarRegistro` + determination `ReservarEstoqueRegistro` | Registro com reserva pela diferença |
 | Pedidos | Draft action `Activate` com implementação adicional | Libera a reserva de itens removidos |
 | Pedidos | Determinations `DefinirStatusInicial`, `GerarNumeroPedido`, `AtualizarEndereco`, `CalcularTotalPedido`, `CalcularValorItem`, `AtualizarFlagsStatus` | Status inicial, número, endereço, totais e indicadores de status |
 | Pedidos | Validations `ValidarCliente`, `ValidarItemPedido` | Cliente ativo; item ativo com quantidade maior que zero |
 | Pedidos | Precheck da inclusão de item | Bloqueia item sem estoque disponível |
-| Pedidos | Action `SimularPagamento` (Efetuar Pagamento) | Pagamento fictício sem dados sensíveis |
+| Pedidos | Action `SimularPagamento` (Efetuar Pagamento) com precheck | Pagamento fictício sem dados sensíveis; o precheck valida todos os campos do cartão de uma vez |
 | Pedidos | Action `AprovarPedido` | Baixa o estoque, gera snapshots e finaliza |
 | Pedidos | Action `CancelarPedido` | Cancela ou abre a solicitação de reembolso |
 | Pedidos | Actions internas `CancelarPorReembolso`, `RetomarPedido`, `RecalcularTotal` | Chamadas pelo BO Reembolso ou pelo próprio BO |
 | Reembolsos | Actions `AprovarReembolso`, `RejeitarReembolso` | Decidem a solicitação `PENDENTE` na mesma LUW |
 | Todos | Action estática `ImportarPlanilha` | Importação em massa (seção 17) |
+
+Os handlers processam todas as instâncias de uma chamada em lote: nenhuma leitura ou gravação, por SQL ou por
+EML, fica dentro de laço. As consultas usam `FOR ALL ENTRIES` ou `UNION` com tabela de faixa; as CodeLists são
+lidas uma vez por chamada; as ações do pedido movimentam o estoque numa única chamada ao BO Item por tipo de
+movimento (com compensação se uma parte falhar) e criam snapshots e solicitações de reembolso numa única
+chamada EML. Ficam em laço, por natureza, a consulta ao ViaCEP (uma vez por CEP distinto), a numeração por
+objeto de numeração e o processamento de cada arquivo importado.
 
 ## 21. Mensagens de erro e sucesso
 
@@ -820,6 +855,10 @@ com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o const
 | CLIENTE_INATIVO | Cliente inativo não pode realizar pedido. |
 | CLIENTE_COM_PEDIDO | Cliente não pode ser excluído pois possui pedido vinculado. |
 | CLIENTE_SEM_ENDERECO_PRINCIPAL | Cliente selecionado não possui endereço principal válido. |
+| CLIENTE_INATIVACAO_BLOQUEADA | Cliente possui pedido em andamento. Inativação bloqueada. |
+| ENDERECO_PRINCIPAL_UNICO | Selecione apenas um endereço para definir como principal. |
+| ENDERECO_JA_PRINCIPAL | Este endereço já é o endereço principal do cliente. |
+| ENDERECO_PRINCIPAL_CEP_INVAL | Endereço com CEP não validado não pode ser o principal. |
 | CEP_INDISPONIVEL | Não foi possível validar o CEP agora. Tente novamente em instantes. |
 | CEP_INVALIDO | CEP inválido ou não encontrado. Verifique o número informado. |
 | CEP_DUPLICADO_CLIENTE | Já existe um endereço cadastrado com este CEP para este cliente. |
@@ -852,7 +891,7 @@ com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o const
 | PEDIDO_CANCELADO | Pedido &1 cancelado. |
 | PEDIDO_REEMBOLSO_SOLICITADO | Pedido &1 enviado para processamento de reembolso. |
 | PAGAMENTO_APROVADO | Pagamento aprovado com sucesso. |
-| PAGAMENTO_RECUSADO | Pagamento recusado. O pedido permanecerá aguardando pagamento. |
+| PAGAMENTO_RECUSADO | Pagamento recusado. O pedido permanecerá aguardando pagamento. (severidade de informação) |
 | CARTAO_DADOS_INVALIDOS | Dados do cartão inválidos: &1. |
 | SNAPSHOT_EXISTENTE | Snapshot do pedido já foi gerado e não pode ser recriado. |
 | REEMBOLSO_MOTIVO_DECISAO_OBRIG | Informe o motivo da decisão sobre o reembolso. |
@@ -875,6 +914,10 @@ com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o const
 - Dado um cliente inativo, quando for usado num novo pedido, então o registro do pedido é bloqueado.
 - Dado um endereço gravado, quando o usuário tentar alterar o CEP, então o campo está somente leitura.
 - Dado um CEP já usado pelo mesmo cliente, quando outro endereço for salvo com ele, então o Save é bloqueado.
+- Dado um cliente com pedido em andamento, quando o administrador desmarcar Ativo, então a alteração é
+  recusada na hora.
+- Dada a tabela de endereços, quando o usuário selecionar uma linha, então nenhuma outra fica selecionada; se o
+  endereço já for o principal ou tiver CEP não validado, Definir endereço principal é recusado.
 
 ### 22.2 Estoque
 
@@ -900,6 +943,10 @@ com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o const
 - Dado um pedido com pagamento aprovado, quando cancelado, então é criada uma solicitação `PENDENTE` e o status
   muda para `PROCESSANDO_REEMBOLSO`, mantendo a reserva.
 - Dado um pedido encerrado, quando aberto, então cliente e itens vêm dos snapshots e nenhuma edição é possível.
+- Dado qualquer pedido, quando o usuário escolher Efetuar Pagamento, Aprovar pedido ou Cancelar pedido, então a
+  ação só executa depois da confirmação.
+- Dado o diálogo de pagamento com um campo vazio ou fora do formato, quando confirmado, então todos os erros são
+  mostrados de uma vez e nada é gravado.
 
 ### 22.4 Reembolsos
 
@@ -908,6 +955,8 @@ com os atributos das variáveis `&1` a `&4` e os métodos de atalho; só o const
 - Dada uma solicitação `PENDENTE`, quando rejeitada sem motivo, então a ação é bloqueada; com motivo, o pedido
   retoma o status anterior.
 - Dada uma solicitação já decidida, então Aprovar e Rejeitar não ficam disponíveis.
+- Dada uma solicitação `PENDENTE`, quando o usuário escolher Aprovar ou Rejeitar no menu "Ações", então a
+  decisão só segue para o diálogo do motivo depois da confirmação.
 
 ### 22.5 Importação
 
@@ -1016,11 +1065,11 @@ numa transação RAP.
 | Verificação de perfil | Autorização simulada | Modo de demonstração liberado; fora dele, cada atividade só com a sua autorização |
 | Consulta de CEP | Regra pura, sem chamada externa | Leitura da resposta, CEP fora do formato sem consulta e cache da sessão, nos dois ambientes |
 | Virtual elements do cliente | Regra pura | CPF e telefone formatados e faixas de cor do score |
-| Pagamento simulado | Regra pura | Bandeira, máscara, aprovação, recusa e dados inválidos |
+| Pagamento simulado | Regra pura | Bandeira, máscara, aprovação, recusa, dados inválidos e validação de todos os campos de uma vez |
 | Leitura de planilhas e importações | Integração | Formatos XLSX e CSV, as três importações e a reimportação recusada |
-| BO Cliente | Integração com test doubles | Validações do Save, normalização, preenchimento pelo CEP, endereço principal, CEP único e exclusão bloqueada |
-| BO Item | Integração com test doubles | Reserva, liberação e baixa com recálculo do saldo, validações, inativação e exclusão bloqueadas |
-| BO Pedido | Integração com test doubles e com o banco | Registro com reserva, edição de itens, validações do Save, precheck de estoque, total, pagamento, aprovação, cancelamento e snapshots |
+| BO Cliente | Integração com test doubles | Validações do Save, normalização, preenchimento pelo CEP, endereço principal e seu precheck, CEP único, exclusão e inativação bloqueadas |
+| BO Item | Integração com test doubles | Reserva, liberação e baixa com recálculo do saldo, validações, inativação (precheck e Save) e exclusão bloqueadas |
+| BO Pedido | Integração com test doubles e com o banco | Registro com reserva, edição de itens, validações do Save, precheck de estoque e do pagamento, total, pagamento, aprovação, cancelamento e snapshots |
 | BO Reembolso | Integração com test doubles e com o banco | Aprovação e rejeição na mesma transação do pedido e recusa de solicitação já decidida |
 
 - Os testes de integração devem semear os próprios dados e usar test doubles das entidades e das tabelas de

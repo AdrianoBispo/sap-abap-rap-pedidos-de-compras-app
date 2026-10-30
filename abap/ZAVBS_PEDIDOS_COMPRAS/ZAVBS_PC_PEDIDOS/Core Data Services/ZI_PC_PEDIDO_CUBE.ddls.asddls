@@ -31,7 +31,7 @@ define view entity ZI_PC_PEDIDO_CUBE
       @Semantics.amount.currencyCode: 'Currency'
       ValorTotal,
 
-      /* Ticket médio: média do valor dos pedidos (a soma é o ValorTotal) */
+      /* Ticket médio: média do valor por pedido */
       @Aggregation.default: #AVG
       @Semantics.amount.currencyCode: 'Currency'
       ValorTotal                        as ValorMedio,

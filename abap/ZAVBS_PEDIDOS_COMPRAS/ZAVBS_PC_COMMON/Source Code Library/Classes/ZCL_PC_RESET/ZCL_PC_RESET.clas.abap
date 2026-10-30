@@ -1,17 +1,17 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Reset dos dados do banco</p>
+"! <strong>Reset dos dados:</strong>
 "! APAGA todos os dados de negócio (clientes, endereços, itens de estoque,
 "! pedidos, pagamentos, reembolsos e snapshots) e as tabelas draft de cada BO.
-"! Executar no ADT com F9 (Run as ABAP Application - Console).
+"! Contudo, só roda quando <strong>{@link ZIF_PC_CONSTANTS.data:C_MODO_TRIAL} = abap_true</strong>,
+"! o mesmo indicador de ambiente de demonstração usado em {@link ZCL_PC_AUTH}.
 "!
-"! Não toca em:
-"!  - ZTA_PC_CODELIST (cadastro de listas; recarregada por ZCL_PC_SETUP);
-"!  - intervalos do objeto de numeração ZPC_NR: o próximo pedido/SKU continua
-"!    de onde parou (para recomeçar, zere os intervalos no ADT e rode ZCL_PC_SETUP).
+"! <p>Ficam de fora do reset:</p>
+"! <ul>
+"!  <li>{@link ZTA_PC_CODELIST} que pode ser recarregada por {@link ZCL_PC_SETUP};</li>
+"!  <li>Intervalos do objeto de numeração {@link ZPC_NR}. O próximo pedido/SKU continuam
+"!   de onde parou. Caso queira recomeçar, zere os intervalos e rode {@link ZCL_PC_SETUP}.</li>
+"! </ul>
 "!
-"! Proteção: só roda com ZIF_PC_CONSTANTS=>C_MODO_TRIAL = abap_true, o mesmo
-"! indicador de ambiente educacional/demonstração usado em ZCL_PC_AUTH.
-"! Depois do reset, ZCL_PC_SETUP recarrega os dados de demonstração.
-"! Constantes, tipos e métodos públicos: interface ZIF_PC_RESET.
+"! <p>Constantes, tipos e métodos públicos são declarados na interface {@link ZIF_PC_RESET}.</p>
 CLASS zcl_pc_reset DEFINITION
   PUBLIC
   FINAL
@@ -23,7 +23,6 @@ CLASS zcl_pc_reset DEFINITION
 
     ALIASES resetar FOR zif_pc_reset~resetar.
 
-  PROTECTED SECTION.
   PRIVATE SECTION.
     "! Tabelas de dados, filhas antes das mães.
     CLASS-METHODS tabelas
@@ -44,16 +43,19 @@ CLASS zcl_pc_reset IMPLEMENTATION.
     ENDIF.
 
     DATA(lv_total) = 0.
+
     LOOP AT lt_resultado INTO DATA(ls_res).
       out->write( |{ ls_res-tabela }: { ls_res-apagados } registro(s) apagado(s)| ).
       lv_total = lv_total + ls_res-apagados.
     ENDLOOP.
+
     out->write( |Reset concluído: { lv_total } registro(s) apagado(s) em { lines( lt_resultado ) } tabelas.| ).
     out->write( `Execute ZCL_PC_SETUP para recarregar os dados de demonstração.` ).
   ENDMETHOD.
 
 
   METHOD zif_pc_reset~resetar.
+
     CLEAR: et_resultado, ev_executado.
 
     IF zif_pc_constants=>c_modo_trial = abap_false.

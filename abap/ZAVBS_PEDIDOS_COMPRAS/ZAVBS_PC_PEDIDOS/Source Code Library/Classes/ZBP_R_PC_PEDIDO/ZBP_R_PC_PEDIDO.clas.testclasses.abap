@@ -7,8 +7,12 @@
 *"* (ltcl_edicao_pedido, ltcl_registro_pedido, ltcl_ciclo_pedido, ltcl_reembolso).
 
 *"* Números T100 (Message Class ZPC_MSG) das mensagens de uma tabela REPORTED.
+"! Apoio dos testes: números T100 das mensagens de um REPORTED.
 CLASS lcl_msgs DEFINITION FINAL.
   PUBLIC SECTION.
+    "! Números T100 (Message Class ZPC_MSG) das mensagens com %msg.
+    "! @parameter it_reported | Tabela REPORTED de qualquer entidade
+    "! @parameter rt_numeros | Números das mensagens (ex.: 023)
     CLASS-METHODS numeros
       IMPORTING it_reported       TYPE ANY TABLE
       RETURNING VALUE(rt_numeros) TYPE string_table.
@@ -32,20 +36,30 @@ ENDCLASS.
 
 
 *"* Base: ambiente de test doubles, dados semeados e atalhos de EML.
+"! Base dos testes do BO {@link ZR_PC_PEDIDO}: ambiente de test doubles, dados
+"! semeados (cliente, item, pedido) e atalhos de EML para as ações.
 CLASS lcl_base_pedido DEFINITION ABSTRACT FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PROTECTED SECTION.
+    "! FAILED do BO Pedido
     TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_pedido.
+    "! REPORTED do BO Pedido
     TYPES ty_reported TYPE RESPONSE FOR REPORTED EARLY zr_pc_pedido.
+    "! Pedido lido por READ ENTITIES
     TYPES ty_pedido   TYPE STRUCTURE FOR READ RESULT zr_pc_pedido\\Pedido.
 
+    "! Doubles das entidades CDS (pedido, cliente, endereço, item, ...)
     CLASS-DATA go_cds TYPE REF TO if_cds_test_environment.
+    "! Doubles das tabelas de rascunho
     CLASS-DATA go_sql TYPE REF TO if_osql_test_environment.
 
+    "! Cria os doubles (uma vez por classe de teste).
     CLASS-METHODS criar_ambiente.
+    "! Destrói os doubles ao final da classe de teste.
     CLASS-METHODS destruir_ambiente.
+    "! Limpa os doubles antes de cada teste.
     CLASS-METHODS limpar_ambiente.
 
     "! Endereço principal do último cliente semeado.
@@ -85,24 +99,29 @@ CLASS lcl_base_pedido DEFINITION ABSTRACT FOR TESTING
       IMPORTING iv_pedido   TYPE sysuuid_x16
       EXPORTING es_failed   TYPE ty_failed
                 es_reported TYPE ty_reported.
+    "! Lê o pedido ativo (ou o rascunho) pelo BO.
     METHODS ler_pedido
       IMPORTING iv_pedido        TYPE sysuuid_x16
                 iv_rascunho      TYPE abap_boolean DEFAULT abap_false
       RETURNING VALUE(rs_pedido) TYPE ty_pedido.
+    "! Quantidade reservada do item, lida pelo BO {@link ZR_PC_ITEM}.
     METHODS reservado
       IMPORTING iv_item       TYPE sysuuid_x16
       RETURNING VALUE(rv_qtd) TYPE i.
 
+    "! Executa SimularPagamento (crédito, validade 12/99) no pedido ativo.
     METHODS pagar
       IMPORTING iv_pedido  TYPE sysuuid_x16
                 iv_numero  TYPE csequence DEFAULT '4111111111111111'
                 iv_cvv     TYPE csequence DEFAULT '123'
       EXPORTING ev_falhou  TYPE abap_boolean
                 et_numeros TYPE string_table.
+    "! Executa AprovarPedido no pedido ativo.
     METHODS aprovar
       IMPORTING iv_pedido  TYPE sysuuid_x16
       EXPORTING ev_falhou  TYPE abap_boolean
                 et_numeros TYPE string_table.
+    "! Executa CancelarPedido no pedido ativo com o motivo informado.
     METHODS cancelar
       IMPORTING iv_pedido  TYPE sysuuid_x16
                 iv_motivo  TYPE csequence DEFAULT 'QA'
@@ -292,24 +311,39 @@ ENDCLASS.
 
 
 *"* Rascunho de pedido: valores iniciais, total e validations do Save (Prepare).
+"! Rascunho do pedido: determinations da criação, validations do Save e
+"! precheck da inclusão de itens.
 CLASS ltcl_pedido_rascunho DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_pedido
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
 
+    "! Pedido novo nasce ABERTO, com o endereço principal do cliente.
     METHODS nasce_aberto_com_endereco       FOR TESTING.
+    "! Valor da linha e total do pedido calculados a partir do preço do item.
     METHODS calcula_valor_do_item_e_total   FOR TESTING.
+    "! Rascunho válido passa no Prepare sem erros.
     METHODS rascunho_valido_sem_erros       FOR TESTING.
+    "! Cliente inativo bloqueia o registro (003).
     METHODS cliente_inativo_bloqueia        FOR TESTING.
+    "! Cliente sem endereço principal bloqueia o registro (005).
     METHODS cliente_sem_endereco_bloqueia   FOR TESTING.
+    "! Pedido sem itens bloqueia o registro (027).
     METHODS pedido_sem_itens_bloqueia       FOR TESTING.
+    "! Quantidade acima do disponível bloqueia o registro (011).
     METHODS estoque_insuficiente_bloqueia   FOR TESTING.
+    "! Item inativo bloqueia o registro (013).
     METHODS item_inativo_bloqueia           FOR TESTING.
+    "! Quantidade zero bloqueia o registro (028).
     METHODS quantidade_zero_bloqueia        FOR TESTING.
+    "! Item sem estoque disponível é recusado já na inclusão (precheck, 048).
     METHODS item_sem_estoque_no_precheck    FOR TESTING.
 ENDCLASS.
 
@@ -455,21 +489,35 @@ ENDCLASS.
 
 
 *"* Ações sobre o pedido ativo: pagamento, aprovação e cancelamento.
+"! Ações do ciclo de vida do pedido: pagamento, aprovação e cancelamento.
 CLASS ltcl_pedido_acoes DEFINITION FINAL FOR TESTING INHERITING FROM lcl_base_pedido
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
+    "! Cria os doubles da classe.
     CLASS-METHODS class_setup.
+    "! Destrói os doubles da classe.
     CLASS-METHODS class_teardown.
+    "! Doubles limpos antes de cada teste.
     METHODS setup.
 
+    "! Cartão com formato inválido é recusado (032) e o pedido não muda.
     METHODS pagamento_dados_invalidos       FOR TESTING.
+    "! Precheck de SimularPagamento: parâmetros vazios são recusados antes da
+    "! action, com uma mensagem 023 (campo obrigatório) por campo.
+    METHODS pagamento_precheck_campos       FOR TESTING.
+    "! Pagamento grava só bandeira, últimos 4 dígitos e máscara do cartão.
     METHODS pagamento_grava_so_mascara      FOR TESTING.
+    "! Pagamento só é aceito em pedido ABERTO.
     METHODS pagamento_so_em_pedido_aberto   FOR TESTING.
+    "! Aprovar baixa o estoque, finaliza e gera os snapshots de cliente e itens.
     METHODS aprovar_gera_snapshots          FOR TESTING.
+    "! Aprovar sem a reserva correspondente é recusado (038).
     METHODS aprovar_sem_reserva_recusado    FOR TESTING.
+    "! Cancelar libera a reserva, cancela e gera os snapshots.
     METHODS cancelar_gera_snapshot          FOR TESTING.
+    "! Pedido FINALIZADO não pode ser cancelado (017).
     METHODS cancelar_finalizado_recusado    FOR TESTING.
 ENDCLASS.
 
@@ -486,6 +534,27 @@ CLASS ltcl_pedido_acoes IMPLEMENTATION.
 
   METHOD setup.
     limpar_ambiente( ).
+  ENDMETHOD.
+
+  METHOD pagamento_precheck_campos.
+    DATA(lv_cli) = semear_cliente( ).
+    DATA(lv_ped) = semear_pedido( iv_cliente = lv_cli iv_item = semear_item( iv_reservada = 2 ) ).
+
+    MODIFY ENTITIES OF zr_pc_pedido
+      ENTITY Pedido
+        EXECUTE SimularPagamento FROM VALUE #( ( %key-PedidoUUID = lv_ped %is_draft = if_abap_behv=>mk-off ) )
+      FAILED DATA(ls_failed)
+      REPORTED DATA(ls_reported).
+
+    cl_abap_unit_assert=>assert_not_initial( act = ls_failed-pedido msg = 'Parâmetros vazios são recusados' ).
+    DATA(lt_numeros) = lcl_msgs=>numeros( ls_reported-pedido ).
+    cl_abap_unit_assert=>assert_equals(
+      act = REDUCE i( INIT n = 0 FOR m IN lt_numeros WHERE ( table_line = `023` ) NEXT n = n + 1 )
+      exp = 4
+      msg = 'Uma mensagem 023 por campo (método, número, validade e CVV)' ).
+    cl_abap_unit_assert=>assert_equals( act = ler_pedido( lv_ped )-StatusPagamento
+                                        exp = zif_pc_constants=>c_status_pagamento-pendente
+                                        msg = 'Pagamento segue PENDENTE' ).
   ENDMETHOD.
 
   METHOD pagamento_dados_invalidos.

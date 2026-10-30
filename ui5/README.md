@@ -41,7 +41,8 @@ tabelas, tile) e a configuração das ferramentas.
 └── webapp/
     ├── manifest.json     descriptor v2: serviço, rotas LR → OP → sub-OP, tabelas, inbound do tile
     ├── Component.js      sap/fe/core/AppComponent
-    ├── annotations/      anotações locais (só a de pedidos tem conteúdo: mapeamento CpfCliente → Cpf)
+    ├── annotations/      anotações locais (pedidos: mapeamento CpfCliente → Cpf e IsActionCritical do Aprovar pedido)
+    ├── ext/              ações customizadas com confirmação (pedidos: AcoesPedido.js; reembolsos: AcoesReembolso.js)
     ├── i18n/             textos pt-BR (idioma padrão)
     ├── localService/     metadata do serviço, para o mock
     └── test/integration/ testes OPA5 gerados
@@ -51,14 +52,24 @@ tabelas, tile) e a configuração das ferramentas.
 
 | App      | List Report                                                                                              | Object Page                                                                                                                                                  | Sub-páginas                               |
 | -------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| Clientes | `Cliente`                                                                                                | Cliente, com a tabela de endereços e a ação **Definir endereço principal**                                                                                   | `Endereco`                                |
+| Clientes | `Cliente`                                                                                                | Cliente, com a tabela de endereços (seleção única) e a ação **Definir endereço principal**                                                                   | `Endereco`                                |
 | Estoque  | `Item`                                                                                                   | Item                                                                                                                                                         | —                                         |
-| Pedidos  | `Pedido`, com as ações Simular pagamento / Aprovar / Cancelar (o Save do rascunho registra o pedido e reserva o estoque) | Pedido. Itens criados na própria tabela (*inline*) só no rascunho; Pagamento e Histórico do cliente como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot` |
-| Reembolsos | `Reembolso`, com as ações Aprovar reembolso / Rejeitar reembolso (lista própria, sem criar/editar/excluir) | Reembolso (identificação, motivos e datas da solicitação e da decisão) | — |
+| Pedidos  | `Pedido`, com as ações Efetuar Pagamento / Aprovar / Cancelar no menu "Ações" (o Save do rascunho registra o pedido e reserva o estoque) | Pedido. Itens criados na própria tabela (*inline*) só no rascunho; Pagamento e Histórico do cliente como formulário (composição 0..1) | `ItemPedido`, `ItemSnapshot` |
+| Reembolsos | `Reembolso`, com as ações Aprovar reembolso / Rejeitar reembolso no menu "Ações" (lista própria, sem criar/editar/excluir) | Reembolso (identificação, motivos e datas da solicitação e da decisão) | — |
 
 - As ações com parâmetros abrem o diálogo a partir das abstract entities `ZPC_A_PAGAMENTO_INPUT`,
   `ZPC_A_CANCELAMENTO_INPUT` e `ZPC_A_REEMB_DECISAO_INPUT`. Os botões da app de Reembolsos só ficam
   ativos com a solicitação `PENDENTE` (feature control do backend); rejeitar exige motivo.
+- **Confirmação antes das ações**: Aprovar pedido usa a confirmação padrão do Fiori Elements
+  (`Common.IsActionCritical`, em `annotations/annotation.xml`). Como o Fiori Elements não confirma ações com
+  diálogo de parâmetros, *Efetuar Pagamento*, *Cancelar pedido*, *Aprovar reembolso* e *Rejeitar reembolso* são
+  botões customizados (`webapp/ext/AcoesPedido.js` e `webapp/ext/AcoesReembolso.js`) que pedem a confirmação e
+  então executam a action do RAP (`editFlow.invokeAction`). As DDLX mantêm as ações padrão no menu "Ações" (para o
+  Preview do serviço); o `manifest.json` de cada app sobrescreve o grupo anotado
+  (`DataFieldForActionGroup::AcoesPedido` / `::AcoesReembolso`) com os botões customizados.
+- Os botões customizados seguem o feature control do backend: o `enabled` lê `__OperationControl/<Action>` na
+  Object Page e nas funções da lista. Uma expressão comparando texto (`${Status} === '...'`) não funciona no
+  `enabled` do manifest, que converte cada parte para booleano.
 - O **CEP** do endereço é um campo padrão: o value help `ZC_PC_CEP_VH` sugere CEPs já cadastrados e
   a determination `PreencherEnderecoViaCep`, com side effects, preenche o restante do endereço.
 
@@ -71,7 +82,9 @@ tabelas, tile) e a configuração das ferramentas.
 - **Pedido `ABERTO`**: *Editar* abre o rascunho só com os itens editáveis (o cliente fica somente leitura); o
   pedido não oferece *Excluir*.
 - **Ações do pedido** agrupadas no menu "Ações" (`#FOR_ACTION_GROUP`, aparece também no preview do ADT), com
-  diálogos para *Efetuar Pagamento* e *Cancelar pedido* (motivo obrigatório).
+  confirmação antes de cada uma. *Efetuar Pagamento* abre um diálogo próprio com máscaras (cartão
+  `9999 9999 9999 9999`, validade `99/99`, CVV `999`; `sap.m.MaskInput`) e *Cancelar pedido* pede o motivo.
+- **Endereços do cliente** com seleção única (radio button) na tabela, para *Definir endereço principal*.
 - **Score do cliente** em %, como *Process Indicator*: vermelho até 40, amarelo de 40 a 70 e verde a partir de 70.
 - **Fotos** de clientes e itens (JPEG, PNG ou WEBP) na Object Page; cliente sem foto mostra um avatar.
 - **Códigos de CodeList** (gênero, categoria, status, método de pagamento) aparecem só como texto, e cliente,
@@ -79,7 +92,7 @@ tabelas, tile) e a configuração das ferramentas.
 - **Importar planilha**: botão na lista de Clientes, Estoque e Pedidos, que abre a janela de upload da action
   estática `ImportarPlanilha` (regras no [`abap/README.md`](../abap/README.md#94-importação-em-massa-por-planilha)).
 - **Limitações**: nenhum valor de `@UI.lineItem` para imagem foi aceito pelo ADT, então as fotos não aparecem
-  no List Report; os dados do cartão aparecem sem máscara no diálogo da action (não são gravados).
+  no List Report. No Preview do serviço (sem a app), as ações usam os diálogos padrão, sem confirmação nem máscara.
 
 | Tela | Captura |
 | --- | --- |

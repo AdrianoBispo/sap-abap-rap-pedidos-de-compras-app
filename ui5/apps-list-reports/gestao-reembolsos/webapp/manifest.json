@@ -153,6 +153,26 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "DataFieldForActionGroup::AcoesReembolso": {
+                      "menu": [
+                        "AprovarReembolso",
+                        "RejeitarReembolso"
+                      ]
+                    },
+                    "AprovarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
+                      "enabled": "gestaoreembolsos.ext.AcoesReembolso.podeAprovar",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoAprovarReembolso}"
+                    },
+                    "RejeitarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
+                      "enabled": "gestaoreembolsos.ext.AcoesReembolso.podeRejeitar",
+                      "requiresSelection": true,
+                      "text": "{i18n>acaoRejeitarReembolso}"
+                    }
                   }
                 }
               },
@@ -167,7 +187,29 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Reembolso"
+              "contextPath": "/Reembolso",
+              "content": {
+                "header": {
+                  "actions": {
+                    "DataFieldForActionGroup::AcoesReembolso": {
+                      "menu": [
+                        "AprovarReembolso",
+                        "RejeitarReembolso"
+                      ]
+                    },
+                    "AprovarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.aprovarReembolso",
+                      "text": "{i18n>acaoAprovarReembolso}",
+                      "enabled": "{__OperationControl/AprovarReembolso}"
+                    },
+                    "RejeitarReembolso": {
+                      "press": "gestaoreembolsos.ext.AcoesReembolso.rejeitarReembolso",
+                      "text": "{i18n>acaoRejeitarReembolso}",
+                      "enabled": "{__OperationControl/RejeitarReembolso}"
+                    }
+                  }
+                }
+              }
             }
           }
         }

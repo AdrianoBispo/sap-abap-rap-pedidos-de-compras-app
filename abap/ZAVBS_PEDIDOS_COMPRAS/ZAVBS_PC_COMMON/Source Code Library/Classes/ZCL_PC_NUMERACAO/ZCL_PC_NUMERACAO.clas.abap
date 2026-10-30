@@ -1,9 +1,11 @@
-"! <p class="shorttext synchronized">Pedidos de Compras - Numeração (Number Range)</p>
-"! Objeto de numeração ZPC_NR (domínio de tamanho NUMC 10):
-"!   intervalo 01 -> NumeroPedido
-"!   intervalo 02 -> sequencial do SKU
-"! Os intervalos são criados pela classe ZCL_PC_SETUP.
-"! Constantes, tipos e métodos públicos: interface ZIF_PC_NUMERACAO.
+"! Classe que implementa o Objeto de Numeração {@link ZPC_NR} (NUMC 10):
+"! <ul>
+"!  <li>Intervalo 01 -> NumeroPedido</li>
+"!  <li>Intervalo 02 -> Sequencial do SKU</li>
+"! </ul>
+"!
+"! Os intervalos são criados pela classe {@link ZCL_PC_SETUP}.<br/>
+"! Constantes, tipos e métodos públicos são declarados na interface {@link ZIF_PC_NUMERACAO}.
 CLASS zcl_pc_numeracao DEFINITION
   PUBLIC
   FINAL
@@ -47,6 +49,7 @@ CLASS zcl_pc_numeracao IMPLEMENTATION.
 
 
   METHOD zif_pc_numeracao~gerar_sku.
+
     DATA(lv_numero) = proximo_numero( zif_pc_constants=>c_numeracao-intervalo_sku )
                       - CONV int8( zif_pc_constants=>c_numeracao-sku_de ).
 
@@ -55,11 +58,15 @@ CLASS zcl_pc_numeracao IMPLEMENTATION.
 
 
   METHOD zif_pc_numeracao~prefixo_categoria.
+
     rv_prefixo = to_upper( condense( iv_categoria ) ).
+
     IF strlen( rv_prefixo ) < 3.
       rv_prefixo = |{ rv_prefixo WIDTH = 3 PAD = 'X' }|.
     ENDIF.
+
     rv_prefixo = substring( val = rv_prefixo off = 0 len = 3 ).
+
   ENDMETHOD.
 
 ENDCLASS.

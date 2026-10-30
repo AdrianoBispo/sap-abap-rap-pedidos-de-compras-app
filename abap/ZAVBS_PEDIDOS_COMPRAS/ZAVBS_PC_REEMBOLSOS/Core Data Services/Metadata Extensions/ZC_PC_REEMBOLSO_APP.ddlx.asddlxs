@@ -20,19 +20,26 @@ annotate entity ZC_PC_REEMBOLSO_APP with
   @UI.hidden: true
   ClienteUUID;
 
-  @UI: { lineItem:       [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar', position: 10,
-                            importance: #HIGH },
-                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar', position: 20,
-                            importance: #HIGH },
+  /* Menu "Ações" (grupo AcoesReembolso) com Aprovar e Rejeitar reembolso, para o
+     Preview do serviço. O app Gestão de Reembolsos substitui os itens desse menu
+     no manifest por botões customizados (ext/AcoesReembolso.js), que pedem
+     confirmação antes da action, o que o Fiori Elements não faz em actions com
+     parâmetros (MotivoDecisao). */
+  @UI: { lineItem:       [{ type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesReembolso', label: 'Ações', position: 100 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar reembolso',
+                            actionGroupId: 'AcoesReembolso', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso',
+                            actionGroupId: 'AcoesReembolso', position: 20 },
                           /* Link direto (sem popover) para a Object Page do pedido na app
                              Pedidos de Compras: intent ZPCPedidoCompra-manage com
                              PedidoUUID/NumeroPedido do reembolso */
                           { type: #WITH_INTENT_BASED_NAVIGATION, semanticObjectAction: 'manage',
                             position: 10, label: 'Pedido', importance: #HIGH }],
-         identification: [{ type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar reembolso',
-                            position: 1 },
+         identification: [{ type: #FOR_ACTION_GROUP, actionGroupId: 'AcoesReembolso', label: 'Ações', position: 1 },
+                          { type: #FOR_ACTION, dataAction: 'AprovarReembolso', label: 'Aprovar reembolso',
+                            actionGroupId: 'AcoesReembolso', position: 10 },
                           { type: #FOR_ACTION, dataAction: 'RejeitarReembolso', label: 'Rejeitar reembolso',
-                            position: 2 },
+                            actionGroupId: 'AcoesReembolso', position: 20 },
                           { type: #WITH_INTENT_BASED_NAVIGATION, semanticObjectAction: 'manage',
                             position: 5, label: 'Pedido' }],
          selectionField: [{ position: 10 }] }

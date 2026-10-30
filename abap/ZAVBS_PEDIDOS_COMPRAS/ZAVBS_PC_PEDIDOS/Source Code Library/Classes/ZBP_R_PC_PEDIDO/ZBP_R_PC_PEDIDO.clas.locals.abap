@@ -1,73 +1,168 @@
 *"* Local Types da behavior pool ZBP_R_PC_PEDIDO
 
-"! Handler da entidade Pedido (root)
+"! <h1>Handler da entidade Pedido (root do BO {@link ZR_PC_PEDIDO})</h1>
+"! Registro do pedido com reserva de estoque, ciclo de vida (pagamento,
+"! aprovação, cancelamento e reembolso), snapshots e importação por planilha.
+"! As ações processam vários pedidos em lote: estoque movimentado numa única
+"! chamada ao BO {@link ZR_PC_ITEM} por tipo de movimento
+"! ({@link .METH:movimentar_estoque}).
 CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     CONSTANTS:
+      "! Tipos de movimento de estoque de {@link .METH:movimentar_estoque}
       BEGIN OF c_mov,
+        "! Reserva (ReservarEstoque no BO Item)
         reservar TYPE c LENGTH 1 VALUE 'R',
+        "! Liberação da reserva (LiberarReserva no BO Item)
         liberar  TYPE c LENGTH 1 VALUE 'L',
+        "! Baixa do estoque reservado (BaixarEstoque no BO Item)
         baixar   TYPE c LENGTH 1 VALUE 'B',
       END OF c_mov.
 
     CONSTANTS:
+      "! State areas das validations (mensagens de estado no rascunho)
       BEGIN OF c_area,
+        "! {@link .METH:ValidarCliente}
         cliente  TYPE string VALUE `VALIDAR_CLIENTE`,
+        "! {@link .METH:ValidarRegistro}
         registro TYPE string VALUE `VALIDAR_REGISTRO`,
       END OF c_area.
 
     TYPES:
+      "! Chave de um pedido (rascunho ou ativo)
       BEGIN OF ty_pedido_key,
+        "! Instância em rascunho ou ativa
         is_draft    TYPE abp_behv_flag,
+        "! Pedido
         pedido_uuid TYPE sysuuid_x16,
       END OF ty_pedido_key,
+      "! Chaves de pedidos
       tt_pedido_key TYPE STANDARD TABLE OF ty_pedido_key WITH EMPTY KEY.
 
     TYPES:
+      "! Quantidade total de um item (somada entre as linhas do pedido)
       BEGIN OF ty_qtde_item,
+        "! Item de estoque
         item_uuid TYPE sysuuid_x16,
+        "! Quantidade
         qtde      TYPE i,
       END OF ty_qtde_item,
+      "! Quantidades por item (uma linha por item)
       tt_qtde_item TYPE SORTED TABLE OF ty_qtde_item WITH UNIQUE KEY item_uuid.
 
-    TYPES:
-      BEGIN OF ty_endereco,
-        endereco_uuid TYPE sysuuid_x16,
-        completo      TYPE zr_pc_pedido-EnderecoPrincipalCompleto,
-      END OF ty_endereco.
-
+    "! Linha do pedido lida por READ ENTITIES
     TYPES ts_pedido        TYPE STRUCTURE FOR READ RESULT zr_pc_pedido\\Pedido.
+    "! Pedidos lidos por READ ENTITIES
+    TYPES tt_pedidos       TYPE TABLE FOR READ RESULT zr_pc_pedido\\Pedido.
+    "! Itens dos pedidos lidos pela associação _Itens
     TYPES tt_itens_pedido  TYPE TABLE FOR READ RESULT zr_pc_pedido\\Pedido\_Itens.
+    "! FAILED do BO Pedido
     TYPES ty_failed        TYPE RESPONSE FOR FAILED EARLY zr_pc_pedido.
+    "! REPORTED do BO Pedido
     TYPES ty_reported      TYPE RESPONSE FOR REPORTED EARLY zr_pc_pedido.
+    "! Conjunto de UUIDs (clientes, pedidos ou itens)
+    TYPES tt_uuid          TYPE SORTED TABLE OF sysuuid_x16 WITH NON-UNIQUE KEY table_line.
+    "! Range de UUIDs (consultas com IN, sem FOR ALL ENTRIES)
+    TYPES tt_range_uuid    TYPE RANGE OF sysuuid_x16.
 
-    " Falhas da reserva de estoque no registro. Uma determination não tem
-    " FAILED e não aborta o Save; ValidarRegistro lê esta tabela na gravação
-    " do pedido recém-registrado e reprova o salvamento com estas mensagens.
     TYPES:
-      BEGIN OF ty_falha_registro,
+      "! Endereço principal de um cliente, lido de uma vez para vários clientes
+      "! por {@link .METH:enderecos_principais}
+      BEGIN OF ty_endereco_cli,
+        "! Cliente
+        cliente_uuid  TYPE sysuuid_x16,
+        "! Endereço marcado como principal
+        endereco_uuid TYPE sysuuid_x16,
+        "! Endereço formatado ({@link ZCL_PC_UTIL.METH:formatar_endereco})
+        completo      TYPE zr_pc_pedido-EnderecoPrincipalCompleto,
+      END OF ty_endereco_cli,
+      "! Endereço principal por cliente
+      tt_endereco_cli TYPE HASHED TABLE OF ty_endereco_cli WITH UNIQUE KEY cliente_uuid.
+
+    TYPES:
+      "! Movimento de estoque de um item em um pedido (vários pedidos por chamada)
+      BEGIN OF ty_mov_pedido,
+        "! Instância do pedido (rascunho ou ativa) que recebe as mensagens
+        is_draft    TYPE abp_behv_flag,
+        "! Pedido
         pedido_uuid TYPE sysuuid_x16,
+        "! Item de estoque
+        item_uuid   TYPE sysuuid_x16,
+        "! Quantidade do movimento
+        qtde        TYPE i,
+      END OF ty_mov_pedido,
+      "! Movimentos enviados a {@link .METH:movimentar_estoque}
+      tt_mov_pedido TYPE STANDARD TABLE OF ty_mov_pedido WITH EMPTY KEY.
+
+    TYPES:
+      "! Pedido com o motivo informado (cancelamento / solicitação de reembolso)
+      BEGIN OF ty_solicitacao,
+        "! Pedido lido
+        pedido TYPE ts_pedido,
+        "! Motivo informado pelo usuário
+        motivo TYPE string,
+      END OF ty_solicitacao,
+      "! Pedidos a cancelar ou enviar para reembolso
+      tt_solicitacao TYPE STANDARD TABLE OF ty_solicitacao WITH EMPTY KEY.
+
+    TYPES:
+      "! Falha da reserva de estoque no registro de um pedido
+      BEGIN OF ty_falha_registro,
+        "! Pedido registrado
+        pedido_uuid TYPE sysuuid_x16,
+        "! Mensagem da falha
         msg         TYPE REF TO if_abap_behv_message,
       END OF ty_falha_registro.
+    "! Falhas da reserva de estoque no registro. Uma determination não tem
+    "! FAILED e não aborta o Save; {@link .METH:ValidarRegistro} lê esta tabela na
+    "! gravação do pedido recém-registrado e reprova o salvamento com estas mensagens.
     CLASS-DATA gt_falhas_registro TYPE STANDARD TABLE OF ty_falha_registro WITH EMPTY KEY.
 
-    " Reserva já aplicada por pedido nesta transação: o banco só muda no Save,
-    " então a determination consulta aqui antes do banco para não reservar duas vezes.
     TYPES:
+      "! Quantidade de um item já reservada por um pedido
       BEGIN OF ty_reserva_ped,
+        "! Pedido
         pedido_uuid TYPE sysuuid_x16,
+        "! Item de estoque
         item_uuid   TYPE sysuuid_x16,
+        "! Quantidade reservada
         qtde        TYPE i,
       END OF ty_reserva_ped.
-    CLASS-DATA gt_reserva     TYPE SORTED TABLE OF ty_reserva_ped WITH UNIQUE KEY pedido_uuid item_uuid.
+    "! Reservas por pedido e item (uma linha por par)
+    TYPES tt_reserva_ped TYPE SORTED TABLE OF ty_reserva_ped WITH UNIQUE KEY pedido_uuid item_uuid.
+    "! Reserva já aplicada por pedido nesta transação: o banco só muda no Save,
+    "! então {@link .METH:reservas_atuais} consulta aqui antes do banco para não
+    "! reservar duas vezes.
+    CLASS-DATA gt_reserva     TYPE tt_reserva_ped.
+    "! Pedidos cuja reserva está em {@link .DATA:gt_reserva} (inclusive sem itens)
     CLASS-DATA gt_reserva_ped TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
 
-    "! Quantidade por item que o pedido ativo já tem reservada (itens gravados,
-    "! ou o que esta transação já aplicou).
-    METHODS reserva_atual
-      IMPORTING iv_pedido_uuid TYPE sysuuid_x16
+    "! Quantidade por pedido e item que os pedidos ativos já têm reservada (itens
+    "! gravados, ou o que esta transação já aplicou). Uma consulta para todos.
+    METHODS reservas_atuais
+      IMPORTING it_pedidos         TYPE tt_uuid
+      RETURNING VALUE(rt_reservas) TYPE tt_reserva_ped.
+
+    "! Reserva de um pedido, filtrada do resultado de reservas_atuais (memória).
+    METHODS reserva_do_pedido
+      IMPORTING it_reservas    TYPE tt_reserva_ped
+                iv_pedido_uuid TYPE sysuuid_x16
       RETURNING VALUE(rt_qtde) TYPE tt_qtde_item.
 
+    "! Linhas de movimento de estoque dos itens dos pedidos ATIVOS informados.
+    METHODS movimentos
+      IMPORTING it_pedidos    TYPE tt_pedidos
+                it_itens      TYPE tt_itens_pedido
+      RETURNING VALUE(rt_mov) TYPE tt_mov_pedido.
+
+    "! Pedidos (entre os informados) que não estão em FAILED.
+    METHODS sem_falha
+      IMPORTING it_pedidos        TYPE tt_pedidos
+                is_failed         TYPE ty_failed
+      RETURNING VALUE(rt_pedidos) TYPE tt_pedidos.
+
+    "! Autorização global ({@link ZCL_PC_AUTH}): criar, alterar, excluir e
+    "! importar por atividade; ações do ciclo de vida exigem "executar".
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Pedido RESULT result.
 
@@ -90,27 +185,40 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING iv_cid          TYPE csequence
       RETURNING VALUE(rv_texto) TYPE string.
 
+    "! Feature control: Edit só em pedido ativo ABERTO, itens só no rascunho e
+    "! ações do ciclo de vida só na instância ativa, conforme o status.
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Pedido RESULT result.
 
+    "! Pedido novo nasce ABERTO, com pagamento PENDENTE e moeda padrão.
     METHODS DefinirStatusInicial FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Pedido~DefinirStatusInicial.
 
+    "! Ao trocar o cliente, usa o endereço principal atual dele
+    "! ({@link .METH:enderecos_principais}, uma consulta para todos).
     METHODS AtualizarEndereco FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Pedido~AtualizarEndereco.
 
+    "! Número do pedido pelo intervalo ZPC_NR / 01 ({@link ZCL_PC_NUMERACAO}),
+    "! na fase de interação (o GET NUMBER não pode rodar no save).
     METHODS GerarNumeroPedido FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Pedido~GerarNumeroPedido.
 
+    "! Soma o valor dos itens no total do pedido, ver {@link .METH:recalcular_totais}.
     METHODS CalcularTotalPedido FOR DETERMINE ON SAVE
       IMPORTING keys FOR Pedido~CalcularTotalPedido.
 
+    "! Mantém os indicadores que mostram/escondem as seções da Object Page
+    "! (encerrado, sem histórico, não finalizado, não cancelado).
     METHODS AtualizarFlagsStatus FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Pedido~AtualizarFlagsStatus.
 
+    "! Cliente obrigatório e ativo; sem endereço principal gera alerta (status do
+    "! cliente e endereços lidos uma vez para todos os pedidos).
     METHODS ValidarCliente FOR VALIDATE ON SAVE
       IMPORTING keys FOR Pedido~ValidarCliente.
 
+    "! Action interna: recalcula o total, ver {@link .METH:recalcular_totais}.
     METHODS RecalcularTotal FOR MODIFY
       IMPORTING keys FOR ACTION Pedido~RecalcularTotal.
 
@@ -135,12 +243,26 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS Activate FOR MODIFY
       IMPORTING keys FOR ACTION Pedido~Activate.
 
+    "! Efetuar Pagamento: simula o pagamento ({@link ZCL_PC_PAGAMENTO_SIM}),
+    "! grava a última tentativa (pagamentos numa única chamada EML) e move o
+    "! pedido aprovado para AGUARDANDO_APROVACAO. Parâmetros conferidos em
+    "! {@link .METH:precheck_simular_pagamento}.
     METHODS SimularPagamento FOR MODIFY
       IMPORTING keys FOR ACTION Pedido~SimularPagamento RESULT result.
 
+    "! Precheck dos parâmetros de SimularPagamento: método, número do cartão,
+    "! validade e CVV são conferidos antes da action (todos os erros de uma vez).
+    METHODS precheck_simular_pagamento FOR PRECHECK
+      IMPORTING keys FOR ACTION Pedido~SimularPagamento.
+
+    "! Aprovar pedido: confere a reserva, baixa o estoque, gera os snapshots e
+    "! finaliza (FINALIZADO). Todos os pedidos em lote.
     METHODS AprovarPedido FOR MODIFY
       IMPORTING keys FOR ACTION Pedido~AprovarPedido RESULT result.
 
+    "! Cancelar pedido (motivo obrigatório): pedido pago vai para reembolso
+    "! ({@link .METH:iniciar_processo_reembolso}); os demais liberam a reserva,
+    "! geram snapshots e são cancelados. Todos os pedidos em lote.
     METHODS CancelarPedido FOR MODIFY
       IMPORTING keys FOR ACTION Pedido~CancelarPedido RESULT result.
 
@@ -165,44 +287,52 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING it_pedidos         TYPE tt_pedido_key
       RETURNING VALUE(rs_reported) TYPE ty_reported.
 
-    "! Endereço principal atual do cliente (vazio se não houver).
-    METHODS endereco_principal
-      IMPORTING iv_cliente_uuid    TYPE sysuuid_x16
-      RETURNING VALUE(rs_endereco) TYPE ty_endereco.
+    "! Endereço principal atual de cada cliente informado (uma única consulta;
+    "! cliente sem endereço principal fica fora do resultado).
+    METHODS enderecos_principais
+      IMPORTING it_clientes         TYPE tt_uuid
+      RETURNING VALUE(rt_enderecos) TYPE tt_endereco_cli.
 
     "! Quantidade total por item (o mesmo item pode estar em mais de uma linha).
     METHODS somar_quantidades
       IMPORTING it_itens       TYPE tt_itens_pedido
       RETURNING VALUE(rt_qtde) TYPE tt_qtde_item.
 
-    "! Executa ReservarEstoque / LiberarReserva / BaixarEstoque no BO Item
-    "! (EML entre BOs, mesma LUW). Em falha parcial de reserva, libera o
-    "! que já foi reservado (compensação) e reporta o erro no pedido.
+    "! Executa ReservarEstoque / LiberarReserva / BaixarEstoque no BO Item para
+    "! todos os pedidos de uma vez (uma chamada EML, uma linha por item com a
+    "! quantidade somada; mesma LUW). Item recusado faz falhar todos os pedidos
+    "! que o usam; na reserva, a parte já reservada desses pedidos é liberada
+    "! (compensação). Devolve os pedidos que falharam.
     METHODS movimentar_estoque
       IMPORTING iv_acao     TYPE c
-                is_pedido   TYPE ts_pedido
-                it_qtde     TYPE tt_qtde_item
-      EXPORTING ev_ok       TYPE abap_boolean
+                it_mov      TYPE tt_mov_pedido
+      EXPORTING et_falhou   TYPE tt_pedido_key
       CHANGING  cs_failed   TYPE ty_failed
                 cs_reported TYPE ty_reported.
 
     "! Pagamento já efetuado: em vez de cancelar direto, cria a solicitação
     "! de reembolso (PENDENTE) e move o pedido para PROCESSANDO_REEMBOLSO.
     "! O estoque permanece reservado até a decisão (AprovarReembolso/RejeitarReembolso).
+    "! Todas as solicitações numa única chamada EML por BO.
     METHODS iniciar_processo_reembolso
-      IMPORTING is_pedido   TYPE ts_pedido
-                iv_motivo   TYPE csequence
-      CHANGING  cs_failed   TYPE ty_failed
-                cs_reported TYPE ty_reported.
+      IMPORTING it_solicitacoes TYPE tt_solicitacao
+      CHANGING  cs_failed       TYPE ty_failed
+                cs_reported     TYPE ty_reported.
 
-    "! Congela cliente, endereço e itens no encerramento do pedido.
+    "! Congela cliente, endereço e itens no encerramento dos pedidos (uma
+    "! consulta por tabela e uma única criação EML para todos os pedidos).
     METHODS criar_snapshots
-      IMPORTING is_pedido   TYPE ts_pedido
+      IMPORTING it_pedidos  TYPE tt_pedidos
                 it_itens    TYPE tt_itens_pedido
                 iv_motivo   TYPE csequence
       CHANGING  cs_failed   TYPE ty_failed
                 cs_reported TYPE ty_reported.
 
+    "! Marca o pedido como falho (uma vez) e reporta a mensagem nele.
+    "! @parameter is_pedido | Pedido com erro
+    "! @parameter io_msg | Mensagem ({@link ZCX_PC_MSG})
+    "! @parameter cs_failed | FAILED da operação
+    "! @parameter cs_reported | REPORTED da operação
     METHODS registrar_erro
       IMPORTING is_pedido   TYPE ts_pedido
                 io_msg      TYPE REF TO zcx_pc_msg
@@ -217,6 +347,10 @@ CLASS lhc_pedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
       CHANGING  cs_failed   TYPE ty_failed
                 cs_reported TYPE ty_reported.
 
+    "! Mensagem de status que não permite a ação: finalizado (017), cancelado
+    "! (018) ou transição inválida com o status atual (015).
+    "! @parameter is_pedido | Pedido avaliado
+    "! @parameter ro_msg | Mensagem correspondente ao status
     METHODS erro_status
       IMPORTING is_pedido     TYPE ts_pedido
       RETURNING VALUE(ro_msg) TYPE REF TO zcx_pc_msg.
@@ -336,18 +470,19 @@ CLASS lhc_pedido IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_pedidos).
 
+    CHECK lt_pedidos IS NOT INITIAL.
+
+    " Endereços principais de todos os clientes numa única consulta
+    DATA(lt_enderecos) = enderecos_principais( VALUE #( FOR p IN lt_pedidos ( p-ClienteUUID ) ) ).
+
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
-
-    LOOP AT lt_pedidos INTO DATA(ls_pedido).
-      DATA(ls_endereco) = endereco_principal( ls_pedido-ClienteUUID ).
-      APPEND VALUE #( %tky                      = ls_pedido-%tky
-                      EnderecoUUID              = ls_endereco-endereco_uuid
-                      EnderecoPrincipalCompleto = ls_endereco-completo
-                      %control = VALUE #( EnderecoUUID              = if_abap_behv=>mk-on
-                                          EnderecoPrincipalCompleto = if_abap_behv=>mk-on ) ) TO lt_update.
-    ENDLOOP.
-
-    CHECK lt_update IS NOT INITIAL.
+    lt_update = VALUE #( FOR p IN lt_pedidos
+                         LET e = VALUE ty_endereco_cli( lt_enderecos[ cliente_uuid = p-ClienteUUID ] OPTIONAL )
+                         IN ( %tky                      = p-%tky
+                              EnderecoUUID              = e-endereco_uuid
+                              EnderecoPrincipalCompleto = e-completo
+                              %control = VALUE #( EnderecoUUID              = if_abap_behv=>mk-on
+                                                  EnderecoPrincipalCompleto = if_abap_behv=>mk-on ) ) ).
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido UPDATE FROM lt_update
@@ -542,6 +677,17 @@ CLASS lhc_pedido IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_pedidos).
 
+    " Situação e endereço principal de todos os clientes: uma consulta cada
+    DATA(lt_ids_cli) = VALUE tt_uuid( FOR p IN lt_pedidos WHERE ( ClienteUUID IS NOT INITIAL ) ( p-ClienteUUID ) ).
+    IF lt_ids_cli IS NOT INITIAL.
+      SELECT ClienteUUID, ClienteAtivo
+        FROM zr_pc_cliente
+        FOR ALL ENTRIES IN @lt_ids_cli
+        WHERE ClienteUUID = @lt_ids_cli-table_line
+        INTO TABLE @DATA(lt_clientes).
+    ENDIF.
+    DATA(lt_enderecos) = enderecos_principais( lt_ids_cli ).
+
     LOOP AT lt_pedidos INTO DATA(ls_pedido).
       APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente ) TO reported-pedido.
 
@@ -553,12 +699,9 @@ CLASS lhc_pedido IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      SELECT SINGLE ClienteAtivo
-        FROM zr_pc_cliente
-        WHERE ClienteUUID = @ls_pedido-ClienteUUID
-        INTO @DATA(lv_ativo).
+      READ TABLE lt_clientes INTO DATA(ls_cliente) WITH KEY ClienteUUID = ls_pedido-ClienteUUID.
 
-      IF sy-subrc <> 0 OR lv_ativo = abap_false.
+      IF sy-subrc <> 0 OR ls_cliente-ClienteAtivo = abap_false.
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente
                         %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_inativo )
@@ -567,14 +710,12 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
 
       " Sem endereço principal: apenas alerta no salvamento; a confirmação é bloqueada
-      DATA(ls_endereco) = endereco_principal( ls_pedido-ClienteUUID ).
-      IF ls_endereco-endereco_uuid IS INITIAL.
+      IF NOT line_exists( lt_enderecos[ cliente_uuid = ls_pedido-ClienteUUID ] ).
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-cliente
                         %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>cliente_sem_endereco_principal
                                                severity = if_abap_behv_message=>severity-warning )
                         %element-ClienteUUID = if_abap_behv=>mk-on ) TO reported-pedido.
       ENDIF.
-      CLEAR lv_ativo.
     ENDLOOP.
   ENDMETHOD.
 
@@ -594,6 +735,24 @@ CLASS lhc_pedido IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    " Dados de apoio dos rascunhos lidos uma única vez (fora do laço): endereço
+    " principal dos clientes, reserva já feita por pedido em edição e estoque
+    DATA(lt_rascunhos) = VALUE tt_pedidos( FOR p IN lt_pedidos WHERE ( %is_draft = if_abap_behv=>mk-on ) ( p ) ).
+    DATA(lt_enderecos) = enderecos_principais( VALUE #( FOR r IN lt_rascunhos WHERE ( ClienteUUID IS NOT INITIAL )
+                                                        ( r-ClienteUUID ) ) ).
+    DATA(lt_reservas)  = reservas_atuais( VALUE #( FOR r IN lt_rascunhos ( r-PedidoUUID ) ) ).
+
+    DATA(lt_itens_rasc) = VALUE tt_itens_pedido( FOR i IN lt_itens
+                                                 WHERE ( %is_draft = if_abap_behv=>mk-on AND ItemUUID IS NOT INITIAL )
+                                                 ( i ) ).
+    IF lt_itens_rasc IS NOT INITIAL.
+      SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
+        FROM zr_pc_item
+        FOR ALL ENTRIES IN @lt_itens_rasc
+        WHERE ItemUUID = @lt_itens_rasc-ItemUUID
+        INTO TABLE @DATA(lt_estoque).
+    ENDIF.
+
     LOOP AT lt_pedidos INTO DATA(ls_pedido).
       " Pedido ativo recém-registrado: devolve as falhas da reserva de estoque
       " (ReservarEstoqueRegistro não pode falhar o Save por conta própria)
@@ -612,7 +771,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       " Cliente inexistente/inativo já é acusado por ValidarCliente
       IF ls_pedido-ClienteUUID IS NOT INITIAL
-         AND endereco_principal( ls_pedido-ClienteUUID )-endereco_uuid IS INITIAL.
+         AND NOT line_exists( lt_enderecos[ cliente_uuid = ls_pedido-ClienteUUID ] ).
         APPEND VALUE #( %tky = ls_pedido-%tky ) TO failed-pedido.
         APPEND VALUE #( %tky = ls_pedido-%tky %state_area = c_area-registro
                         %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>cliente_sem_endereco_principal )
@@ -632,12 +791,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       DATA(lt_qtde) = somar_quantidades( lt_itens_ped ).
       " Pedido aberto em edição: o que ele já reservou continua disponível para ele
-      DATA(lt_velho) = reserva_atual( ls_pedido-PedidoUUID ).
-      SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
-        FROM zr_pc_item
-        FOR ALL ENTRIES IN @lt_qtde
-        WHERE ItemUUID = @lt_qtde-item_uuid
-        INTO TABLE @DATA(lt_estoque).
+      DATA(lt_velho) = reserva_do_pedido( it_reservas = lt_reservas iv_pedido_uuid = ls_pedido-PedidoUUID ).
 
       LOOP AT lt_qtde INTO DATA(ls_qtde) WHERE item_uuid IS NOT INITIAL.
         READ TABLE lt_estoque INTO DATA(ls_estoque) WITH KEY ItemUUID = ls_qtde-item_uuid.
@@ -663,28 +817,45 @@ CLASS lhc_pedido IMPLEMENTATION.
 
 
   METHOD Activate.
-    LOOP AT keys INTO DATA(ls_key).
-      " Só edição: pedido já reservado. O registro inicial é feito por ReservarEstoqueRegistro.
-      DATA(lt_velho) = reserva_atual( ls_key-PedidoUUID ).
+    " Só edição: pedido já reservado. O registro inicial é feito por ReservarEstoqueRegistro.
+    " Reservas, rascunhos e estoque são lidos uma vez para todos os pedidos e o
+    " estoque é movimentado numa única chamada por tipo de movimento.
+    DATA(lt_reservas) = reservas_atuais( VALUE #( FOR k IN keys ( k-PedidoUUID ) ) ).
+    CHECK lt_reservas IS NOT INITIAL.
+
+    READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY Pedido
+        ALL FIELDS
+        WITH VALUE #( FOR k IN keys ( %is_draft = if_abap_behv=>mk-on PedidoUUID = k-PedidoUUID ) )
+      RESULT DATA(lt_ped)
+      ENTITY Pedido BY \_Itens
+        ALL FIELDS
+        WITH VALUE #( FOR k IN keys ( %is_draft = if_abap_behv=>mk-on PedidoUUID = k-PedidoUUID ) )
+      RESULT DATA(lt_itens_rasc).
+    CHECK lt_ped IS NOT INITIAL.
+
+    IF lt_itens_rasc IS NOT INITIAL.
+      SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
+        FROM zr_pc_item
+        FOR ALL ENTRIES IN @lt_itens_rasc
+        WHERE ItemUUID = @lt_itens_rasc-ItemUUID
+        INTO TABLE @DATA(lt_estoque).
+    ENDIF.
+
+    DATA lt_mov_reservar TYPE tt_mov_pedido.
+    DATA lt_mov_liberar  TYPE tt_mov_pedido.
+    DATA lt_nova_reserva TYPE tt_reserva_ped.
+    DATA lt_reservar     TYPE tt_qtde_item.
+    DATA lt_liberar      TYPE tt_qtde_item.
+    DATA lv_antes        TYPE i.
+
+    LOOP AT lt_ped INTO DATA(ls_pedido).
+      DATA(lt_velho) = reserva_do_pedido( it_reservas = lt_reservas iv_pedido_uuid = ls_pedido-PedidoUUID ).
       CHECK lt_velho IS NOT INITIAL.
 
-      READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY Pedido
-          ALL FIELDS
-          WITH VALUE #( ( %is_draft = if_abap_behv=>mk-on PedidoUUID = ls_key-PedidoUUID ) )
-        RESULT DATA(lt_ped)
-        ENTITY Pedido BY \_Itens
-          ALL FIELDS
-          WITH VALUE #( ( %is_draft = if_abap_behv=>mk-on PedidoUUID = ls_key-PedidoUUID ) )
-        RESULT DATA(lt_itens_rasc).
-      CHECK lt_ped IS NOT INITIAL.
-      DATA(ls_pedido) = lt_ped[ 1 ].
-
-      DATA(lt_qtde) = somar_quantidades( VALUE tt_itens_pedido( FOR r IN lt_itens_rasc ( r ) ) ).
-
-      DATA lt_reservar TYPE tt_qtde_item.
-      DATA lt_liberar  TYPE tt_qtde_item.
-      DATA lv_antes    TYPE i.
+      DATA(lt_qtde) = somar_quantidades( VALUE tt_itens_pedido( FOR r IN lt_itens_rasc
+                                                                WHERE ( PedidoUUID = ls_pedido-PedidoUUID )
+                                                                ( r ) ) ).
       CLEAR: lt_reservar, lt_liberar.
       LOOP AT lt_qtde INTO DATA(ls_novo).
         CLEAR lv_antes.
@@ -705,12 +876,7 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDLOOP.
       CHECK lt_reservar IS NOT INITIAL OR lt_liberar IS NOT INITIAL.
 
-      " Disponibilidade do que precisa ser reservado a mais
-      SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
-        FROM zr_pc_item
-        FOR ALL ENTRIES IN @lt_reservar
-        WHERE ItemUUID = @lt_reservar-item_uuid
-        INTO TABLE @DATA(lt_estoque).
+      " Disponibilidade do que precisa ser reservado a mais (estoque lido antes do laço)
       DATA(lv_erro) = abap_false.
       LOOP AT lt_reservar INTO DATA(ls_a_reservar).
         READ TABLE lt_estoque INTO DATA(ls_estoque) WITH KEY ItemUUID = ls_a_reservar-item_uuid.
@@ -725,34 +891,42 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDLOOP.
       CHECK lv_erro = abap_false.
 
-      DATA(lv_ok) = abap_true.
-      IF lt_liberar IS NOT INITIAL.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = lt_liberar
-                            IMPORTING ev_ok       = lv_ok
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        CHECK lv_ok = abap_true.
-      ENDIF.
-      IF lt_reservar IS NOT INITIAL.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-reservar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = lt_reservar
-                            IMPORTING ev_ok       = lv_ok
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        CHECK lv_ok = abap_true.
-      ENDIF.
+      " Movimentos acumulados para uma única chamada ao BO Item
+      lt_mov_liberar  = VALUE #( BASE lt_mov_liberar FOR l IN lt_liberar
+                                 ( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID
+                                   item_uuid = l-item_uuid qtde = l-qtde ) ).
+      lt_mov_reservar = VALUE #( BASE lt_mov_reservar FOR x IN lt_reservar
+                                 ( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID
+                                   item_uuid = x-item_uuid qtde = x-qtde ) ).
+      lt_nova_reserva = VALUE #( BASE lt_nova_reserva FOR q IN lt_qtde
+                                 ( pedido_uuid = ls_pedido-PedidoUUID item_uuid = q-item_uuid qtde = q-qtde ) ).
+    ENDLOOP.
 
-      " Registra a reserva aplicada: ReservarEstoqueRegistro, se disparar depois, só vê diferença zero
-      DELETE gt_reserva WHERE pedido_uuid = ls_key-PedidoUUID.
-      LOOP AT lt_qtde INTO ls_novo.
-        INSERT VALUE #( pedido_uuid = ls_key-PedidoUUID
-                        item_uuid   = ls_novo-item_uuid
-                        qtde        = ls_novo-qtde ) INTO TABLE gt_reserva.
-      ENDLOOP.
-      INSERT ls_key-PedidoUUID INTO TABLE gt_reserva_ped.
+    " Libera o que sobrou e reserva o que faltou (pedido que falhou na liberação não reserva)
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
+                                  it_mov      = lt_mov_liberar
+                        IMPORTING et_falhou   = DATA(lt_falhou_lib)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
+    LOOP AT lt_falhou_lib INTO DATA(ls_falhou).
+      DELETE lt_mov_reservar WHERE pedido_uuid = ls_falhou-pedido_uuid.
+    ENDLOOP.
+
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-reservar
+                                  it_mov      = lt_mov_reservar
+                        IMPORTING et_falhou   = DATA(lt_falhou_res)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
+
+    " Registra a reserva aplicada dos pedidos bem-sucedidos: ReservarEstoqueRegistro,
+    " se disparar depois, só vê diferença zero
+    LOOP AT lt_nova_reserva INTO DATA(ls_nova) GROUP BY ls_nova-pedido_uuid INTO DATA(lv_pedido).
+      CHECK NOT line_exists( lt_falhou_lib[ pedido_uuid = lv_pedido ] )
+        AND NOT line_exists( lt_falhou_res[ pedido_uuid = lv_pedido ] )
+        AND NOT line_exists( failed-pedido[ PedidoUUID = lv_pedido ] ).
+      DELETE gt_reserva WHERE pedido_uuid = lv_pedido.
+      INSERT LINES OF VALUE tt_reserva_ped( FOR m IN GROUP lv_pedido ( m ) ) INTO TABLE gt_reserva.
+      INSERT lv_pedido INTO TABLE gt_reserva_ped.
     ENDLOOP.
   ENDMETHOD.
 
@@ -908,6 +1082,9 @@ CLASS lhc_pedido IMPLEMENTATION.
           INTO TABLE @DATA(lt_itens_db).
       ENDIF.
 
+      " Endereço principal dos clientes da planilha: uma única consulta
+      DATA(lt_end_cli) = enderecos_principais( VALUE #( FOR c IN lt_clientes ( c-ClienteUUID ) ) ).
+
       LOOP AT lt_cpfs INTO DATA(lv_cpf).
         DATA(ls_status) = VALUE ty_cli_status( cpf = lv_cpf ).
         READ TABLE lt_clientes INTO DATA(ls_cli) WITH KEY Cpf = lv_cpf.
@@ -915,7 +1092,7 @@ CLASS lhc_pedido IMPLEMENTATION.
           ls_status-motivo = `cliente não encontrado`.
         ELSEIF ls_cli-ClienteAtivo = abap_false.
           ls_status-motivo = `cliente inativo`.
-        ELSEIF endereco_principal( ls_cli-ClienteUUID )-endereco_uuid IS INITIAL.
+        ELSEIF NOT line_exists( lt_end_cli[ cliente_uuid = ls_cli-ClienteUUID ] ).
           ls_status-motivo = `cliente sem endereço principal`.
         ELSE.
           ls_status-cliente_uuid = ls_cli-ClienteUUID.
@@ -1097,45 +1274,82 @@ CLASS lhc_pedido IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD endereco_principal.
-    CHECK iv_cliente_uuid IS NOT INITIAL.
+  METHOD enderecos_principais.
+    CHECK it_clientes IS NOT INITIAL.
 
-    SELECT SINGLE EnderecoUUID, Cep, Logradouro, Numero, Complemento, Bairro, Cidade, Uf
+    SELECT ClienteUUID, EnderecoUUID, Cep, Logradouro, Numero, Complemento, Bairro, Cidade, Uf
       FROM zr_pc_endereco
-      WHERE ClienteUUID       = @iv_cliente_uuid
+      FOR ALL ENTRIES IN @it_clientes
+      WHERE ClienteUUID       = @it_clientes-table_line
         AND EnderecoPrincipal = @abap_true
-      INTO @DATA(ls_end).
+      INTO TABLE @DATA(lt_end).
 
-    IF sy-subrc = 0.
-      rs_endereco-endereco_uuid = ls_end-EnderecoUUID.
-      rs_endereco-completo      = zcl_pc_util=>formatar_endereco( iv_logradouro  = ls_end-Logradouro
-                                                                  iv_numero      = ls_end-Numero
-                                                                  iv_complemento = ls_end-Complemento
-                                                                  iv_bairro      = ls_end-Bairro
-                                                                  iv_cidade      = ls_end-Cidade
-                                                                  iv_uf          = ls_end-Uf
-                                                                  iv_cep         = ls_end-Cep ).
-    ENDIF.
+    " Um principal por cliente (garantido por DefinirEnderecoPrincipal); um
+    " eventual segundo registro do mesmo cliente é ignorado pelo INSERT
+    LOOP AT lt_end INTO DATA(ls_end).
+      INSERT VALUE #( cliente_uuid  = ls_end-ClienteUUID
+                      endereco_uuid = ls_end-EnderecoUUID
+                      completo      = zcl_pc_util=>formatar_endereco( iv_logradouro  = ls_end-Logradouro
+                                                                      iv_numero      = ls_end-Numero
+                                                                      iv_complemento = ls_end-Complemento
+                                                                      iv_bairro      = ls_end-Bairro
+                                                                      iv_cidade      = ls_end-Cidade
+                                                                      iv_uf          = ls_end-Uf
+                                                                      iv_cep         = ls_end-Cep ) ) INTO TABLE rt_enderecos.
+    ENDLOOP.
   ENDMETHOD.
 
 
-  METHOD reserva_atual.
-    IF line_exists( gt_reserva_ped[ table_line = iv_pedido_uuid ] ).
-      LOOP AT gt_reserva INTO DATA(ls_res) WHERE pedido_uuid = iv_pedido_uuid.
-        INSERT VALUE #( item_uuid = ls_res-item_uuid qtde = ls_res-qtde ) INTO TABLE rt_qtde.
-      ENDLOOP.
-      RETURN.
-    ENDIF.
+  METHOD reservas_atuais.
+    CHECK it_pedidos IS NOT INITIAL.
 
-    " Itens do pedido ativo, como gravados (rascunhos ficam na tabela draft)
-    SELECT ItemUUID, SUM( QtdeItemPedido ) AS Qtde
+    " Pedidos cuja reserva esta transação já aplicou: vale o que está em memória
+    DATA(lt_range) = VALUE tt_range_uuid( ).
+    LOOP AT it_pedidos INTO DATA(lv_pedido).
+      IF line_exists( gt_reserva_ped[ table_line = lv_pedido ] ).
+        INSERT LINES OF VALUE tt_reserva_ped( FOR r IN gt_reserva WHERE ( pedido_uuid = lv_pedido ) ( r ) )
+               INTO TABLE rt_reservas.
+      ELSE.
+        APPEND VALUE #( sign = 'I' option = 'EQ' low = lv_pedido ) TO lt_range.
+      ENDIF.
+    ENDLOOP.
+
+    CHECK lt_range IS NOT INITIAL.
+
+    " Itens dos pedidos ativos, como gravados (rascunhos ficam na tabela draft):
+    " uma única consulta para todos os pedidos
+    SELECT PedidoUUID, ItemUUID, SUM( QtdeItemPedido ) AS Qtde
       FROM zr_pc_item_pedido
-      WHERE PedidoUUID = @iv_pedido_uuid
-      GROUP BY ItemUUID
+      WHERE PedidoUUID IN @lt_range
+      GROUP BY PedidoUUID, ItemUUID
       INTO TABLE @DATA(lt_gravado).
 
-    LOOP AT lt_gravado INTO DATA(ls_gravado) WHERE Qtde > 0.
-      INSERT VALUE #( item_uuid = ls_gravado-ItemUUID qtde = ls_gravado-Qtde ) INTO TABLE rt_qtde.
+    rt_reservas = VALUE #( BASE rt_reservas FOR g IN lt_gravado WHERE ( Qtde > 0 )
+                           ( pedido_uuid = g-PedidoUUID item_uuid = g-ItemUUID qtde = g-Qtde ) ).
+  ENDMETHOD.
+
+
+  METHOD reserva_do_pedido.
+    rt_qtde = VALUE #( FOR r IN it_reservas WHERE ( pedido_uuid = iv_pedido_uuid )
+                       ( item_uuid = r-item_uuid qtde = r-qtde ) ).
+  ENDMETHOD.
+
+
+  METHOD movimentos.
+    rt_mov = VALUE #( FOR p IN it_pedidos WHERE ( %is_draft = if_abap_behv=>mk-off )
+                      FOR i IN it_itens WHERE ( PedidoUUID = p-PedidoUUID AND %is_draft = p-%is_draft )
+                      ( is_draft    = p-%is_draft
+                        pedido_uuid = p-PedidoUUID
+                        item_uuid   = i-ItemUUID
+                        qtde        = i-QtdeItemPedido ) ).
+  ENDMETHOD.
+
+
+  METHOD sem_falha.
+    LOOP AT it_pedidos INTO DATA(ls_pedido).
+      IF NOT line_exists( is_failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        APPEND ls_pedido TO rt_pedidos.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
@@ -1240,32 +1454,72 @@ CLASS lhc_pedido IMPLEMENTATION.
         WITH VALUE #( FOR k IN it_keys ( %is_draft = k-is_draft PedidoUUID = k-pedido_uuid ) )
       RESULT DATA(lt_itens).
 
-    LOOP AT lt_pedidos INTO DATA(ls_pedido).
-      DATA(lv_erro) = abap_false.
+    " 1) Só a instância ativa em ABERTO reserva (rascunho não reserva)
+    DATA(lt_candidatos) = VALUE tt_pedidos( FOR p IN lt_pedidos
+                                            WHERE ( %is_draft    = if_abap_behv=>mk-off
+                                                AND StatusPedido = zif_pc_constants=>c_status_pedido-aberto )
+                                            ( p ) ).
+    CHECK lt_candidatos IS NOT INITIAL.
 
-      " 1) Só a instância ativa em ABERTO reserva (rascunho não reserva)
-      IF ls_pedido-%is_draft = if_abap_behv=>mk-on
-         OR ls_pedido-StatusPedido <> zif_pc_constants=>c_status_pedido-aberto.
-        CONTINUE.
-      ENDIF.
+    " Dados de apoio lidos uma única vez para todos os pedidos (fora do laço):
+    " reserva já aplicada, itens do rascunho (edição de pedido já reservado),
+    " situação do cliente, endereço principal e estoque atual dos itens
+    DATA(lt_reservas) = reservas_atuais( VALUE #( FOR c IN lt_candidatos ( c-PedidoUUID ) ) ).
+
+    READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY Pedido BY \_Itens
+        ALL FIELDS
+        WITH VALUE #( FOR c IN lt_candidatos ( %is_draft = if_abap_behv=>mk-on PedidoUUID = c-PedidoUUID ) )
+      RESULT DATA(lt_itens_rasc).
+
+    DATA(lt_ids_cli) = VALUE tt_uuid( FOR c IN lt_candidatos ( c-ClienteUUID ) ).
+    SELECT ClienteUUID, ClienteAtivo
+      FROM zr_pc_cliente
+      FOR ALL ENTRIES IN @lt_ids_cli
+      WHERE ClienteUUID = @lt_ids_cli-table_line
+      INTO TABLE @DATA(lt_clientes).
+    DATA(lt_enderecos) = enderecos_principais( lt_ids_cli ).
+
+    DATA(lt_ids_item) = VALUE tt_uuid( FOR i IN lt_itens ( i-ItemUUID ) ).
+    INSERT LINES OF VALUE tt_uuid( FOR r IN lt_itens_rasc ( r-ItemUUID ) ) INTO TABLE lt_ids_item.
+    IF lt_ids_item IS NOT INITIAL.
+      SELECT ItemUUID, Sku, ItemAtivo, PrecoUnitario, Currency, QtdeEstoque, QtdeReservada
+        FROM zr_pc_item
+        FOR ALL ENTRIES IN @lt_ids_item
+        WHERE ItemUUID = @lt_ids_item-table_line
+        INTO TABLE @DATA(lt_estoque).
+    ENDIF.
+
+    TYPES:
+      BEGIN OF ty_registro,
+        pedido   TYPE ts_pedido,
+        itens    TYPE tt_itens_pedido,
+        qtde     TYPE tt_qtde_item,
+        velho    TYPE tt_qtde_item,
+        endereco TYPE ty_endereco_cli,
+      END OF ty_registro.
+    DATA lt_registros    TYPE STANDARD TABLE OF ty_registro WITH EMPTY KEY.
+    DATA lt_mov_reservar TYPE tt_mov_pedido.
+    DATA lt_mov_liberar  TYPE tt_mov_pedido.
+
+    LOOP AT lt_candidatos INTO DATA(ls_pedido).
+      DATA(lv_erro) = abap_false.
 
       " 2) Itens do pedido e diferença em relação ao que já está reservado
       DATA(lt_itens_ped) = VALUE tt_itens_pedido( FOR i IN lt_itens
                                                   WHERE ( PedidoUUID = ls_pedido-PedidoUUID
                                                           AND %is_draft = ls_pedido-%is_draft )
                                                   ( i ) ).
-      DATA(lt_velho) = reserva_atual( ls_pedido-PedidoUUID ).
+      DATA(lt_velho) = reserva_do_pedido( it_reservas = lt_reservas iv_pedido_uuid = ls_pedido-PedidoUUID ).
 
       " Edição de pedido já reservado: na ativação, os itens apagados no rascunho
       " ainda não saíram da instância ativa; a quantidade nova vem do rascunho.
       IF lt_velho IS NOT INITIAL.
-        READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
-          ENTITY Pedido BY \_Itens
-            ALL FIELDS
-            WITH VALUE #( ( %is_draft = if_abap_behv=>mk-on PedidoUUID = ls_pedido-PedidoUUID ) )
-          RESULT DATA(lt_itens_rasc).
-        IF lt_itens_rasc IS NOT INITIAL.
-          lt_itens_ped = VALUE tt_itens_pedido( FOR r IN lt_itens_rasc ( r ) ).
+        DATA(lt_rasc_ped) = VALUE tt_itens_pedido( FOR r IN lt_itens_rasc
+                                                   WHERE ( PedidoUUID = ls_pedido-PedidoUUID )
+                                                   ( r ) ).
+        IF lt_rasc_ped IS NOT INITIAL.
+          lt_itens_ped = lt_rasc_ped.
         ENDIF.
       ENDIF.
 
@@ -1306,21 +1560,17 @@ CLASS lhc_pedido IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " 3) Cliente ativo
-      SELECT SINGLE ClienteAtivo
-        FROM zr_pc_cliente
-        WHERE ClienteUUID = @ls_pedido-ClienteUUID
-        INTO @DATA(lv_cliente_ativo).
-      IF sy-subrc <> 0 OR lv_cliente_ativo = abap_false.
+      " 3) Cliente ativo (lido antes do laço)
+      READ TABLE lt_clientes INTO DATA(ls_cliente) WITH KEY ClienteUUID = ls_pedido-ClienteUUID.
+      IF sy-subrc <> 0 OR ls_cliente-ClienteAtivo = abap_false.
         registrar_erro( EXPORTING is_pedido = ls_pedido
                                   io_msg    = NEW #( textid = zif_pc_msg=>cliente_inativo )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         lv_erro = abap_true.
       ENDIF.
-      CLEAR lv_cliente_ativo.
 
       " 3) Endereço pertencente ao cliente e marcado como principal
-      DATA(ls_endereco) = endereco_principal( ls_pedido-ClienteUUID ).
+      DATA(ls_endereco) = VALUE ty_endereco_cli( lt_enderecos[ cliente_uuid = ls_pedido-ClienteUUID ] OPTIONAL ).
       IF ls_endereco-endereco_uuid IS INITIAL.
         registrar_erro( EXPORTING is_pedido = ls_pedido
                                   io_msg    = NEW #( textid = zif_pc_msg=>cliente_sem_endereco_principal )
@@ -1328,13 +1578,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         lv_erro = abap_true.
       ENDIF.
 
-      " 4) Releitura do estoque atual (dados definitivos do banco, não da UI)
-      SELECT ItemUUID, Sku, ItemAtivo, PrecoUnitario, Currency, QtdeEstoque, QtdeReservada
-        FROM zr_pc_item
-        FOR ALL ENTRIES IN @lt_itens_ped
-        WHERE ItemUUID = @lt_itens_ped-ItemUUID
-        INTO TABLE @DATA(lt_estoque).
-
+      " 4) Estoque atual (dados definitivos do banco, não da UI; lido antes do laço)
       LOOP AT lt_itens_ped INTO DATA(ls_item_ped).
         READ TABLE lt_estoque INTO DATA(ls_estoque) WITH KEY ItemUUID = ls_item_ped-ItemUUID.
         " Item inativo só barra itens novos ou com quantidade maior (os já reservados seguem)
@@ -1377,92 +1621,119 @@ CLASS lhc_pedido IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " 6) Libera o que sobrou (itens removidos ou com quantidade menor) e reserva
-      "    o que faltou (EML no BO Item, com lock e releitura)
-      DATA(lv_ok) = abap_true.
-      IF lt_liberar IS NOT INITIAL.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = lt_liberar
-                            IMPORTING ev_ok       = lv_ok
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        IF lv_ok = abap_false.
-          CONTINUE.
-        ENDIF.
-      ENDIF.
-      IF lt_reservar IS NOT INITIAL.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-reservar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = lt_reservar
-                            IMPORTING ev_ok       = lv_ok
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        IF lv_ok = abap_false.
-          CONTINUE.
-        ENDIF.
+      " Pedido apto: movimentos e dados guardados para o processamento em lote
+      lt_mov_liberar  = VALUE #( BASE lt_mov_liberar FOR l IN lt_liberar
+                                 ( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID
+                                   item_uuid = l-item_uuid qtde = l-qtde ) ).
+      lt_mov_reservar = VALUE #( BASE lt_mov_reservar FOR x IN lt_reservar
+                                 ( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID
+                                   item_uuid = x-item_uuid qtde = x-qtde ) ).
+      APPEND VALUE #( pedido   = ls_pedido
+                      itens    = lt_itens_ped
+                      qtde     = lt_qtde
+                      velho    = lt_velho
+                      endereco = ls_endereco ) TO lt_registros.
+    ENDLOOP.
+
+    CHECK lt_registros IS NOT INITIAL.
+
+    " 6) Libera o que sobrou (itens removidos ou com quantidade menor) e reserva
+    "    o que faltou: uma chamada EML ao BO Item por tipo de movimento, para
+    "    todos os pedidos (lock e releitura no BO Item). Pedido que falha na
+    "    liberação não reserva.
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
+                                  it_mov      = lt_mov_liberar
+                        IMPORTING et_falhou   = DATA(lt_falhou_lib)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
+    LOOP AT lt_falhou_lib INTO DATA(ls_falhou).
+      DELETE lt_mov_reservar WHERE pedido_uuid = ls_falhou-pedido_uuid.
+    ENDLOOP.
+
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-reservar
+                                  it_mov      = lt_mov_reservar
+                        IMPORTING et_falhou   = DATA(lt_falhou_res)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
+
+    DATA lt_upd_itens TYPE TABLE FOR UPDATE zr_pc_pedido\\ItemPedido.
+    DATA lt_upd_ped   TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
+
+    LOOP AT lt_registros INTO DATA(ls_reg).
+      IF line_exists( lt_falhou_lib[ pedido_uuid = ls_reg-pedido-PedidoUUID ] )
+         OR line_exists( lt_falhou_res[ pedido_uuid = ls_reg-pedido-PedidoUUID ] ).
+        CONTINUE.
       ENDIF.
 
       " Registra o que ficou reservado ANTES de qualquer MODIFY: as alterações abaixo
       " disparam esta determination de novo (aninhada), que então só vê a diferença (zero)
-      DELETE gt_reserva WHERE pedido_uuid = ls_pedido-PedidoUUID.
-      LOOP AT lt_qtde INTO ls_novo.
-        INSERT VALUE #( pedido_uuid = ls_pedido-PedidoUUID
-                        item_uuid   = ls_novo-item_uuid
-                        qtde        = ls_novo-qtde ) INTO TABLE gt_reserva.
-      ENDLOOP.
-      INSERT ls_pedido-PedidoUUID INTO TABLE gt_reserva_ped.
+      DELETE gt_reserva WHERE pedido_uuid = ls_reg-pedido-PedidoUUID.
+      INSERT LINES OF VALUE tt_reserva_ped( FOR q IN ls_reg-qtde
+                                            ( pedido_uuid = ls_reg-pedido-PedidoUUID
+                                              item_uuid   = q-item_uuid
+                                              qtde        = q-qtde ) ) INTO TABLE gt_reserva.
+      INSERT ls_reg-pedido-PedidoUUID INTO TABLE gt_reserva_ped.
 
       " 7) Fixa o preço unitário nos itens do pedido / 8) calcula o total
-      DATA lt_upd_itens TYPE TABLE FOR UPDATE zr_pc_pedido\\ItemPedido.
-      CLEAR lt_upd_itens.
       DATA(lv_total) = CONV zr_pc_pedido-ValorTotal( 0 ).
 
-      LOOP AT lt_itens_ped INTO ls_item_ped.
-        READ TABLE lt_estoque INTO ls_estoque WITH KEY ItemUUID = ls_item_ped-ItemUUID.
-        " Item que já estava no pedido mantém o preço fixado; só item novo pega o preço atual
-        DATA(lv_preco) = ls_estoque-PrecoUnitario.
-        IF ls_item_ped-PrecoUnitarioSnapshot IS NOT INITIAL
-           AND line_exists( lt_velho[ item_uuid = ls_item_ped-ItemUUID ] ).
-          lv_preco = ls_item_ped-PrecoUnitarioSnapshot.
+      LOOP AT ls_reg-itens INTO DATA(ls_item_preco).
+        READ TABLE lt_estoque INTO DATA(ls_estoque_preco) WITH KEY ItemUUID = ls_item_preco-ItemUUID.
+        IF sy-subrc <> 0.
+          CLEAR ls_estoque_preco.
         ENDIF.
-        DATA(lv_valor_item) = CONV zr_pc_item_pedido-ValorTotal( ls_item_ped-QtdeItemPedido * lv_preco ).
+        " Item que já estava no pedido mantém o preço fixado; só item novo pega o preço atual
+        DATA(lv_preco) = ls_estoque_preco-PrecoUnitario.
+        IF ls_item_preco-PrecoUnitarioSnapshot IS NOT INITIAL
+           AND line_exists( ls_reg-velho[ item_uuid = ls_item_preco-ItemUUID ] ).
+          lv_preco = ls_item_preco-PrecoUnitarioSnapshot.
+        ENDIF.
+        DATA(lv_valor_item) = CONV zr_pc_item_pedido-ValorTotal( ls_item_preco-QtdeItemPedido * lv_preco ).
         lv_total += lv_valor_item.
-        APPEND VALUE #( %tky                  = ls_item_ped-%tky
+        APPEND VALUE #( %tky                  = ls_item_preco-%tky
                         PrecoUnitarioSnapshot = lv_preco
-                        Currency              = ls_estoque-Currency
+                        Currency              = ls_estoque_preco-Currency
                         ValorTotal            = lv_valor_item
                         %control = VALUE #( PrecoUnitarioSnapshot = if_abap_behv=>mk-on
                                             Currency              = if_abap_behv=>mk-on
                                             ValorTotal            = if_abap_behv=>mk-on ) ) TO lt_upd_itens.
       ENDLOOP.
 
-      " 10) StatusEstoque já recalculado pelo BO Item / 11) novo status
-      MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY ItemPedido
-          UPDATE FROM lt_upd_itens
-        ENTITY Pedido
-          UPDATE FIELDS ( ValorTotal Currency EnderecoUUID EnderecoPrincipalCompleto )
-          WITH VALUE #( ( %tky                      = ls_pedido-%tky
-                          ValorTotal                = lv_total
-                          Currency                  = zif_pc_constants=>c_moeda_padrao
-                          EnderecoUUID              = ls_endereco-endereco_uuid
-                          EnderecoPrincipalCompleto = ls_endereco-completo ) )
-        FAILED DATA(ls_failed_conf)
-        REPORTED DATA(ls_reported_conf).
+      APPEND VALUE #( %tky                      = ls_reg-pedido-%tky
+                      ValorTotal                = lv_total
+                      Currency                  = zif_pc_constants=>c_moeda_padrao
+                      EnderecoUUID              = ls_reg-endereco-endereco_uuid
+                      EnderecoPrincipalCompleto = ls_reg-endereco-completo
+                      %control = VALUE #( ValorTotal                = if_abap_behv=>mk-on
+                                          Currency                  = if_abap_behv=>mk-on
+                                          EnderecoUUID              = if_abap_behv=>mk-on
+                                          EnderecoPrincipalCompleto = if_abap_behv=>mk-on ) ) TO lt_upd_ped.
+    ENDLOOP.
 
-      propagar( EXPORTING is_failed = ls_failed_conf is_reported = ls_reported_conf
-                CHANGING  cs_failed = failed cs_reported = reported ).
+    CHECK lt_upd_ped IS NOT INITIAL.
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
+    " 10) StatusEstoque já recalculado pelo BO Item / 11) preços e totais de
+    "     todos os pedidos numa única chamada EML
+    MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY ItemPedido
+        UPDATE FROM lt_upd_itens
+      ENTITY Pedido
+        UPDATE FROM lt_upd_ped
+      FAILED DATA(ls_failed_conf)
+      REPORTED DATA(ls_reported_conf).
 
-      APPEND VALUE #( %tky = ls_pedido-%tky
-                      %msg = COND #( WHEN lt_velho IS INITIAL
+    propagar( EXPORTING is_failed = ls_failed_conf is_reported = ls_reported_conf
+              CHANGING  cs_failed = failed cs_reported = reported ).
+
+    LOOP AT lt_registros INTO ls_reg.
+      CHECK line_exists( lt_upd_ped[ PedidoUUID = ls_reg-pedido-PedidoUUID ] )
+        AND NOT line_exists( failed-pedido[ PedidoUUID = ls_reg-pedido-PedidoUUID ] ).
+
+      APPEND VALUE #( %tky = ls_reg-pedido-%tky
+                      %msg = COND #( WHEN ls_reg-velho IS INITIAL
                                      THEN zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_confirmado
-                                                               attr1  = ls_pedido-NumeroPedido )
-                                     ELSE zcx_pc_msg=>texto( iv_texto    = |Pedido { ls_pedido-NumeroPedido } atualizado. Reserva de estoque ajustada.|
+                                                               attr1  = ls_reg-pedido-NumeroPedido )
+                                     ELSE zcx_pc_msg=>texto( iv_texto    = |Pedido { ls_reg-pedido-NumeroPedido } atualizado. Reserva de estoque ajustada.|
                                                              iv_severity = if_abap_behv_message=>severity-success ) ) )
              TO reported-pedido.
     ENDLOOP.
@@ -1478,6 +1749,25 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENTITY Pedido BY \_Pagamento
         FIELDS ( PedidoUUID ) WITH CORRESPONDING #( keys )
       RESULT DATA(lt_pagamentos).
+
+    " Resultado da simulação de um pedido, aplicado depois em lote
+    TYPES:
+      BEGIN OF ty_simulacao,
+        pedido TYPE ts_pedido,
+        sim    TYPE zif_pc_pagamento_sim=>ty_resultado,
+      END OF ty_simulacao.
+
+    DATA lt_simulacoes TYPE STANDARD TABLE OF ty_simulacao WITH EMPTY KEY.
+    DATA lt_upd_pag    TYPE TABLE FOR UPDATE zr_pc_pedido\\Pagamento.
+    DATA lt_cre_pag    TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido\_Pagamento.
+    DATA lt_upd_ped    TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
+    DATA lv_agora      TYPE timestampl.
+
+    GET TIME STAMP FIELD lv_agora.
+
+*---------------------------------------------------------------------*
+    " 1) Status do pedido e simulação (somente em memória)
+*---------------------------------------------------------------------*
 
     LOOP AT keys INTO DATA(ls_key).
       READ TABLE lt_pedidos INTO DATA(ls_pedido)
@@ -1497,6 +1787,7 @@ CLASS lhc_pedido IMPLEMENTATION.
                                                              validade = ls_key-%param-Validade
                                                              cvv      = ls_key-%param-Cvv ) ).
 
+      " Formato já conferido no precheck; aqui só por segurança (chamadas internas)
       IF ls_sim-dados_validos = abap_false.
         registrar_erro( EXPORTING is_pedido = ls_pedido
                                   io_msg    = NEW #( textid = zif_pc_msg=>cartao_dados_invalidos
@@ -1505,84 +1796,118 @@ CLASS lhc_pedido IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      DATA lv_agora TYPE timestampl.
-      GET TIME STAMP FIELD lv_agora.
+      APPEND VALUE #( pedido = ls_pedido sim = ls_sim ) TO lt_simulacoes.
+    ENDLOOP.
 
-      " Apenas a última tentativa segura é mantida
+    CHECK lt_simulacoes IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+    " 2) Pagamentos: apenas a última tentativa segura é mantida (atualiza a
+    "    existente ou cria a primeira), numa única chamada EML
+*---------------------------------------------------------------------*
+
+    LOOP AT lt_simulacoes INTO DATA(ls_simulacao).
+      DATA(lv_idx) = sy-tabix.
+
       READ TABLE lt_pagamentos INTO DATA(ls_pag)
-           WITH KEY PedidoUUID = ls_pedido-PedidoUUID %is_draft = ls_pedido-%is_draft.
+           WITH KEY PedidoUUID = ls_simulacao-pedido-PedidoUUID %is_draft = ls_simulacao-pedido-%is_draft.
       IF sy-subrc = 0.
-        MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-          ENTITY Pagamento
-            UPDATE FIELDS ( MetodoPagamento StatusPagamento BandeiraCartao Ultimos4DigitosCartao
-                            CartaoMascarado CodigoAutorizacao MensagemPagamento DataPagamento )
-            WITH VALUE #( ( %tky                  = ls_pag-%tky
-                            MetodoPagamento       = ls_sim-metodo
-                            StatusPagamento       = ls_sim-status
-                            BandeiraCartao        = ls_sim-bandeira
-                            Ultimos4DigitosCartao = ls_sim-ultimos4
-                            CartaoMascarado       = ls_sim-cartao_mascarado
-                            CodigoAutorizacao     = ls_sim-codigo_autorizacao
-                            MensagemPagamento     = ls_sim-mensagem
-                            DataPagamento         = lv_agora ) )
-          FAILED DATA(ls_failed_pag)
-          REPORTED DATA(ls_reported_pag).
-
-        propagar( EXPORTING is_failed = ls_failed_pag is_reported = ls_reported_pag
-                  CHANGING  cs_failed = failed cs_reported = reported ).
+        APPEND VALUE #( %tky                  = ls_pag-%tky
+                        MetodoPagamento       = ls_simulacao-sim-metodo
+                        StatusPagamento       = ls_simulacao-sim-status
+                        BandeiraCartao        = ls_simulacao-sim-bandeira
+                        Ultimos4DigitosCartao = ls_simulacao-sim-ultimos4
+                        CartaoMascarado       = ls_simulacao-sim-cartao_mascarado
+                        CodigoAutorizacao     = ls_simulacao-sim-codigo_autorizacao
+                        MensagemPagamento     = ls_simulacao-sim-mensagem
+                        DataPagamento         = lv_agora ) TO lt_upd_pag.
       ELSE.
-        MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-          ENTITY Pedido
-            CREATE BY \_Pagamento
-            FIELDS ( MetodoPagamento StatusPagamento BandeiraCartao Ultimos4DigitosCartao
-                     CartaoMascarado CodigoAutorizacao MensagemPagamento DataPagamento )
-            WITH VALUE #( ( %tky    = ls_pedido-%tky
-                            %target = VALUE #( ( %cid                  = 'PAGAMENTO'
-                                                 %is_draft             = ls_pedido-%is_draft
-                                                 MetodoPagamento       = ls_sim-metodo
-                                                 StatusPagamento       = ls_sim-status
-                                                 BandeiraCartao        = ls_sim-bandeira
-                                                 Ultimos4DigitosCartao = ls_sim-ultimos4
-                                                 CartaoMascarado       = ls_sim-cartao_mascarado
-                                                 CodigoAutorizacao     = ls_sim-codigo_autorizacao
-                                                 MensagemPagamento     = ls_sim-mensagem
-                                                 DataPagamento         = lv_agora ) ) ) )
-          FAILED DATA(ls_failed_cre)
-          REPORTED DATA(ls_reported_cre).
-
-        propagar( EXPORTING is_failed = ls_failed_cre is_reported = ls_reported_cre
-                  CHANGING  cs_failed = failed cs_reported = reported ).
+        APPEND VALUE #( %tky    = ls_simulacao-pedido-%tky
+                        %target = VALUE #( ( %cid                  = |PAGAMENTO{ lv_idx }|
+                                             %is_draft             = ls_simulacao-pedido-%is_draft
+                                             MetodoPagamento       = ls_simulacao-sim-metodo
+                                             StatusPagamento       = ls_simulacao-sim-status
+                                             BandeiraCartao        = ls_simulacao-sim-bandeira
+                                             Ultimos4DigitosCartao = ls_simulacao-sim-ultimos4
+                                             CartaoMascarado       = ls_simulacao-sim-cartao_mascarado
+                                             CodigoAutorizacao     = ls_simulacao-sim-codigo_autorizacao
+                                             MensagemPagamento     = ls_simulacao-sim-mensagem
+                                             DataPagamento         = lv_agora ) ) ) TO lt_cre_pag.
       ENDIF.
+    ENDLOOP.
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+    MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY Pagamento
+        UPDATE FIELDS ( MetodoPagamento StatusPagamento BandeiraCartao Ultimos4DigitosCartao
+                        CartaoMascarado CodigoAutorizacao MensagemPagamento DataPagamento )
+        WITH lt_upd_pag
+      ENTITY Pedido
+        CREATE BY \_Pagamento
+        FIELDS ( MetodoPagamento StatusPagamento BandeiraCartao Ultimos4DigitosCartao
+                 CartaoMascarado CodigoAutorizacao MensagemPagamento DataPagamento )
+        WITH lt_cre_pag
+      FAILED DATA(ls_failed_pag)
+      REPORTED DATA(ls_reported_pag).
+
+    propagar( EXPORTING is_failed = ls_failed_pag is_reported = ls_reported_pag
+              CHANGING  cs_failed = failed cs_reported = reported ).
+
+    " Pedidos cujo pagamento não pôde ser gravado: atualização -> dono do
+    " pagamento existente; criação -> %cid PAGAMENTO<n> = n-ésima simulação
+    DATA lt_pag_falhou TYPE tt_uuid.
+    LOOP AT ls_failed_pag-pagamento INTO DATA(ls_fail_pag).
+      READ TABLE lt_pagamentos INTO DATA(ls_pag_falhou) WITH KEY PagamentoUUID = ls_fail_pag-PagamentoUUID.
+      IF sy-subrc = 0.
+        INSERT ls_pag_falhou-PedidoUUID INTO TABLE lt_pag_falhou.
+      ELSEIF ls_fail_pag-%cid IS NOT INITIAL.
+        READ TABLE lt_simulacoes INTO DATA(ls_sim_falhou) INDEX CONV i( match( val = ls_fail_pag-%cid pcre = `\d+` ) ).
+        IF sy-subrc = 0.
+          INSERT ls_sim_falhou-pedido-PedidoUUID INTO TABLE lt_pag_falhou.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+*---------------------------------------------------------------------*
+    " 3) Status do pedido conforme o resultado, numa única chamada EML
+*---------------------------------------------------------------------*
+
+    LOOP AT lt_simulacoes INTO ls_simulacao.
+      " Pagamento que não pôde ser gravado: o pedido não muda de status
+      IF line_exists( failed-pedido[ PedidoUUID = ls_simulacao-pedido-PedidoUUID ] )
+         OR line_exists( lt_pag_falhou[ table_line = ls_simulacao-pedido-PedidoUUID ] ).
         CONTINUE.
       ENDIF.
-      CLEAR ls_pag.
 
-      DATA(lv_aprovado) = xsdbool( ls_sim-status = zif_pc_constants=>c_status_pagamento-aprovado ).
+      APPEND VALUE #( %tky            = ls_simulacao-pedido-%tky
+                      StatusPagamento = ls_simulacao-sim-status
+                      StatusPedido    = COND #( WHEN ls_simulacao-sim-status = zif_pc_constants=>c_status_pagamento-aprovado
+                                                THEN zif_pc_constants=>c_status_pedido-aguardando_aprovacao
+                                                ELSE zif_pc_constants=>c_status_pedido-aberto )
+                      %control = VALUE #( StatusPagamento = if_abap_behv=>mk-on
+                                          StatusPedido    = if_abap_behv=>mk-on ) ) TO lt_upd_ped.
+    ENDLOOP.
 
-      MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY Pedido
-          UPDATE FIELDS ( StatusPagamento StatusPedido )
-          WITH VALUE #( ( %tky            = ls_pedido-%tky
-                          StatusPagamento = ls_sim-status
-                          StatusPedido    = COND #( WHEN lv_aprovado = abap_true
-                                                    THEN zif_pc_constants=>c_status_pedido-aguardando_aprovacao
-                                                    ELSE zif_pc_constants=>c_status_pedido-aberto ) ) )
-          FAILED DATA(ls_failed_ped)
-          REPORTED DATA(ls_reported_ped).
+    CHECK lt_upd_ped IS NOT INITIAL.
 
-      propagar( EXPORTING is_failed = ls_failed_ped is_reported = ls_reported_ped
-                CHANGING  cs_failed = failed cs_reported = reported ).
+    MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY Pedido UPDATE FROM lt_upd_ped
+      FAILED DATA(ls_failed_ped)
+      REPORTED DATA(ls_reported_ped).
 
-      " Recusa não é erro técnico: o pedido segue aguardando nova tentativa
-      APPEND VALUE #( %tky = ls_pedido-%tky
-                      %msg = COND #( WHEN lv_aprovado = abap_true
+    propagar( EXPORTING is_failed = ls_failed_ped is_reported = ls_reported_ped
+              CHANGING  cs_failed = failed cs_reported = reported ).
+
+    " 4) Recusa não é erro técnico: o pedido segue aguardando nova tentativa.
+    "    Informação (e não aviso): em ações o Fiori Elements trata aviso como
+    "    HTTP 412 e pede um segundo "Continuar?", que descartaria a tentativa.
+    LOOP AT lt_upd_ped INTO DATA(ls_upd).
+      CHECK NOT line_exists( failed-pedido[ PedidoUUID = ls_upd-PedidoUUID ] ).
+      APPEND VALUE #( %tky = ls_upd-%tky
+                      %msg = COND #( WHEN ls_upd-StatusPagamento = zif_pc_constants=>c_status_pagamento-aprovado
                                      THEN zcx_pc_msg=>sucesso( zif_pc_msg=>pagamento_aprovado )
                                      ELSE NEW zcx_pc_msg( textid   = zif_pc_msg=>pagamento_recusado
-                                                          severity = if_abap_behv_message=>severity-warning ) ) )
+                                                          severity = if_abap_behv_message=>severity-information ) ) )
              TO reported-pedido.
-      CLEAR ls_sim.
     ENDLOOP.
 
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
@@ -1597,6 +1922,40 @@ CLASS lhc_pedido IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD precheck_simular_pagamento.
+
+    LOOP AT keys INTO DATA(ls_key).
+
+*---------------------------------------------------------------------*
+      " 1) Validação de todos os campos do parâmetro (mesmas regras da
+      "    simulação, ver ZCL_PC_PAGAMENTO_SIM=>validar)
+*---------------------------------------------------------------------*
+
+      DATA(lt_erros) = zcl_pc_pagamento_sim=>validar( VALUE #( metodo   = ls_key-%param-MetodoPagamento
+                                                              numero   = ls_key-%param-NumeroCartao
+                                                              validade = ls_key-%param-Validade
+                                                              cvv      = ls_key-%param-Cvv ) ).
+      CHECK lt_erros IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+      " 2) Recusa a action com uma mensagem por campo: obrigatório (023)
+      "    ou formato inválido (032)
+*---------------------------------------------------------------------*
+
+      APPEND VALUE #( %tky = ls_key-%tky ) TO failed-pedido.
+
+      reported-pedido = VALUE #( BASE reported-pedido
+                                 FOR e IN lt_erros
+                                 ( %tky = ls_key-%tky
+                                   %msg = COND #( WHEN e-obrigatorio = abap_true
+                                                  THEN NEW zcx_pc_msg( textid = zif_pc_msg=>campo_obrigatorio
+                                                                       attr1  = e-campo )
+                                                  ELSE NEW zcx_pc_msg( textid = zif_pc_msg=>cartao_dados_invalidos
+                                                                       attr1  = e-mensagem ) ) ) ).
+    ENDLOOP.
+  ENDMETHOD.
+
+
   METHOD AprovarPedido.
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido
@@ -1606,8 +1965,13 @@ CLASS lhc_pedido IMPLEMENTATION.
         ALL FIELDS WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    DATA lt_aprovar TYPE tt_pedidos.
+
+*---------------------------------------------------------------------*
+    " 1) Status AGUARDANDO_APROVACAO / 2) pagamento aprovado (memória)
+*---------------------------------------------------------------------*
+
     LOOP AT lt_pedidos INTO DATA(ls_pedido).
-      " 1) Status AGUARDANDO_APROVACAO / 2) pagamento aprovado
       IF ls_pedido-%is_draft = if_abap_behv=>mk-off
          AND ls_pedido-StatusPedido = zif_pc_constants=>c_status_pedido-aberto.
         registrar_erro( EXPORTING is_pedido = ls_pedido
@@ -1627,23 +1991,30 @@ CLASS lhc_pedido IMPLEMENTATION.
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
+      APPEND ls_pedido TO lt_aprovar.
+    ENDLOOP.
 
-      DATA(lt_itens_ped) = VALUE tt_itens_pedido( FOR i IN lt_itens
-                                                  WHERE ( PedidoUUID = ls_pedido-PedidoUUID
-                                                          AND %is_draft = ls_pedido-%is_draft )
-                                                  ( i ) ).
-      DATA(lt_qtde) = somar_quantidades( lt_itens_ped ).
+    CHECK lt_aprovar IS NOT INITIAL.
 
-      " 3) Estoque reservado correspondente (pré-validação)
-      IF lt_qtde IS NOT INITIAL.
-        SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
-          FROM zr_pc_item
-          FOR ALL ENTRIES IN @lt_qtde
-          WHERE ItemUUID = @lt_qtde-item_uuid
-          INTO TABLE @DATA(lt_estoque).
-      ENDIF.
+*---------------------------------------------------------------------*
+    " 3) Estoque reservado correspondente (pré-validação): estoque de todos
+    "    os itens lido numa única consulta
+*---------------------------------------------------------------------*
 
-      DATA(lv_erro) = abap_false.
+    DATA(lt_mov) = movimentos( it_pedidos = lt_aprovar it_itens = lt_itens ).
+    IF lt_mov IS NOT INITIAL.
+      SELECT ItemUUID, Sku, QtdeEstoque, QtdeReservada
+        FROM zr_pc_item
+        FOR ALL ENTRIES IN @lt_mov
+        WHERE ItemUUID = @lt_mov-item_uuid
+        INTO TABLE @DATA(lt_estoque).
+    ENDIF.
+
+    LOOP AT lt_aprovar INTO ls_pedido.
+      DATA(lt_qtde) = somar_quantidades( VALUE tt_itens_pedido( FOR i IN lt_itens
+                                                                WHERE ( PedidoUUID = ls_pedido-PedidoUUID
+                                                                        AND %is_draft = ls_pedido-%is_draft )
+                                                                ( i ) ) ).
       LOOP AT lt_qtde INTO DATA(ls_qtde).
         READ TABLE lt_estoque INTO DATA(ls_estoque) WITH KEY ItemUUID = ls_qtde-item_uuid.
         IF sy-subrc <> 0
@@ -1653,56 +2024,53 @@ CLASS lhc_pedido IMPLEMENTATION.
                                     io_msg    = NEW #( textid = zif_pc_msg=>item_reserva_inconsistente
                                                        attr1  = ls_estoque-Sku )
                           CHANGING  cs_failed = failed cs_reported = reported ).
-          lv_erro = abap_true.
+          " Pedido inconsistente não movimenta estoque
+          DELETE lt_mov WHERE pedido_uuid = ls_pedido-PedidoUUID.
         ENDIF.
         CLEAR ls_estoque.
       ENDLOOP.
-      IF lv_erro = abap_true.
-        CONTINUE.
-      ENDIF.
+    ENDLOOP.
 
-      " 4-6) Baixa QtdeEstoque e QtdeReservada + recálculo do StatusEstoque (BO Item)
-      movimentar_estoque( EXPORTING iv_acao     = c_mov-baixar
-                                    is_pedido   = ls_pedido
-                                    it_qtde     = lt_qtde
-                          IMPORTING ev_ok       = DATA(lv_ok)
-                          CHANGING  cs_failed   = failed
-                                    cs_reported = reported ).
-      IF lv_ok = abap_false.
-        CONTINUE.
-      ENDIF.
+    " 4-6) Baixa QtdeEstoque e QtdeReservada + recálculo do StatusEstoque (BO
+    "      Item), uma única chamada para todos os pedidos
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-baixar
+                                  it_mov      = lt_mov
+                        IMPORTING et_falhou   = DATA(lt_falhou)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
 
-      " 7) Snapshots de cliente, endereço e itens
-      criar_snapshots( EXPORTING is_pedido   = ls_pedido
-                                 it_itens    = lt_itens_ped
-                                 iv_motivo   = 'FINALIZACAO'
-                       CHANGING  cs_failed   = failed
-                                 cs_reported = reported ).
+    " 7) Snapshots de cliente, endereço e itens dos pedidos ainda válidos
+    lt_aprovar = sem_falha( it_pedidos = lt_aprovar is_failed = failed ).
+    criar_snapshots( EXPORTING it_pedidos  = lt_aprovar
+                               it_itens    = lt_itens
+                               iv_motivo   = 'FINALIZACAO'
+                     CHANGING  cs_failed   = failed
+                               cs_reported = reported ).
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
+*---------------------------------------------------------------------*
+    " 8) DataFinalizacao / 9) FINALIZADO, numa única chamada EML
+*---------------------------------------------------------------------*
 
-      " 8) DataFinalizacao / 9) FINALIZADO
-      DATA lv_agora TYPE timestampl.
-      GET TIME STAMP FIELD lv_agora.
+    lt_aprovar = sem_falha( it_pedidos = lt_aprovar is_failed = failed ).
+    CHECK lt_aprovar IS NOT INITIAL.
 
-      MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY Pedido
-          UPDATE FIELDS ( StatusPedido DataFinalizacao )
-          WITH VALUE #( ( %tky            = ls_pedido-%tky
-                          StatusPedido    = zif_pc_constants=>c_status_pedido-finalizado
-                          DataFinalizacao = lv_agora ) )
-          FAILED DATA(ls_failed_apr)
-          REPORTED DATA(ls_reported_apr).
+    DATA lv_agora TYPE timestampl.
+    GET TIME STAMP FIELD lv_agora.
 
-      propagar( EXPORTING is_failed = ls_failed_apr is_reported = ls_reported_apr
-                CHANGING  cs_failed = failed cs_reported = reported ).
+    MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
+      ENTITY Pedido
+        UPDATE FIELDS ( StatusPedido DataFinalizacao )
+        WITH VALUE #( FOR a IN lt_aprovar
+                      ( %tky            = a-%tky
+                        StatusPedido    = zif_pc_constants=>c_status_pedido-finalizado
+                        DataFinalizacao = lv_agora ) )
+        FAILED DATA(ls_failed_apr)
+        REPORTED DATA(ls_reported_apr).
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
+    propagar( EXPORTING is_failed = ls_failed_apr is_reported = ls_reported_apr
+              CHANGING  cs_failed = failed cs_reported = reported ).
 
+    LOOP AT sem_falha( it_pedidos = lt_aprovar is_failed = failed ) INTO ls_pedido.
       APPEND VALUE #( %tky = ls_pedido-%tky
                       %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_finalizado
                                                   attr1  = ls_pedido-NumeroPedido ) ) TO reported-pedido.
@@ -1729,12 +2097,20 @@ CLASS lhc_pedido IMPLEMENTATION.
         ALL FIELDS WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    DATA lt_reembolsos TYPE tt_solicitacao.
+    DATA lt_cancelar   TYPE tt_solicitacao.
+
+*---------------------------------------------------------------------*
+    " 1) Status e motivo de cada pedido (memória); separa os pagos, que
+    "    vão para reembolso, dos que são cancelados direto
+*---------------------------------------------------------------------*
+
     LOOP AT keys INTO DATA(ls_key).
       READ TABLE lt_pedidos INTO DATA(ls_pedido)
            WITH KEY PedidoUUID = ls_key-PedidoUUID %is_draft = ls_key-%is_draft.
       CHECK sy-subrc = 0.
 
-      " 1) Status permite cancelamento?
+      " Status permite cancelamento?
       IF ls_pedido-%is_draft = if_abap_behv=>mk-on
          OR (     ls_pedido-StatusPedido <> zif_pc_constants=>c_status_pedido-aberto
               AND ls_pedido-StatusPedido <> zif_pc_constants=>c_status_pedido-aguardando_aprovacao ).
@@ -1753,77 +2129,86 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
 
       " 2b) Pagamento já efetuado: inicia processo de reembolso em vez de
-      " cancelar direto. O estoque permanece reservado até a decisão.
+      "     cancelar direto. O estoque permanece reservado até a decisão.
       IF ls_pedido-StatusPagamento = zif_pc_constants=>c_status_pagamento-aprovado.
-        iniciar_processo_reembolso( EXPORTING is_pedido   = ls_pedido
-                                              iv_motivo   = lv_motivo
-                                    CHANGING  cs_failed   = failed
-                                              cs_reported = reported ).
-        CONTINUE.
+        APPEND VALUE #( pedido = ls_pedido motivo = lv_motivo ) TO lt_reembolsos.
+      ELSE.
+        APPEND VALUE #( pedido = ls_pedido motivo = lv_motivo ) TO lt_cancelar.
       ENDIF.
+    ENDLOOP.
 
-      DATA(lt_itens_ped) = VALUE tt_itens_pedido( FOR i IN lt_itens
-                                                  WHERE ( PedidoUUID = ls_pedido-PedidoUUID
-                                                          AND %is_draft = ls_pedido-%is_draft )
-                                                  ( i ) ).
+*---------------------------------------------------------------------*
+    " 3) Solicitações de reembolso de todos os pedidos pagos de uma vez
+*---------------------------------------------------------------------*
 
-      " 4) Libera a reserva (feita no registro do pedido, vale para todo status cancelável)
-      IF ls_pedido-%is_draft = if_abap_behv=>mk-off.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = somar_quantidades( lt_itens_ped )
-                            IMPORTING ev_ok       = DATA(lv_ok)
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        IF lv_ok = abap_false.
-          CONTINUE.
-        ENDIF.
-      ENDIF.
+    iniciar_processo_reembolso( EXPORTING it_solicitacoes = lt_reembolsos
+                                CHANGING  cs_failed       = failed
+                                          cs_reported     = reported ).
 
-      " 3) Snapshots (somente se ainda não existirem)
-      criar_snapshots( EXPORTING is_pedido   = ls_pedido
-                                 it_itens    = lt_itens_ped
-                                 iv_motivo   = 'CANCELAMENTO'
-                       CHANGING  cs_failed   = failed
-                                 cs_reported = reported ).
+*---------------------------------------------------------------------*
+    " 4) Libera a reserva (feita no registro do pedido, vale para todo status
+    "    cancelável) e gera os snapshots, uma chamada para todos os pedidos
+*---------------------------------------------------------------------*
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
+    " Sem pedido a cancelar direto (todos foram para reembolso ou falharam)
+    " o método segue apenas para montar o resultado
+    DATA(lt_ped_cancelar) = VALUE tt_pedidos( FOR c IN lt_cancelar ( c-pedido ) ).
 
-      " 6) Motivo, data e usuário / 7) CANCELADO
-      DATA lv_agora TYPE timestampl.
-      GET TIME STAMP FIELD lv_agora.
+    movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
+                                  it_mov      = movimentos( it_pedidos = lt_ped_cancelar it_itens = lt_itens )
+                        IMPORTING et_falhou   = DATA(lt_falhou)
+                        CHANGING  cs_failed   = failed
+                                  cs_reported = reported ).
 
-      DATA lv_usuario TYPE zr_pc_pedido-CanceladoPor.
-      TRY.
-          lv_usuario = cl_abap_context_info=>get_user_technical_name( ).
-        CATCH cx_abap_context_info_error.
-          CLEAR lv_usuario.
-      ENDTRY.
+    " 5) Snapshots (somente se ainda não existirem)
+    criar_snapshots( EXPORTING it_pedidos  = sem_falha( it_pedidos = lt_ped_cancelar is_failed = failed )
+                               it_itens    = lt_itens
+                               iv_motivo   = 'CANCELAMENTO'
+                     CHANGING  cs_failed   = failed
+                               cs_reported = reported ).
 
+*---------------------------------------------------------------------*
+    " 6) Motivo, data e usuário / 7) CANCELADO, numa única chamada EML
+*---------------------------------------------------------------------*
+
+    DATA lv_agora TYPE timestampl.
+    GET TIME STAMP FIELD lv_agora.
+
+    DATA lv_usuario TYPE zr_pc_pedido-CanceladoPor.
+    TRY.
+        lv_usuario = cl_abap_context_info=>get_user_technical_name( ).
+      CATCH cx_abap_context_info_error.
+        CLEAR lv_usuario.
+    ENDTRY.
+
+    DATA lt_upd_can TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
+    LOOP AT lt_cancelar INTO DATA(ls_cancelar).
+      CHECK NOT line_exists( failed-pedido[ PedidoUUID = ls_cancelar-pedido-PedidoUUID ] ).
+      APPEND VALUE #( %tky               = ls_cancelar-pedido-%tky
+                      StatusPedido       = zif_pc_constants=>c_status_pedido-cancelado
+                      MotivoCancelamento = ls_cancelar-motivo
+                      DataCancelamento   = lv_agora
+                      CanceladoPor       = lv_usuario
+                      %control = VALUE #( StatusPedido       = if_abap_behv=>mk-on
+                                          MotivoCancelamento = if_abap_behv=>mk-on
+                                          DataCancelamento   = if_abap_behv=>mk-on
+                                          CanceladoPor       = if_abap_behv=>mk-on ) ) TO lt_upd_can.
+    ENDLOOP.
+    IF lt_upd_can IS NOT INITIAL.
       MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY Pedido
-          UPDATE FIELDS ( StatusPedido MotivoCancelamento DataCancelamento CanceladoPor )
-          WITH VALUE #( ( %tky               = ls_pedido-%tky
-                          StatusPedido       = zif_pc_constants=>c_status_pedido-cancelado
-                          MotivoCancelamento = lv_motivo
-                          DataCancelamento   = lv_agora
-                          CanceladoPor       = lv_usuario ) )
-          FAILED DATA(ls_failed_can)
-          REPORTED DATA(ls_reported_can).
+        ENTITY Pedido UPDATE FROM lt_upd_can
+        FAILED DATA(ls_failed_can)
+        REPORTED DATA(ls_reported_can).
 
       propagar( EXPORTING is_failed = ls_failed_can is_reported = ls_reported_can
                 CHANGING  cs_failed = failed cs_reported = reported ).
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
-
-      APPEND VALUE #( %tky = ls_pedido-%tky
-                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_cancelado
-                                                  attr1  = ls_pedido-NumeroPedido ) ) TO reported-pedido.
-    ENDLOOP.
+      LOOP AT sem_falha( it_pedidos = lt_ped_cancelar is_failed = failed ) INTO ls_pedido.
+        APPEND VALUE #( %tky = ls_pedido-%tky
+                        %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_cancelado
+                                                    attr1  = ls_pedido-NumeroPedido ) ) TO reported-pedido.
+      ENDLOOP.
+    ENDIF.
 
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido ALL FIELDS WITH CORRESPONDING #( keys )
@@ -1838,6 +2223,8 @@ CLASS lhc_pedido IMPLEMENTATION.
 
 
   METHOD iniciar_processo_reembolso.
+    CHECK it_solicitacoes IS NOT INITIAL.
+
     DATA lv_agora TYPE timestampl.
     GET TIME STAMP FIELD lv_agora.
 
@@ -1848,54 +2235,78 @@ CLASS lhc_pedido IMPLEMENTATION.
         CLEAR lv_usuario.
     ENDTRY.
 
-    " A solicitação vive no BO Reembolso (root próprio, app Gestão de Reembolsos)
+*---------------------------------------------------------------------*
+    " 1) Solicitações no BO Reembolso (root próprio, app Gestão de
+    "    Reembolsos), todas numa única chamada EML. O %cid REEMBOLSO<n>
+    "    liga cada solicitação ao n-ésimo pedido.
+*---------------------------------------------------------------------*
+
     MODIFY ENTITIES OF zr_pc_reembolso
       ENTITY Reembolso
         CREATE FIELDS ( PedidoUUID NumeroPedido ClienteUUID StatusReembolso StatusPedidoAnterior
                         Currency ValorReembolso MotivoSolicitacao DataSolicitacao SolicitadoPor )
-        WITH VALUE #( ( %cid                 = 'REEMBOLSO'
-                        PedidoUUID           = is_pedido-PedidoUUID
-                        NumeroPedido         = is_pedido-NumeroPedido
-                        ClienteUUID          = is_pedido-ClienteUUID
+        WITH VALUE #( FOR s IN it_solicitacoes INDEX INTO lv_idx
+                      ( %cid                 = |REEMBOLSO{ lv_idx }|
+                        PedidoUUID           = s-pedido-PedidoUUID
+                        NumeroPedido         = s-pedido-NumeroPedido
+                        ClienteUUID          = s-pedido-ClienteUUID
                         StatusReembolso      = zif_pc_constants=>c_status_reembolso-pendente
-                        StatusPedidoAnterior = is_pedido-StatusPedido
-                        Currency             = is_pedido-Currency
-                        ValorReembolso       = is_pedido-ValorTotal
-                        MotivoSolicitacao    = iv_motivo
+                        StatusPedidoAnterior = s-pedido-StatusPedido
+                        Currency             = s-pedido-Currency
+                        ValorReembolso       = s-pedido-ValorTotal
+                        MotivoSolicitacao    = s-motivo
                         DataSolicitacao      = lv_agora
                         SolicitadoPor        = lv_usuario ) )
       FAILED   DATA(ls_failed_reemb)
       REPORTED DATA(ls_reported_reemb).
 
+    " Mensagens e falhas do BO Reembolso voltam para o pedido de origem
     LOOP AT ls_reported_reemb-reembolso INTO DATA(ls_rep_reemb) WHERE %msg IS BOUND.
-      APPEND VALUE #( %tky = is_pedido-%tky %msg = ls_rep_reemb-%msg ) TO cs_reported-pedido.
-    ENDLOOP.
-    IF ls_failed_reemb-reembolso IS NOT INITIAL.
-      IF NOT line_exists( cs_failed-pedido[ PedidoUUID = is_pedido-PedidoUUID ] ).
-        APPEND VALUE #( %tky = is_pedido-%tky ) TO cs_failed-pedido.
+      READ TABLE it_solicitacoes INTO DATA(ls_sol_rep)
+           INDEX CONV i( match( val = ls_rep_reemb-%cid pcre = `\d+` ) ).
+      IF sy-subrc = 0.
+        APPEND VALUE #( %tky = ls_sol_rep-pedido-%tky %msg = ls_rep_reemb-%msg ) TO cs_reported-pedido.
       ENDIF.
-      RETURN.
-    ENDIF.
+    ENDLOOP.
+
+    LOOP AT ls_failed_reemb-reembolso INTO DATA(ls_fail_reemb).
+      READ TABLE it_solicitacoes INTO DATA(ls_sol_fail)
+           INDEX CONV i( match( val = ls_fail_reemb-%cid pcre = `\d+` ) ).
+      IF sy-subrc = 0 AND NOT line_exists( cs_failed-pedido[ PedidoUUID = ls_sol_fail-pedido-PedidoUUID ] ).
+        APPEND VALUE #( %tky = ls_sol_fail-pedido-%tky ) TO cs_failed-pedido.
+      ENDIF.
+    ENDLOOP.
+
+*---------------------------------------------------------------------*
+    " 2) Pedidos com solicitação criada vão para PROCESSANDO_REEMBOLSO
+*---------------------------------------------------------------------*
+
+    DATA lt_upd TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
+    LOOP AT it_solicitacoes INTO DATA(ls_sol).
+      CHECK NOT line_exists( cs_failed-pedido[ PedidoUUID = ls_sol-pedido-PedidoUUID ] ).
+      APPEND VALUE #( %tky               = ls_sol-pedido-%tky
+                      StatusPedido       = zif_pc_constants=>c_status_pedido-processando_reembolso
+                      MotivoCancelamento = ls_sol-motivo
+                      %control = VALUE #( StatusPedido       = if_abap_behv=>mk-on
+                                          MotivoCancelamento = if_abap_behv=>mk-on ) ) TO lt_upd.
+    ENDLOOP.
+    CHECK lt_upd IS NOT INITIAL.
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-      ENTITY Pedido
-        UPDATE FIELDS ( StatusPedido MotivoCancelamento )
-        WITH VALUE #( ( %tky               = is_pedido-%tky
-                        StatusPedido       = zif_pc_constants=>c_status_pedido-processando_reembolso
-                        MotivoCancelamento = iv_motivo ) )
+      ENTITY Pedido UPDATE FROM lt_upd
       FAILED   DATA(ls_failed_upd)
       REPORTED DATA(ls_reported_upd).
 
     propagar( EXPORTING is_failed = ls_failed_upd is_reported = ls_reported_upd
               CHANGING  cs_failed = cs_failed cs_reported = cs_reported ).
 
-    IF line_exists( cs_failed-pedido[ PedidoUUID = is_pedido-PedidoUUID ] ).
-      RETURN.
-    ENDIF.
-
-    APPEND VALUE #( %tky = is_pedido-%tky
-                    %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_reembolso_solicitado
-                                                attr1  = is_pedido-NumeroPedido ) ) TO cs_reported-pedido.
+    " 3) Confirmação para cada pedido enviado ao reembolso
+    LOOP AT it_solicitacoes INTO ls_sol.
+      CHECK NOT line_exists( cs_failed-pedido[ PedidoUUID = ls_sol-pedido-PedidoUUID ] ).
+      APPEND VALUE #( %tky = ls_sol-pedido-%tky
+                      %msg = zcx_pc_msg=>sucesso( textid = zif_pc_msg=>pedido_reembolso_solicitado
+                                                  attr1  = ls_sol-pedido-NumeroPedido ) ) TO cs_reported-pedido.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -1910,47 +2321,55 @@ CLASS lhc_pedido IMPLEMENTATION.
         ALL FIELDS WITH CORRESPONDING #( keys )
       RESULT DATA(lt_itens).
 
+    DATA lt_cancelar TYPE tt_pedidos.
+
+*---------------------------------------------------------------------*
+    " 1) Status permite decisão de reembolso? (memória)
+*---------------------------------------------------------------------*
+
     LOOP AT keys INTO DATA(ls_key).
       READ TABLE lt_pedidos INTO DATA(ls_pedido)
            WITH KEY PedidoUUID = ls_key-PedidoUUID %is_draft = ls_key-%is_draft.
       CHECK sy-subrc = 0.
 
-      " 1) Status permite decisão de reembolso?
       IF ls_pedido-%is_draft = if_abap_behv=>mk-on
          OR ls_pedido-StatusPedido <> zif_pc_constants=>c_status_pedido-processando_reembolso.
         registrar_erro( EXPORTING is_pedido = ls_pedido io_msg = erro_status( ls_pedido )
                         CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
       ENDIF.
+      APPEND ls_pedido TO lt_cancelar.
+    ENDLOOP.
 
-      DATA(lt_itens_ped) = VALUE tt_itens_pedido( FOR i IN lt_itens
-                                                  WHERE ( PedidoUUID = ls_pedido-PedidoUUID
-                                                          AND %is_draft = ls_pedido-%is_draft )
-                                                  ( i ) ).
+    IF lt_cancelar IS NOT INITIAL.
 
-      " 3) Libera a reserva de estoque (o pedido não avança mais)
-      IF ls_pedido-%is_draft = if_abap_behv=>mk-off.
-        movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
-                                      is_pedido   = ls_pedido
-                                      it_qtde     = somar_quantidades( lt_itens_ped )
-                            IMPORTING ev_ok       = DATA(lv_ok)
-                            CHANGING  cs_failed   = failed
-                                      cs_reported = reported ).
-        IF lv_ok = abap_false.
-          CONTINUE.
-        ENDIF.
-      ENDIF.
+*---------------------------------------------------------------------*
+      " 2) Libera a reserva de estoque (o pedido não avança mais) e gera os
+      "    snapshots, uma chamada para todos os pedidos
+*---------------------------------------------------------------------*
 
-      " 4) Snapshots (somente se ainda não existirem)
-      criar_snapshots( EXPORTING is_pedido   = ls_pedido
-                                 it_itens    = lt_itens_ped
+      movimentar_estoque( EXPORTING iv_acao     = c_mov-liberar
+                                    it_mov      = movimentos( it_pedidos = lt_cancelar it_itens = lt_itens )
+                          IMPORTING et_falhou   = DATA(lt_falhou)
+                          CHANGING  cs_failed   = failed
+                                    cs_reported = reported ).
+
+      " Snapshots somente se ainda não existirem
+      criar_snapshots( EXPORTING it_pedidos  = sem_falha( it_pedidos = lt_cancelar is_failed = failed )
+                                 it_itens    = lt_itens
                                  iv_motivo   = 'CANCELAMENTO'
                        CHANGING  cs_failed   = failed
                                  cs_reported = reported ).
 
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
+      lt_cancelar = sem_falha( it_pedidos = lt_cancelar is_failed = failed ).
+    ENDIF.
+
+    IF lt_cancelar IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+      " 3) Pedido efetivamente cancelado e pagamento devolvido: pagamentos
+      "    lidos e todos os pedidos atualizados numa única chamada EML
+*---------------------------------------------------------------------*
 
       DATA lv_agora TYPE timestampl.
       GET TIME STAMP FIELD lv_agora.
@@ -1962,17 +2381,17 @@ CLASS lhc_pedido IMPLEMENTATION.
           CLEAR lv_usuario.
       ENDTRY.
 
-      " 5) Pedido efetivamente cancelado e pagamento devolvido
       READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
         ENTITY Pedido BY \_Pagamento
           FIELDS ( StatusPagamento )
-          WITH VALUE #( ( %tky = ls_pedido-%tky ) )
+          WITH VALUE #( FOR c IN lt_cancelar ( %tky = c-%tky ) )
         RESULT DATA(lt_pag_dev).
 
       MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
         ENTITY Pedido
           UPDATE FIELDS ( StatusPedido StatusPagamento DataCancelamento CanceladoPor )
-          WITH VALUE #( ( %tky             = ls_pedido-%tky
+          WITH VALUE #( FOR c IN lt_cancelar
+                        ( %tky             = c-%tky
                           StatusPedido     = zif_pc_constants=>c_status_pedido-cancelado
                           StatusPagamento  = zif_pc_constants=>c_status_pagamento-devolvido
                           DataCancelamento = lv_agora
@@ -1987,12 +2406,7 @@ CLASS lhc_pedido IMPLEMENTATION.
 
       propagar( EXPORTING is_failed = ls_failed_apr is_reported = ls_reported_apr
                 CHANGING  cs_failed = failed cs_reported = reported ).
-
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
-
-    ENDLOOP.
+    ENDIF.
 
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido ALL FIELDS WITH CORRESPONDING #( keys )
@@ -2009,6 +2423,8 @@ CLASS lhc_pedido IMPLEMENTATION.
   METHOD RetomarPedido.
     " Chamada pelo BO Reembolso (RejeitarReembolso) na mesma LUW: o pedido volta
     " ao status em que estava antes da solicitação de reembolso.
+    DATA lt_upd_ret TYPE TABLE FOR UPDATE zr_pc_pedido\\Pedido.
+
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido
         ALL FIELDS WITH CORRESPONDING #( keys )
@@ -2038,23 +2454,23 @@ CLASS lhc_pedido IMPLEMENTATION.
       ENDIF.
 
       " 3) Pedido volta ao status anterior e o motivo do cancelamento é limpo
+      "    (acumulado para uma única chamada EML)
+      APPEND VALUE #( %tky               = ls_pedido-%tky
+                      StatusPedido       = lv_status_anterior
+                      MotivoCancelamento = ''
+                      %control = VALUE #( StatusPedido       = if_abap_behv=>mk-on
+                                          MotivoCancelamento = if_abap_behv=>mk-on ) ) TO lt_upd_ret.
+    ENDLOOP.
+
+    IF lt_upd_ret IS NOT INITIAL.
       MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
-        ENTITY Pedido
-          UPDATE FIELDS ( StatusPedido MotivoCancelamento )
-          WITH VALUE #( ( %tky               = ls_pedido-%tky
-                          StatusPedido       = lv_status_anterior
-                          MotivoCancelamento = '' ) )
+        ENTITY Pedido UPDATE FROM lt_upd_ret
         FAILED   DATA(ls_failed_rej)
         REPORTED DATA(ls_reported_rej).
 
       propagar( EXPORTING is_failed = ls_failed_rej is_reported = ls_reported_rej
                 CHANGING  cs_failed = failed cs_reported = reported ).
-
-      IF line_exists( failed-pedido[ PedidoUUID = ls_pedido-PedidoUUID ] ).
-        CONTINUE.
-      ENDIF.
-
-    ENDLOOP.
+    ENDIF.
 
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido ALL FIELDS WITH CORRESPONDING #( keys )
@@ -2072,24 +2488,36 @@ CLASS lhc_pedido IMPLEMENTATION.
     DATA ls_failed_item   TYPE RESPONSE FOR FAILED EARLY zr_pc_item.
     DATA ls_reported_item TYPE RESPONSE FOR REPORTED EARLY zr_pc_item.
 
-    ev_ok = abap_true.
-    CHECK it_qtde IS NOT INITIAL.
+    CLEAR et_falhou.
+    CHECK it_mov IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+    " 1) Uma linha por item com a quantidade somada de todos os pedidos
+*---------------------------------------------------------------------*
+
+    DATA(lt_total) = VALUE tt_qtde_item( FOR GROUPS g OF m IN it_mov GROUP BY m-item_uuid
+                                         ( item_uuid = g
+                                           qtde      = REDUCE i( INIT s = 0 FOR r IN GROUP g NEXT s = s + r-qtde ) ) ).
 
     SELECT ItemUUID, Sku
       FROM zr_pc_item
-      FOR ALL ENTRIES IN @it_qtde
-      WHERE ItemUUID = @it_qtde-item_uuid
+      FOR ALL ENTRIES IN @lt_total
+      WHERE ItemUUID = @lt_total-item_uuid
       INTO TABLE @DATA(lt_sku).
 
-    " EML entre BOs: o framework bloqueia cada item (lock master) antes da
-    " action; se outro usuário/transação estiver com o item bloqueado, a
-    " operação falha e o pedido recebe ITEM_ESTOQUE_CONCORRENTE.
+*---------------------------------------------------------------------*
+    " 2) Movimento no BO Item, uma única chamada EML. O framework bloqueia
+    "    cada item (lock master) antes da action; se outro usuário/transação
+    "    estiver com o item bloqueado, a operação falha e os pedidos que usam
+    "    o item recebem ITEM_ESTOQUE_CONCORRENTE.
+*---------------------------------------------------------------------*
+
     CASE iv_acao.
       WHEN c_mov-reservar.
         MODIFY ENTITIES OF zr_pc_item
           ENTITY Item
             EXECUTE ReservarEstoque
-            FROM VALUE #( FOR q IN it_qtde ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
+            FROM VALUE #( FOR q IN lt_total ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
           FAILED ls_failed_item
           REPORTED ls_reported_item.
 
@@ -2097,7 +2525,7 @@ CLASS lhc_pedido IMPLEMENTATION.
         MODIFY ENTITIES OF zr_pc_item
           ENTITY Item
             EXECUTE LiberarReserva
-            FROM VALUE #( FOR q IN it_qtde ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
+            FROM VALUE #( FOR q IN lt_total ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
           FAILED ls_failed_item
           REPORTED ls_reported_item.
 
@@ -2105,101 +2533,162 @@ CLASS lhc_pedido IMPLEMENTATION.
         MODIFY ENTITIES OF zr_pc_item
           ENTITY Item
             EXECUTE BaixarEstoque
-            FROM VALUE #( FOR q IN it_qtde ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
+            FROM VALUE #( FOR q IN lt_total ( ItemUUID = q-item_uuid %param-Quantidade = q-qtde ) )
           FAILED ls_failed_item
           REPORTED ls_reported_item.
     ENDCASE.
 
-    " Repassa as mensagens do BO Item para o pedido
+    " 3) Mensagens do BO Item repassadas a cada pedido que usa o item
     LOOP AT ls_reported_item-item INTO DATA(ls_rep_item) WHERE %msg IS BOUND.
-      APPEND VALUE #( %tky = is_pedido-%tky %msg = ls_rep_item-%msg ) TO cs_reported-pedido.
-    ENDLOOP.
-
-    IF ls_failed_item-item IS INITIAL.
-      RETURN.
-    ENDIF.
-
-    ev_ok = abap_false.
-
-    " Falhas sem mensagem própria (ex.: lock) => concorrência
-    LOOP AT ls_failed_item-item INTO DATA(ls_fail_item).
-      IF NOT line_exists( ls_reported_item-item[ ItemUUID = ls_fail_item-ItemUUID ] ).
-        READ TABLE lt_sku INTO DATA(ls_sku) WITH KEY ItemUUID = ls_fail_item-ItemUUID.
-        DATA(lv_sku) = COND string( WHEN sy-subrc = 0 THEN ls_sku-Sku ELSE `?` ).
-        APPEND VALUE #( %tky = is_pedido-%tky
-                        %msg = NEW zcx_pc_msg( textid = zif_pc_msg=>item_estoque_concorrente
-                                               attr1  = lv_sku ) ) TO cs_reported-pedido.
-      ENDIF.
-    ENDLOOP.
-
-    IF NOT line_exists( cs_failed-pedido[ PedidoUUID = is_pedido-PedidoUUID ] ).
-      APPEND VALUE #( %tky = is_pedido-%tky ) TO cs_failed-pedido.
-    ENDIF.
-
-    " Compensação: evita reserva parcial - libera o que foi reservado nesta chamada
-    IF iv_acao = c_mov-reservar.
-      DATA(lt_reservados) = it_qtde.
-      LOOP AT ls_failed_item-item INTO ls_fail_item.
-        DELETE lt_reservados WHERE item_uuid = ls_fail_item-ItemUUID.
+      LOOP AT it_mov INTO DATA(ls_mov) WHERE item_uuid = ls_rep_item-ItemUUID.
+        APPEND VALUE #( %tky-%is_draft  = ls_mov-is_draft
+                        %tky-PedidoUUID = ls_mov-pedido_uuid
+                        %msg            = ls_rep_item-%msg ) TO cs_reported-pedido.
       ENDLOOP.
+    ENDLOOP.
 
-      IF lt_reservados IS NOT INITIAL.
-        MODIFY ENTITIES OF zr_pc_item
-          ENTITY Item
-            EXECUTE LiberarReserva
-            FROM VALUE #( FOR r IN lt_reservados ( ItemUUID = r-item_uuid %param-Quantidade = r-qtde ) )
-          FAILED DATA(ls_failed_comp)
-          REPORTED DATA(ls_reported_comp).
+    CHECK ls_failed_item-item IS NOT INITIAL.
 
-        " A compensação não pode falhar em silêncio: reserva presa é inconsistência
-        LOOP AT ls_reported_comp-item INTO DATA(ls_rep_comp) WHERE %msg IS BOUND.
-          APPEND VALUE #( %tky = is_pedido-%tky %msg = ls_rep_comp-%msg ) TO cs_reported-pedido.
-        ENDLOOP.
-        LOOP AT ls_failed_comp-item INTO DATA(ls_fail_comp).
-          READ TABLE lt_sku INTO DATA(ls_sku_comp) WITH KEY ItemUUID = ls_fail_comp-ItemUUID.
-          APPEND VALUE #( %tky = is_pedido-%tky
-                          %msg = NEW zcx_pc_msg(
-                                   textid = zif_pc_msg=>item_reserva_inconsistente
-                                   attr1  = COND string( WHEN sy-subrc = 0 THEN ls_sku_comp-Sku ELSE `?` ) ) )
-                 TO cs_reported-pedido.
-        ENDLOOP.
+*---------------------------------------------------------------------*
+    " 4) Item recusado faz falhar todos os pedidos que o usam. Falha sem
+    "    mensagem própria (ex.: lock) => concorrência
+*---------------------------------------------------------------------*
+
+    LOOP AT ls_failed_item-item INTO DATA(ls_fail_item).
+      DATA(lv_sem_msg) = xsdbool( NOT line_exists( ls_reported_item-item[ ItemUUID = ls_fail_item-ItemUUID ] ) ).
+      READ TABLE lt_sku INTO DATA(ls_sku) WITH KEY ItemUUID = ls_fail_item-ItemUUID.
+      DATA(lv_sku) = COND string( WHEN sy-subrc = 0 THEN ls_sku-Sku ELSE `?` ).
+
+      LOOP AT it_mov INTO ls_mov WHERE item_uuid = ls_fail_item-ItemUUID.
+        IF NOT line_exists( et_falhou[ is_draft = ls_mov-is_draft pedido_uuid = ls_mov-pedido_uuid ] ).
+          APPEND VALUE #( is_draft = ls_mov-is_draft pedido_uuid = ls_mov-pedido_uuid ) TO et_falhou.
+        ENDIF.
+        IF lv_sem_msg = abap_true.
+          APPEND VALUE #( %tky-%is_draft  = ls_mov-is_draft
+                          %tky-PedidoUUID = ls_mov-pedido_uuid
+                          %msg            = NEW zcx_pc_msg( textid = zif_pc_msg=>item_estoque_concorrente
+                                                            attr1  = lv_sku ) ) TO cs_reported-pedido.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+
+    LOOP AT et_falhou INTO DATA(ls_falhou).
+      IF NOT line_exists( cs_failed-pedido[ PedidoUUID = ls_falhou-pedido_uuid ] ).
+        APPEND VALUE #( %tky-%is_draft  = ls_falhou-is_draft
+                        %tky-PedidoUUID = ls_falhou-pedido_uuid ) TO cs_failed-pedido.
       ENDIF.
-    ENDIF.
+    ENDLOOP.
+
+    CHECK iv_acao = c_mov-reservar.
+
+*---------------------------------------------------------------------*
+    " 5) Compensação: evita reserva parcial. Os itens aceitos dos pedidos que
+    "    falharam foram reservados na chamada acima; a parte desses pedidos é
+    "    liberada numa única chamada EML.
+*---------------------------------------------------------------------*
+
+    DATA lt_comp TYPE tt_mov_pedido.
+    LOOP AT it_mov INTO ls_mov.
+      IF line_exists( et_falhou[ is_draft = ls_mov-is_draft pedido_uuid = ls_mov-pedido_uuid ] )
+         AND NOT line_exists( ls_failed_item-item[ ItemUUID = ls_mov-item_uuid ] ).
+        APPEND ls_mov TO lt_comp.
+      ENDIF.
+    ENDLOOP.
+
+    CHECK lt_comp IS NOT INITIAL.
+
+    DATA(lt_total_comp) = VALUE tt_qtde_item( FOR GROUPS c OF m IN lt_comp GROUP BY m-item_uuid
+                                              ( item_uuid = c
+                                                qtde      = REDUCE i( INIT s = 0 FOR r IN GROUP c NEXT s = s + r-qtde ) ) ).
+
+    MODIFY ENTITIES OF zr_pc_item
+      ENTITY Item
+        EXECUTE LiberarReserva
+        FROM VALUE #( FOR t IN lt_total_comp ( ItemUUID = t-item_uuid %param-Quantidade = t-qtde ) )
+      FAILED DATA(ls_failed_comp)
+      REPORTED DATA(ls_reported_comp).
+
+    " A compensação não pode falhar em silêncio: reserva presa é inconsistência
+    LOOP AT ls_reported_comp-item INTO DATA(ls_rep_comp) WHERE %msg IS BOUND.
+      LOOP AT lt_comp INTO ls_mov WHERE item_uuid = ls_rep_comp-ItemUUID.
+        APPEND VALUE #( %tky-%is_draft  = ls_mov-is_draft
+                        %tky-PedidoUUID = ls_mov-pedido_uuid
+                        %msg            = ls_rep_comp-%msg ) TO cs_reported-pedido.
+      ENDLOOP.
+    ENDLOOP.
+
+    LOOP AT ls_failed_comp-item INTO DATA(ls_fail_comp).
+      READ TABLE lt_sku INTO DATA(ls_sku_comp) WITH KEY ItemUUID = ls_fail_comp-ItemUUID.
+      DATA(lv_sku_comp) = COND string( WHEN sy-subrc = 0 THEN ls_sku_comp-Sku ELSE `?` ).
+      LOOP AT lt_comp INTO ls_mov WHERE item_uuid = ls_fail_comp-ItemUUID.
+        APPEND VALUE #( %tky-%is_draft  = ls_mov-is_draft
+                        %tky-PedidoUUID = ls_mov-pedido_uuid
+                        %msg            = NEW zcx_pc_msg( textid = zif_pc_msg=>item_reserva_inconsistente
+                                                          attr1  = lv_sku_comp ) ) TO cs_reported-pedido.
+      ENDLOOP.
+    ENDLOOP.
   ENDMETHOD.
 
 
   METHOD criar_snapshots.
-    DATA lt_create_itens TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido\_ItensSnapshot.
+    " Liga o %cid de cada snapshot criado ao pedido de origem
+    TYPES:
+      BEGIN OF ty_cid_pedido,
+        cid    TYPE abp_behv_cid,
+        pedido TYPE ty_pedido_key,
+      END OF ty_cid_pedido.
 
-    " Snapshots são imutáveis e gerados uma única vez
+    DATA lt_create_cli   TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido\_ClienteSnapshot.
+    DATA lt_create_itens TYPE TABLE FOR CREATE zr_pc_pedido\\Pedido\_ItensSnapshot.
+    DATA lt_cid_pedido   TYPE SORTED TABLE OF ty_cid_pedido WITH UNIQUE KEY cid.
+    DATA lt_novos        TYPE tt_pedidos.
+
+    CHECK it_pedidos IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+    " 1) Snapshots são imutáveis e gerados uma única vez: pedidos que já
+    "    têm snapshot ficam de fora (uma leitura para todos)
+*---------------------------------------------------------------------*
+
     READ ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido BY \_ClienteSnapshot
-        FIELDS ( SnapshotUUID ) WITH VALUE #( ( %tky = is_pedido-%tky ) )
+        FIELDS ( PedidoUUID ) WITH VALUE #( FOR p IN it_pedidos ( %tky = p-%tky ) )
       RESULT DATA(lt_snap_cli)
       ENTITY Pedido BY \_ItensSnapshot
-        FIELDS ( SnapshotItemUUID ) WITH VALUE #( ( %tky = is_pedido-%tky ) )
+        FIELDS ( PedidoUUID ) WITH VALUE #( FOR p IN it_pedidos ( %tky = p-%tky ) )
       RESULT DATA(lt_snap_itm).
 
-    IF lt_snap_cli IS NOT INITIAL OR lt_snap_itm IS NOT INITIAL.
-      APPEND VALUE #( %tky = is_pedido-%tky
-                      %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>snapshot_existente
-                                             severity = if_abap_behv_message=>severity-information ) )
-             TO cs_reported-pedido.
-      RETURN.
-    ENDIF.
+    LOOP AT it_pedidos INTO DATA(ls_pedido).
+      IF line_exists( lt_snap_cli[ PedidoUUID = ls_pedido-PedidoUUID ] )
+         OR line_exists( lt_snap_itm[ PedidoUUID = ls_pedido-PedidoUUID ] ).
+        APPEND VALUE #( %tky = ls_pedido-%tky
+                        %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>snapshot_existente
+                                               severity = if_abap_behv_message=>severity-information ) )
+               TO cs_reported-pedido.
+      ELSE.
+        APPEND ls_pedido TO lt_novos.
+      ENDIF.
+    ENDLOOP.
 
-    " Dados atuais do cliente e do endereço usado no pedido
-    SELECT SINGLE Cpf, Nome, Email, Telefone, Genero, DataNascimento, ClienteAtivo, ScoreCliente
+    CHECK lt_novos IS NOT INITIAL.
+
+*---------------------------------------------------------------------*
+    " 2) Dados atuais de clientes, endereços usados nos pedidos e itens:
+    "    uma consulta por tabela
+*---------------------------------------------------------------------*
+
+    SELECT ClienteUUID, Cpf, Nome, Email, Telefone, Genero, DataNascimento, ClienteAtivo, ScoreCliente
       FROM zr_pc_cliente
-      WHERE ClienteUUID = @is_pedido-ClienteUUID
-      INTO @DATA(ls_cliente).
+      FOR ALL ENTRIES IN @lt_novos
+      WHERE ClienteUUID = @lt_novos-ClienteUUID
+      INTO TABLE @DATA(lt_clientes).
 
-    SELECT SINGLE EnderecoUUID, Cep, Logradouro, Numero, Complemento, Bairro, Cidade, Uf, Estado
+    SELECT EnderecoUUID, Cep, Logradouro, Numero, Complemento, Bairro, Cidade, Uf, Estado
       FROM zr_pc_endereco
-      WHERE EnderecoUUID = @is_pedido-EnderecoUUID
-      INTO @DATA(ls_endereco).
+      FOR ALL ENTRIES IN @lt_novos
+      WHERE EnderecoUUID = @lt_novos-EnderecoUUID
+      INTO TABLE @DATA(lt_enderecos).
 
-    " Dados atuais dos itens
     IF it_itens IS NOT INITIAL.
       SELECT ItemUUID, Sku, Nome, Descricao, Categoria
         FROM zr_pc_item
@@ -2208,27 +2697,83 @@ CLASS lhc_pedido IMPLEMENTATION.
         INTO TABLE @DATA(lt_itens_mestre).
     ENDIF.
 
-    APPEND VALUE #( %tky = is_pedido-%tky ) TO lt_create_itens ASSIGNING FIELD-SYMBOL(<ls_create>).
+*---------------------------------------------------------------------*
+    " 3) Monta os snapshots de todos os pedidos (memória)
+*---------------------------------------------------------------------*
+
     DATA(lv_seq) = 0.
-    LOOP AT it_itens INTO DATA(ls_item).
-      lv_seq += 1.
-      READ TABLE lt_itens_mestre INTO DATA(ls_mestre) WITH KEY ItemUUID = ls_item-ItemUUID.
+    LOOP AT lt_novos INTO ls_pedido.
+      DATA(lv_idx) = sy-tabix.
+
+      READ TABLE lt_clientes INTO DATA(ls_cliente) WITH KEY ClienteUUID = ls_pedido-ClienteUUID.
       IF sy-subrc <> 0.
-        CLEAR ls_mestre.
+        CLEAR ls_cliente.
       ENDIF.
-      APPEND VALUE #( %cid           = |SNAP_ITEM_{ lv_seq }|
-                      %is_draft      = is_pedido-%is_draft
-                      ItemPedidoUUID = ls_item-ItemPedidoUUID
-                      ItemUUID       = ls_item-ItemUUID
-                      Sku            = ls_mestre-Sku
-                      Nome           = ls_mestre-Nome
-                      Descricao      = ls_mestre-Descricao
-                      Categoria      = ls_mestre-Categoria
-                      Quantidade     = ls_item-QtdeItemPedido
-                      Currency       = ls_item-Currency
-                      PrecoUnitario  = ls_item-PrecoUnitarioSnapshot
-                      ValorTotal     = ls_item-ValorTotal ) TO <ls_create>-%target.
+      READ TABLE lt_enderecos INTO DATA(ls_endereco) WITH KEY EnderecoUUID = ls_pedido-EnderecoUUID.
+      IF sy-subrc <> 0.
+        CLEAR ls_endereco.
+      ENDIF.
+
+      DATA(lv_cid_cli) = CONV abp_behv_cid( |SNAP_CLIENTE_{ lv_idx }| ).
+      INSERT VALUE #( cid    = lv_cid_cli
+                      pedido = VALUE #( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID ) )
+             INTO TABLE lt_cid_pedido.
+
+      APPEND VALUE #( %tky    = ls_pedido-%tky
+                      %target = VALUE #( ( %cid             = lv_cid_cli
+                                           %is_draft        = ls_pedido-%is_draft
+                                           ClienteUUID      = ls_pedido-ClienteUUID
+                                           Cpf              = ls_cliente-Cpf
+                                           Nome             = ls_cliente-Nome
+                                           Email            = ls_cliente-Email
+                                           Telefone         = ls_cliente-Telefone
+                                           Genero           = ls_cliente-Genero
+                                           DataNascimento   = ls_cliente-DataNascimento
+                                           ClienteAtivo     = ls_cliente-ClienteAtivo
+                                           ScoreCliente     = ls_cliente-ScoreCliente
+                                           EnderecoUUID     = ls_endereco-EnderecoUUID
+                                           Cep              = ls_endereco-Cep
+                                           Logradouro       = ls_endereco-Logradouro
+                                           Numero           = ls_endereco-Numero
+                                           Complemento      = ls_endereco-Complemento
+                                           Bairro           = ls_endereco-Bairro
+                                           Cidade           = ls_endereco-Cidade
+                                           Uf               = ls_endereco-Uf
+                                           Estado           = ls_endereco-Estado
+                                           EnderecoCompleto = ls_pedido-EnderecoPrincipalCompleto
+                                           MotivoSnapshot   = iv_motivo ) ) ) TO lt_create_cli.
+
+      APPEND VALUE #( %tky = ls_pedido-%tky ) TO lt_create_itens ASSIGNING FIELD-SYMBOL(<ls_create>).
+      LOOP AT it_itens INTO DATA(ls_item) WHERE PedidoUUID = ls_pedido-PedidoUUID AND %is_draft = ls_pedido-%is_draft.
+        lv_seq += 1.
+        READ TABLE lt_itens_mestre INTO DATA(ls_mestre) WITH KEY ItemUUID = ls_item-ItemUUID.
+        IF sy-subrc <> 0.
+          CLEAR ls_mestre.
+        ENDIF.
+
+        DATA(lv_cid_item) = CONV abp_behv_cid( |SNAP_ITEM_{ lv_seq }| ).
+        INSERT VALUE #( cid    = lv_cid_item
+                        pedido = VALUE #( is_draft = ls_pedido-%is_draft pedido_uuid = ls_pedido-PedidoUUID ) )
+               INTO TABLE lt_cid_pedido.
+
+        APPEND VALUE #( %cid           = lv_cid_item
+                        %is_draft      = ls_pedido-%is_draft
+                        ItemPedidoUUID = ls_item-ItemPedidoUUID
+                        ItemUUID       = ls_item-ItemUUID
+                        Sku            = ls_mestre-Sku
+                        Nome           = ls_mestre-Nome
+                        Descricao      = ls_mestre-Descricao
+                        Categoria      = ls_mestre-Categoria
+                        Quantidade     = ls_item-QtdeItemPedido
+                        Currency       = ls_item-Currency
+                        PrecoUnitario  = ls_item-PrecoUnitarioSnapshot
+                        ValorTotal     = ls_item-ValorTotal ) TO <ls_create>-%target.
+      ENDLOOP.
     ENDLOOP.
+
+*---------------------------------------------------------------------*
+    " 4) Criação de todos os snapshots numa única chamada EML
+*---------------------------------------------------------------------*
 
     MODIFY ENTITIES OF zr_pc_pedido IN LOCAL MODE
       ENTITY Pedido
@@ -2236,29 +2781,7 @@ CLASS lhc_pedido IMPLEMENTATION.
           FIELDS ( ClienteUUID Cpf Nome Email Telefone Genero DataNascimento ClienteAtivo ScoreCliente
                    EnderecoUUID Cep Logradouro Numero Complemento Bairro Cidade Uf Estado
                    EnderecoCompleto MotivoSnapshot )
-          WITH VALUE #( ( %tky    = is_pedido-%tky
-                          %target = VALUE #( ( %cid             = 'SNAP_CLIENTE'
-                                               %is_draft        = is_pedido-%is_draft
-                                               ClienteUUID      = is_pedido-ClienteUUID
-                                               Cpf              = ls_cliente-Cpf
-                                               Nome             = ls_cliente-Nome
-                                               Email            = ls_cliente-Email
-                                               Telefone         = ls_cliente-Telefone
-                                               Genero           = ls_cliente-Genero
-                                               DataNascimento   = ls_cliente-DataNascimento
-                                               ClienteAtivo     = ls_cliente-ClienteAtivo
-                                               ScoreCliente     = ls_cliente-ScoreCliente
-                                               EnderecoUUID     = ls_endereco-EnderecoUUID
-                                               Cep              = ls_endereco-Cep
-                                               Logradouro       = ls_endereco-Logradouro
-                                               Numero           = ls_endereco-Numero
-                                               Complemento      = ls_endereco-Complemento
-                                               Bairro           = ls_endereco-Bairro
-                                               Cidade           = ls_endereco-Cidade
-                                               Uf               = ls_endereco-Uf
-                                               Estado           = ls_endereco-Estado
-                                               EnderecoCompleto = is_pedido-EnderecoPrincipalCompleto
-                                               MotivoSnapshot   = iv_motivo ) ) ) )
+          WITH lt_create_cli
         CREATE BY \_ItensSnapshot
           FIELDS ( ItemPedidoUUID ItemUUID Sku Nome Descricao Categoria Quantidade Currency
                    PrecoUnitario ValorTotal )
@@ -2269,27 +2792,38 @@ CLASS lhc_pedido IMPLEMENTATION.
     propagar( EXPORTING is_failed = ls_failed is_reported = ls_reported
               CHANGING  cs_failed = cs_failed cs_reported = cs_reported ).
 
-    IF ls_failed-pedido IS NOT INITIAL
-       OR ls_failed-clientesnapshot IS NOT INITIAL
-       OR ls_failed-itemsnapshot IS NOT INITIAL.
-      APPEND VALUE #( %tky = is_pedido-%tky ) TO cs_failed-pedido.
-    ENDIF.
+    " 5) Snapshot que falhou reprova o pedido de origem (via %cid)
+    DATA(lt_cids_falha) = VALUE string_table( FOR c IN ls_failed-clientesnapshot ( CONV string( c-%cid ) ) ).
+    INSERT LINES OF VALUE string_table( FOR i IN ls_failed-itemsnapshot ( CONV string( i-%cid ) ) ) INTO TABLE lt_cids_falha.
+
+    LOOP AT lt_cids_falha INTO DATA(lv_cid_falha).
+      READ TABLE lt_cid_pedido INTO DATA(ls_cid_pedido) WITH TABLE KEY cid = CONV abp_behv_cid( lv_cid_falha ).
+      IF sy-subrc = 0 AND NOT line_exists( cs_failed-pedido[ PedidoUUID = ls_cid_pedido-pedido-pedido_uuid ] ).
+        APPEND VALUE #( %tky-%is_draft  = ls_cid_pedido-pedido-is_draft
+                        %tky-PedidoUUID = ls_cid_pedido-pedido-pedido_uuid ) TO cs_failed-pedido.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
 ENDCLASS.
 
 
-"! Handler da entidade ItemPedido (child)
+"! <h1>Handler da entidade ItemPedido (filha do BO {@link ZR_PC_PEDIDO})</h1>
+"! Valor de cada linha e validação do item escolhido.
 CLASS lhc_itempedido DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     CONSTANTS:
+      "! State areas das validations (mensagens de estado no rascunho)
       BEGIN OF c_area,
+        "! {@link .METH:ValidarItemPedido}
         item TYPE string VALUE `VALIDAR_ITEM_PEDIDO`,
       END OF c_area.
 
+    "! Preço unitário atual do item, moeda e valor da linha (quantidade x preço).
     METHODS CalcularValorItem FOR DETERMINE ON MODIFY
       IMPORTING keys FOR ItemPedido~CalcularValorItem.
 
+    "! Item obrigatório, ativo e quantidade maior que zero.
     METHODS ValidarItemPedido FOR VALIDATE ON SAVE
       IMPORTING keys FOR ItemPedido~ValidarItemPedido.
 

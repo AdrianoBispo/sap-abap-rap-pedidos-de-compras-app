@@ -1,6 +1,8 @@
 projection;
 strict ( 2 );
 
+/* Projection do BO Reembolso para o app Gestão de Reembolsos: expõe só as
+   actions de decisão (regras e fluxo em ZR_PC_REEMBOLSO). */
 define behavior for ZC_PC_REEMBOLSO_APP alias Reembolso
 use etag
 {

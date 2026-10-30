@@ -24,17 +24,22 @@ com baixa do estoque e cancelamento, com abertura de reembolso quando o pedido j
 
 | Lista | Rascunho com itens *inline* | Efetuar pagamento |
 | --- | --- | --- |
-| <img src="../../../assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="../../../assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="../../../assets/telas/pedidos/pagamento.png" alt="Diálogo da action Efetuar Pagamento" width="290"> |
+| <img src="../../../assets/telas/pedidos/lista.png" alt="Lista de pedidos" width="290"> | <img src="../../../assets/telas/pedidos/rascunho.png" alt="Pedido em rascunho com dois itens" width="290"> | <img src="../../../assets/telas/pedidos/pagamento.png" alt="Diálogo Efetuar Pagamento com máscaras" width="290"> |
 
 | Pedido finalizado (snapshot) | Cancelamento de pedido pago |
 | --- | --- |
 | <img src="../../../assets/telas/pedidos/finalizado.png" alt="Pedido finalizado com o snapshot do cliente" width="440"> | <img src="../../../assets/telas/pedidos/cancelamento.png" alt="Diálogo Cancelar pedido com motivo" width="440"> |
 
+| Menu Ações | Confirmação antes da ação |
+| --- | --- |
+| <img src="../../../assets/telas/pedidos/acoes-menu.png" alt="Menu Ações aberto na Object Page do pedido" width="440"> | <img src="../../../assets/telas/pedidos/confirmacao.png" alt="Confirmação antes de cancelar o pedido" width="440"> |
+
 ## Comportamento
 
 As colunas, filtros, seções, ações e a criticidade vêm das metadata extensions do backend
-(`ZC_PC_PEDIDO_APP` e filhas). Na app ficam só o `manifest.json` (rotas e criação *inline* dos itens) e o
-mapeamento local do CPF para a navegação.
+(`ZC_PC_PEDIDO_APP` e filhas). Na app ficam o `manifest.json` (rotas, criação *inline* dos itens e o menu
+"Ações"), as anotações locais (mapeamento do CPF para a navegação e a confirmação do *Aprovar pedido*) e os
+botões customizados de `webapp/ext/AcoesPedido.js`.
 
 | Status do pedido | Como chega | O que a app permite |
 | --- | --- | --- |
@@ -49,9 +54,15 @@ mapeamento local do CPF para a navegação.
   endereço principal, itens e disponibilidade e reserva o estoque.
 - **Edição** de pedido `ABERTO`: o cliente fica somente leitura e a reserva é ajustada pela diferença dos
   itens. O pedido não tem *Excluir*.
-- **Ações** agrupadas no menu "Ações", na lista e no pedido; o backend habilita cada uma conforme o status.
-  *Efetuar Pagamento* abre um diálogo com método, cartão, validade e CVV; só bandeira, últimos 4 dígitos e
-  máscara são gravados. *Cancelar pedido* exige o motivo.
+- **Ações** agrupadas no menu "Ações", na lista e no pedido; cada uma fica habilitada conforme o feature
+  control do backend (`__OperationControl`) e pede confirmação antes de executar. *Aprovar pedido* usa a
+  confirmação padrão (`Common.IsActionCritical`); *Efetuar Pagamento* e *Cancelar pedido* são botões
+  customizados (`webapp/ext/AcoesPedido.js`), porque o Fiori Elements não confirma ações com parâmetros. O
+  `manifest.json` sobrescreve o grupo anotado `DataFieldForActionGroup::AcoesPedido` com esses botões; a DDLX
+  mantém as ações padrão para o Preview do serviço.
+- *Efetuar Pagamento* abre um diálogo próprio com método e campos com máscara (cartão `9999 9999 9999 9999`,
+  validade `99/99`, CVV `999`); o precheck do backend confere todos os campos de uma vez e só bandeira,
+  últimos 4 dígitos e máscara são gravados. *Cancelar pedido* exige o motivo.
 - **Seções dinâmicas**: em pedidos `FINALIZADO` ou `CANCELADO`, cliente e itens vêm dos snapshots (histórico
   imutável); nos demais, das tabelas principais.
 - **Importar planilha** (CSV ou XLSX, até 500 linhas, tudo ou nada): uma linha por item; a coluna *Pedido*
@@ -92,7 +103,8 @@ pedidos-compras/
     ├── Component.js        sap/fe/core/AppComponent
     ├── index.html          página standalone (abre sem launchpad)
     ├── clearLaunchpadIntent.js   descarta o intent que tiles do tipo URL acrescentam ao hash
-    ├── annotations/annotation.xml   mapeamento CpfCliente → Cpf (semantic object ZPCCliente)
+    ├── annotations/annotation.xml   mapeamento CpfCliente → Cpf (semantic object ZPCCliente) e confirmação do Aprovar pedido
+    ├── ext/AcoesPedido.js  botões Efetuar Pagamento (diálogo com máscaras) e Cancelar pedido, com confirmação
     ├── i18n/i18n.properties textos pt-BR
     ├── localService/mainService/    metadata do serviço e dos value helps, para o mock
     └── test/integration/   testes OPA5 gerados (lista e Object Page)
