@@ -167,6 +167,12 @@
                     "type": "ResponsiveTable"
                   },
                   "actions": {
+                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
+                      "visible": false
+                    },
+                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
+                      "visible": false
+                    },
                     "EfetuarPagamento": {
                       "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
                       "enabled": "pedidoscompras.ext.AcoesPedido.podePagar",
@@ -174,7 +180,7 @@
                       "text": "{i18n>acaoEfetuarPagamento}",
                       "position": {
                         "placement": "Before",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
                       }
                     },
                     "CancelarPedido": {
@@ -184,7 +190,7 @@
                       "text": "{i18n>acaoCancelarPedido}",
                       "position": {
                         "placement": "After",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
                       }
                     }
                   }
@@ -230,24 +236,30 @@
               "content": {
                 "header": {
                   "actions": {
+                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.SimularPagamento::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
+                      "visible": false
+                    },
+                    "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.CancelarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType": {
+                      "visible": false
+                    },
                     "EfetuarPagamento": {
                       "press": "pedidoscompras.ext.AcoesPedido.efetuarPagamento",
                       "text": "{i18n>acaoEfetuarPagamento}",
                       "visible": "{= ${IsActiveEntity} === true }",
-                      "enabled": "{= ${IsActiveEntity} === true && ${StatusPedido} === 'ABERTO' }",
+                      "enabled": "{__OperationControl/SimularPagamento}",
                       "position": {
                         "placement": "Before",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
                       }
                     },
                     "CancelarPedido": {
                       "press": "pedidoscompras.ext.AcoesPedido.cancelarPedido",
                       "text": "{i18n>acaoCancelarPedido}",
                       "visible": "{= ${IsActiveEntity} === true }",
-                      "enabled": "{= ${IsActiveEntity} === true && ( ${StatusPedido} === 'ABERTO' || ${StatusPedido} === 'AGUARDANDO_APROVACAO' ) }",
+                      "enabled": "{__OperationControl/CancelarPedido}",
                       "position": {
                         "placement": "After",
-                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido"
+                        "anchor": "DataFieldForAction::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.AprovarPedido::com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.PedidoType"
                       }
                     }
                   }

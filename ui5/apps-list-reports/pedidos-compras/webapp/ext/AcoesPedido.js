@@ -5,6 +5,8 @@
  * mostra o pop-up de confirmação (Common.IsActionCritical) em ações com diálogo
  * de parâmetros, por isso os botões padrão foram trocados por estes, que pedem
  * a confirmação e depois executam a action do RAP via editFlow.invokeAction.
+ * Os botões padrão continuam na DDLX ZC_PC_PEDIDO_APP (para o Preview do
+ * serviço) e ficam ocultos neste app pelo manifest (visible: false).
  * Aprovar pedido não tem parâmetros e usa o botão padrão com IsActionCritical
  * (annotations/annotation.xml).
  *
@@ -29,11 +31,7 @@ sap.ui.define([
     // Namespace do serviço OData V4 (ZUI_PC_PEDIDOS_COMPRAS_O4)
     const SERVICO = "com.sap.gateway.srvd.zui_pc_pedidos_compras.v0001.";
 
-    // Valores de ZIF_PC_CONSTANTS (status do pedido e métodos de pagamento)
-    const STATUS = {
-        ABERTO: "ABERTO",
-        AGUARDANDO_APROVACAO: "AGUARDANDO_APROVACAO"
-    };
+    // Valores de ZIF_PC_CONSTANTS=>c_metodo_pagamento
     const METODO = {
         CREDITO: "CARTAO_CREDITO",
         DEBITO: "CARTAO_DEBITO"
@@ -59,11 +57,14 @@ sap.ui.define([
         return oContexto ? [oContexto] : [];
     }
 
-    /** Instância ativa (não rascunho) com o status informado. */
-    function ativoNoStatus(oContexto, aStatus) {
+    /**
+     * Instância ativa (não rascunho) em que o feature control do RAP
+     * (features : instance → __OperationControl) permite a action.
+     */
+    function acaoPermitida(oContexto, sAction) {
         return !!oContexto
             && oContexto.getProperty("IsActiveEntity") === true
-            && aStatus.includes(oContexto.getProperty("StatusPedido"));
+            && oContexto.getProperty("__OperationControl/" + sAction) === true;
     }
 
     /** Somente dígitos (remove espaços e marcadores da máscara). */
@@ -194,10 +195,10 @@ sap.ui.define([
             abrirDialogoPagamento(this, aContextos[0]);
         },
 
-        /** Habilita Efetuar Pagamento na tabela: exatamente um pedido ativo em ABERTO. */
+        /** Habilita Efetuar Pagamento na tabela: exatamente um pedido com SimularPagamento permitido. */
         podePagar: function (oContexto, aSelecionados) {
             return !!aSelecionados && aSelecionados.length === 1
-                && ativoNoStatus(aSelecionados[0], [STATUS.ABERTO]);
+                && acaoPermitida(aSelecionados[0], "SimularPagamento");
         },
 
         /**
@@ -227,11 +228,10 @@ sap.ui.define([
             });
         },
 
-        /** Habilita Cancelar pedido na tabela: todos ativos em ABERTO ou AGUARDANDO_APROVACAO. */
+        /** Habilita Cancelar pedido na tabela: todos os pedidos com CancelarPedido permitido. */
         podeCancelar: function (oContexto, aSelecionados) {
             return !!aSelecionados && aSelecionados.length > 0
-                && aSelecionados.every((oSelecionado) =>
-                    ativoNoStatus(oSelecionado, [STATUS.ABERTO, STATUS.AGUARDANDO_APROVACAO]));
+                && aSelecionados.every((oSelecionado) => acaoPermitida(oSelecionado, "CancelarPedido"));
         }
     };
 });
