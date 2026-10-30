@@ -1,38 +1,61 @@
 *"* Local Types da behavior pool ZBP_R_PC_CLIENTE
 
-"! Handler da entidade Cliente (root)
+"! <h1>Handler da entidade Cliente (root do BO {@link ZR_PC_CLIENTE})</h1>
+"! Autorização, feature control, prechecks (exclusão e inativação),
+"! determinations, validations e importação por planilha. Os endereços
+"! (entidade filha) ficam em {@link lhc_endereco}.
 CLASS lhc_cliente DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     CONSTANTS:
+      "! State areas das validations (mensagens de estado no rascunho)
       BEGIN OF c_area,
+        "! {@link .METH:ValidarCpf}
         cpf         TYPE string VALUE `VALIDAR_CPF`,
+        "! {@link .METH:ValidarDadosObrigatorios}
         obrigatorio TYPE string VALUE `VALIDAR_OBRIGATORIOS`,
+        "! {@link .METH:ValidarEmail}
         email       TYPE string VALUE `VALIDAR_EMAIL`,
+        "! {@link .METH:ValidarTelefone}
         telefone    TYPE string VALUE `VALIDAR_TELEFONE`,
+        "! {@link .METH:ValidarDataNascimento}
         nascimento  TYPE string VALUE `VALIDAR_NASCIMENTO`,
+        "! {@link .METH:ValidarGenero}
         genero      TYPE string VALUE `VALIDAR_GENERO`,
+        "! {@link .METH:ValidarFoto}
         foto        TYPE string VALUE `VALIDAR_FOTO`,
+        "! {@link .METH:ValidarInativacaoCliente}
+        inativacao  TYPE string VALUE `VALIDAR_INATIVACAO`,
       END OF c_area.
 
-    TYPES tt_uuid TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
+    "! Conjunto de UUIDs de clientes
+    TYPES tt_uuid TYPE SORTED TABLE OF sysuuid_x16 WITH NON-UNIQUE KEY table_line.
+    "! Range de UUIDs (consultas com IN e UNION, sem FOR ALL ENTRIES)
+    TYPES tt_range_uuid TYPE RANGE OF sysuuid_x16.
+    "! FAILED do BO Cliente
     TYPES ty_failed   TYPE RESPONSE FOR FAILED EARLY zr_pc_cliente.
+    "! REPORTED do BO Cliente
     TYPES ty_reported TYPE RESPONSE FOR REPORTED EARLY zr_pc_cliente.
 
+    "! Autorização global: cada operação confere sua atividade em {@link ZCL_PC_AUTH}
+    "! (somente administrador cria, altera, exclui e importa).
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Cliente RESULT result.
 
-    "! Importação em massa por planilha (.xlsx/.csv): cria clientes ativos, cada
-    "! um com o endereço principal. Tudo ou nada: qualquer erro cancela a importação.
+    "! <strong>Importação em massa por planilha (.xlsx/.csv):</strong>
+    "! <ul>
+    "!  <li>cria clientes ativos, cada um com o endereço principal.</li>
+    "!  <li>Tudo ou nada: qualquer erro cancela a importação.</li>
+    "! </ul>
     METHODS ImportarPlanilha FOR MODIFY
       IMPORTING keys FOR ACTION Cliente~ImportarPlanilha.
 
-    "! Reporta os erros da importação (primeiro o resumo) e falha a action,
-    "! o que descarta qualquer cliente já criado no buffer.
+    "! Reporta os erros da importação (primeiro o resumo) e
+    "! descarta qualquer cliente já criado no buffer.
     METHODS falhar_importacao
-      IMPORTING it_erros     TYPE string_table
-                iv_cid       TYPE abp_behv_cid
-      CHANGING  cs_failed    TYPE ty_failed
-                cs_reported  TYPE ty_reported.
+      IMPORTING it_erros    TYPE string_table
+                iv_cid      TYPE abp_behv_cid
+      CHANGING  cs_failed   TYPE ty_failed
+                cs_reported TYPE ty_reported.
 
     "! "Linha N: " a partir do %cid (CLI ou END seguido do número da linha).
     METHODS linha_do_cid
@@ -44,44 +67,77 @@ CLASS lhc_cliente DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_global_auth_endereco FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Endereco RESULT result.
 
+    "! Feature control: exclusão desabilitada para cliente com pedido (ativo ou
+    "! rascunho), ver {@link .METH:clientes_com_pedido}.
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Cliente RESULT result.
 
+    "! Precheck da exclusão: mesma regra do feature control, para chamadas via
+    "! EML/API (mensagem 004).
     METHODS precheck_delete FOR PRECHECK
       IMPORTING keys FOR DELETE Cliente.
 
+    "! Cliente novo nasce ativo, com Score inicial sorteado (0 a 100).
     METHODS DefinirValoresIniciais FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Cliente~DefinirValoresIniciais.
 
+    "! Normaliza CPF e telefone (só dígitos) e e-mail (minúsculas, sem espaços).
     METHODS NormalizarDados FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Cliente~NormalizarDados.
 
+    "! CPF válido ({@link ZCL_PC_UTIL.METH:validar_cpf}) e único (CPFs gravados
+    "! lidos numa única consulta).
     METHODS ValidarCpf FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarCpf.
 
+    "! CPF, nome, e-mail, telefone e data de nascimento obrigatórios (mensagem 023).
     METHODS ValidarDadosObrigatorios FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarDadosObrigatorios.
 
+    "! Formato do e-mail ({@link ZCL_PC_UTIL.METH:validar_email}).
     METHODS ValidarEmail FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarEmail.
 
+    "! Telefone com 10 ou 11 dígitos (DDD + número).
     METHODS ValidarTelefone FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarTelefone.
 
+    "! Data de nascimento não pode ser futura.
     METHODS ValidarDataNascimento FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarDataNascimento.
 
+    "! Gênero da CodeList GENERO (lida uma única vez).
     METHODS ValidarGenero FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarGenero.
 
+    "! Foto JPEG/PNG/WEBP coerente com o MIME type ({@link ZCL_PC_UTIL.METH:validar_imagem}).
     METHODS ValidarFoto FOR VALIDATE ON SAVE
       IMPORTING keys FOR Cliente~ValidarFoto.
 
+    "! Inativação no save (mesma regra do precheck_update).
+    METHODS ValidarInativacaoCliente FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Cliente~ValidarInativacaoCliente.
+
+    "! Precheck da inativação: recusa na hora (ao alterar ClienteAtivo no
+    "! rascunho ou via EML) a inativação de cliente com pedido em andamento.
+    METHODS precheck_update FOR PRECHECK
+      IMPORTING entities FOR UPDATE Cliente.
+
     "! Clientes (entre os informados) que possuem pedido ativo ou em draft.
     METHODS clientes_com_pedido
-      IMPORTING it_clientes     TYPE tt_uuid
+      IMPORTING it_clientes          TYPE tt_uuid
       RETURNING VALUE(rt_com_pedido) TYPE tt_uuid.
 
+    "! Clientes (entre os informados) com pedido em andamento: aberto,
+    "! aguardando aprovação, processando reembolso ou ainda em rascunho.
+    METHODS clientes_com_pedido_andamento
+      IMPORTING it_clientes          TYPE tt_uuid
+      RETURNING VALUE(rt_com_pedido) TYPE tt_uuid.
+
+    "! Mensagem T100 de {@link ZCX_PC_MSG} para REPORTED.
+    "! @parameter textid | Chave da mensagem (constante de {@link ZIF_PC_MSG})
+    "! @parameter attr1 | Valor da variável &amp;1
+    "! @parameter ro_msg | Mensagem pronta para %msg
     METHODS msg
       IMPORTING textid        LIKE if_t100_message=>t100key
                 attr1         TYPE csequence OPTIONAL
@@ -92,27 +148,32 @@ ENDCLASS.
 CLASS lhc_cliente IMPLEMENTATION.
 
   METHOD get_global_authorizations.
+
     " Cada operação verifica sua própria atividade (ACTVT)
     IF requested_authorizations-%create = if_abap_behv=>mk-on.
       result-%create = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
                                THEN if_abap_behv=>auth-allowed
                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%update = if_abap_behv=>mk-on.
       result-%update = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                THEN if_abap_behv=>auth-allowed
                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%delete = if_abap_behv=>mk-on.
       result-%delete = COND #( WHEN zcl_pc_auth=>admin_pode_excluir( ) = abap_true
                                THEN if_abap_behv=>auth-allowed
                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%action-Edit = if_abap_behv=>mk-on.
       result-%action-Edit = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                     THEN if_abap_behv=>auth-allowed
                                     ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%action-ImportarPlanilha = if_abap_behv=>mk-on.
       result-%action-ImportarPlanilha = COND #( WHEN zcl_pc_auth=>admin_pode_criar( ) = abap_true
                                                 THEN if_abap_behv=>auth-allowed
@@ -122,16 +183,19 @@ CLASS lhc_cliente IMPLEMENTATION.
 
 
   METHOD get_global_auth_endereco.
+
     IF requested_authorizations-%update = if_abap_behv=>mk-on.
       result-%update = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                THEN if_abap_behv=>auth-allowed
                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%delete = if_abap_behv=>mk-on.
       result-%delete = COND #( WHEN zcl_pc_auth=>admin_pode_excluir( ) = abap_true
                                THEN if_abap_behv=>auth-allowed
                                ELSE if_abap_behv=>auth-unauthorized ).
     ENDIF.
+
     IF requested_authorizations-%action-DefinirEnderecoPrincipal = if_abap_behv=>mk-on.
       result-%action-DefinirEnderecoPrincipal = COND #( WHEN zcl_pc_auth=>admin_pode_alterar( ) = abap_true
                                                          THEN if_abap_behv=>auth-allowed
@@ -141,12 +205,8 @@ CLASS lhc_cliente IMPLEMENTATION.
 
 
   METHOD get_instance_features.
-    DATA lt_ids TYPE tt_uuid.
-    LOOP AT keys INTO DATA(ls_k).
-      INSERT ls_k-ClienteUUID INTO TABLE lt_ids.
-    ENDLOOP.
 
-    DATA(lt_com_pedido) = clientes_com_pedido( lt_ids ).
+    DATA(lt_com_pedido) = clientes_com_pedido( VALUE #( FOR k IN keys ( k-ClienteUUID ) ) ).
 
     result = VALUE #( FOR k IN keys
                       ( %tky    = k-%tky
@@ -157,19 +217,17 @@ CLASS lhc_cliente IMPLEMENTATION.
 
 
   METHOD precheck_delete.
-    DATA lt_ids TYPE tt_uuid.
-    LOOP AT keys INTO DATA(ls_k).
-      INSERT ls_k-ClienteUUID INTO TABLE lt_ids.
-    ENDLOOP.
 
-    DATA(lt_com_pedido) = clientes_com_pedido( lt_ids ).
+    DATA(lt_com_pedido) = clientes_com_pedido( VALUE #( FOR k IN keys ( k-ClienteUUID ) ) ).
 
     LOOP AT keys INTO DATA(ls_key).
+
       IF line_exists( lt_com_pedido[ table_line = ls_key-ClienteUUID ] ).
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_key-%tky
                         %msg = msg( zif_pc_msg=>cliente_com_pedido ) ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
@@ -177,30 +235,93 @@ CLASS lhc_cliente IMPLEMENTATION.
   METHOD clientes_com_pedido.
     CHECK it_clientes IS NOT INITIAL.
 
-    " Pedidos ativos
+    DATA(lt_range) = VALUE tt_range_uuid( FOR c IN it_clientes ( sign = 'I' option = 'EQ' low = c ) ).
+
+    " Pedidos ativos e pedidos ainda em draft numa única consulta
     SELECT ClienteUUID
       FROM zr_pc_pedido
-      FOR ALL ENTRIES IN @it_clientes
-      WHERE ClienteUUID = @it_clientes-table_line
-      INTO TABLE @DATA(lt_ativos).
-
-    " Pedidos ainda em draft (ainda não ativados)
-    SELECT clienteuuid
+      WHERE ClienteUUID IN @lt_range
+    UNION DISTINCT
+    SELECT clienteuuid AS ClienteUUID
       FROM zta_pc_pedido_d
-      FOR ALL ENTRIES IN @it_clientes
-      WHERE clienteuuid = @it_clientes-table_line
-      INTO TABLE @DATA(lt_drafts).
+      WHERE clienteuuid IN @lt_range
+      INTO TABLE @rt_com_pedido.
 
-    LOOP AT lt_ativos INTO DATA(ls_ativo).
-      INSERT ls_ativo-ClienteUUID INTO TABLE rt_com_pedido.
-    ENDLOOP.
-    LOOP AT lt_drafts INTO DATA(ls_draft).
-      INSERT ls_draft-clienteuuid INTO TABLE rt_com_pedido.
+  ENDMETHOD.
+
+
+  METHOD clientes_com_pedido_andamento.
+    CHECK it_clientes IS NOT INITIAL.
+
+    DATA(lt_range) = VALUE tt_range_uuid( FOR c IN it_clientes ( sign = 'I' option = 'EQ' low = c ) ).
+
+    " Pedidos não encerrados e rascunhos de pedido numa única consulta
+    SELECT ClienteUUID
+      FROM zr_pc_pedido
+      WHERE ClienteUUID IN @lt_range
+        AND StatusPedido IN ( @zif_pc_constants=>c_status_pedido-aberto,
+                              @zif_pc_constants=>c_status_pedido-aguardando_aprovacao,
+                              @zif_pc_constants=>c_status_pedido-processando_reembolso )
+    UNION DISTINCT
+    SELECT clienteuuid AS ClienteUUID
+      FROM zta_pc_pedido_d
+      WHERE clienteuuid IN @lt_range
+      INTO TABLE @rt_com_pedido.
+
+  ENDMETHOD.
+
+
+  METHOD precheck_update.
+
+    " Só interessa a troca de ClienteAtivo para inativo (reativar é sempre permitido)
+    DATA(lt_bloqueados) = clientes_com_pedido_andamento(
+      VALUE #( FOR e IN entities
+               WHERE ( %control-ClienteAtivo = if_abap_behv=>mk-on AND ClienteAtivo = abap_false )
+               ( e-ClienteUUID ) ) ).
+
+    CHECK lt_bloqueados IS NOT INITIAL.
+
+    failed-cliente = VALUE #( FOR e IN entities
+                              WHERE ( %control-ClienteAtivo = if_abap_behv=>mk-on AND ClienteAtivo = abap_false )
+                              FOR b IN lt_bloqueados WHERE ( table_line = e-ClienteUUID )
+                              ( %tky = e-%tky ) ).
+
+    reported-cliente = VALUE #( FOR f IN failed-cliente
+                                ( %tky                  = f-%tky
+                                  %msg                  = msg( zif_pc_msg=>cliente_inativacao_bloqueada )
+                                  %element-ClienteAtivo = if_abap_behv=>mk-on ) ).
+  ENDMETHOD.
+
+
+  METHOD ValidarInativacaoCliente.
+
+    READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
+      ENTITY Cliente
+        FIELDS ( ClienteAtivo )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_clientes).
+
+    DATA(lt_bloqueados) = clientes_com_pedido_andamento(
+      VALUE #( FOR c IN lt_clientes WHERE ( ClienteAtivo = abap_false ) ( c-ClienteUUID ) ) ).
+
+    LOOP AT lt_clientes INTO DATA(ls_cliente).
+      APPEND VALUE #( %tky        = ls_cliente-%tky
+                      %state_area = c_area-inativacao ) TO reported-cliente.
+
+      IF ls_cliente-ClienteAtivo = abap_false
+         AND line_exists( lt_bloqueados[ table_line = ls_cliente-ClienteUUID ] ).
+        APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
+        APPEND VALUE #( %tky                  = ls_cliente-%tky
+                        %state_area           = c_area-inativacao
+                        %msg                  = msg( zif_pc_msg=>cliente_inativacao_bloqueada )
+                        %element-ClienteAtivo = if_abap_behv=>mk-on ) TO reported-cliente.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD DefinirValoresIniciais.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( ClienteAtivo ScoreCliente )
@@ -218,19 +339,23 @@ CLASS lhc_cliente IMPLEMENTATION.
     MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         UPDATE FIELDS ( ClienteAtivo ScoreCliente )
+
         WITH VALUE #( FOR c IN lt_clientes
                       ( %tky         = c-%tky
                         ClienteAtivo = abap_true
                         ScoreCliente = lo_random->get_next( ) ) )
+
       REPORTED DATA(ls_rep_cliente0_all).
 
     LOOP AT ls_rep_cliente0_all-cliente INTO DATA(ls_rep_cliente0) WHERE %msg IS BOUND.
       APPEND CORRESPONDING #( ls_rep_cliente0 ) TO reported-cliente.
     ENDLOOP.
+
   ENDMETHOD.
 
 
   METHOD NormalizarDados.
+
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_cliente\\Cliente.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -240,8 +365,11 @@ CLASS lhc_cliente IMPLEMENTATION.
       RESULT DATA(lt_clientes).
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
+
       DATA(lv_cpf)      = CONV zr_pc_cliente-Cpf( zcl_pc_util=>somente_digitos( ls_cliente-Cpf ) ).
+
       DATA(lv_telefone) = CONV zr_pc_cliente-Telefone( zcl_pc_util=>somente_digitos( ls_cliente-Telefone ) ).
+
       DATA(lv_email)    = CONV zr_pc_cliente-Email( condense( to_lower( ls_cliente-Email ) ) ).
 
       IF lv_cpf <> ls_cliente-Cpf OR lv_telefone <> ls_cliente-Telefone OR lv_email <> ls_cliente-Email.
@@ -264,15 +392,28 @@ CLASS lhc_cliente IMPLEMENTATION.
     LOOP AT ls_rep_cliente1_all-cliente INTO DATA(ls_rep_cliente1) WHERE %msg IS BOUND.
       APPEND CORRESPONDING #( ls_rep_cliente1 ) TO reported-cliente.
     ENDLOOP.
+
   ENDMETHOD.
 
 
   METHOD ValidarCpf.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( Cpf )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_clientes).
+
+    " Clientes gravados com os mesmos CPFs: uma única consulta para todos
+    DATA lt_cpfs TYPE STANDARD TABLE OF zta_pc_cliente-cpf WITH EMPTY KEY.
+    lt_cpfs = VALUE #( FOR c IN lt_clientes WHERE ( Cpf IS NOT INITIAL ) ( c-Cpf ) ).
+    IF lt_cpfs IS NOT INITIAL.
+      SELECT cliente_uuid, cpf
+        FROM zta_pc_cliente
+        FOR ALL ENTRIES IN @lt_cpfs
+        WHERE cpf = @lt_cpfs-table_line
+        INTO TABLE @DATA(lt_cpf_db).
+    ENDIF.
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
       APPEND VALUE #( %tky        = ls_cliente-%tky
@@ -292,11 +433,10 @@ CLASS lhc_cliente IMPLEMENTATION.
       ENDIF.
 
       " Unicidade: nenhum outro cliente ativo com o mesmo CPF
-      SELECT SINGLE @abap_true
-        FROM zta_pc_cliente
-        WHERE cpf          =  @ls_cliente-Cpf
-          AND cliente_uuid <> @ls_cliente-ClienteUUID
-        INTO @DATA(lv_existe).
+      DATA(lv_existe) = xsdbool( REDUCE i( INIT n = 0
+                                           FOR d IN lt_cpf_db
+                                           WHERE ( cpf = ls_cliente-Cpf AND cliente_uuid <> ls_cliente-ClienteUUID )
+                                           NEXT n = n + 1 ) > 0 ).
 
       IF lv_existe = abap_true.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
@@ -305,12 +445,15 @@ CLASS lhc_cliente IMPLEMENTATION.
                         %msg        = msg( zif_pc_msg=>cliente_cpf_duplicado )
                         %element-Cpf = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
       CLEAR lv_existe.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarDadosObrigatorios.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( Cpf Nome Email Telefone DataNascimento )
@@ -318,6 +461,7 @@ CLASS lhc_cliente IMPLEMENTATION.
       RESULT DATA(lt_clientes).
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
+
       APPEND VALUE #( %tky        = ls_cliente-%tky
                       %state_area = c_area-obrigatorio ) TO reported-cliente.
 
@@ -327,35 +471,41 @@ CLASS lhc_cliente IMPLEMENTATION.
                         %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'CPF' )
                         %element-Cpf = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
       IF ls_cliente-Nome IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
                         %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Nome' )
                         %element-Nome = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
       IF ls_cliente-Email IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
                         %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'E-mail' )
                         %element-Email = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
       IF ls_cliente-Telefone IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
                         %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Telefone' )
                         %element-Telefone = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
       IF ls_cliente-DataNascimento IS INITIAL.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky = ls_cliente-%tky %state_area = c_area-obrigatorio
                         %msg = msg( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Data de nascimento' )
                         %element-DataNascimento = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarEmail.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( Email )
@@ -366,19 +516,22 @@ CLASS lhc_cliente IMPLEMENTATION.
       APPEND VALUE #( %tky        = ls_cliente-%tky
                       %state_area = c_area-email ) TO reported-cliente.
 
-      IF ls_cliente-Email IS NOT INITIAL
-         AND zcl_pc_util=>validar_email( ls_cliente-Email ) = abap_false.
+      IF ls_cliente-Email IS NOT INITIAL AND zcl_pc_util=>validar_email( ls_cliente-Email ) = abap_false.
+
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
+
         APPEND VALUE #( %tky           = ls_cliente-%tky
                         %state_area    = c_area-email
                         %msg           = msg( zif_pc_msg=>email_invalido )
                         %element-Email = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarTelefone.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( Telefone )
@@ -392,6 +545,7 @@ CLASS lhc_cliente IMPLEMENTATION.
       CHECK ls_cliente-Telefone IS NOT INITIAL.
 
       DATA(lv_tel) = zcl_pc_util=>somente_digitos( ls_cliente-Telefone ).
+
       IF strlen( lv_tel ) < 10 OR strlen( lv_tel ) > 11.
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky              = ls_cliente-%tky
@@ -399,11 +553,13 @@ CLASS lhc_cliente IMPLEMENTATION.
                         %msg              = msg( zif_pc_msg=>telefone_invalido )
                         %element-Telefone = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarDataNascimento.
+
     DATA(lv_hoje) = cl_abap_context_info=>get_system_date( ).
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -413,6 +569,7 @@ CLASS lhc_cliente IMPLEMENTATION.
       RESULT DATA(lt_clientes).
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
+
       APPEND VALUE #( %tky        = ls_cliente-%tky
                       %state_area = c_area-nascimento ) TO reported-cliente.
 
@@ -423,16 +580,24 @@ CLASS lhc_cliente IMPLEMENTATION.
                         %msg                    = msg( zif_pc_msg=>data_nascimento_futura )
                         %element-DataNascimento = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarGenero.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( Genero )
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_clientes).
+
+    " Gêneros válidos lidos uma única vez (fora do laço)
+    SELECT Codigo
+      FROM zr_pc_codelist
+      WHERE Lista = @zif_pc_constants=>c_codelist-genero
+      INTO TABLE @DATA(lt_generos).
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
       APPEND VALUE #( %tky        = ls_cliente-%tky
@@ -440,25 +605,20 @@ CLASS lhc_cliente IMPLEMENTATION.
 
       CHECK ls_cliente-Genero IS NOT INITIAL.
 
-      SELECT SINGLE @abap_true
-        FROM zr_pc_codelist
-        WHERE Lista  = @zif_pc_constants=>c_codelist-genero
-          AND Codigo = @ls_cliente-Genero
-        INTO @DATA(lv_ok).
-
-      IF lv_ok = abap_false.
+      IF NOT line_exists( lt_generos[ Codigo = ls_cliente-Genero ] ).
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
         APPEND VALUE #( %tky            = ls_cliente-%tky
                         %state_area     = c_area-genero
                         %msg            = msg( textid = zif_pc_msg=>valor_invalido attr1 = 'Gênero' )
                         %element-Genero = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
-      CLEAR lv_ok.
+
     ENDLOOP.
   ENDMETHOD.
 
 
   METHOD ValidarFoto.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Cliente
         FIELDS ( FotoCliente FotoMimeType FotoFileName )
@@ -466,18 +626,22 @@ CLASS lhc_cliente IMPLEMENTATION.
       RESULT DATA(lt_clientes).
 
     LOOP AT lt_clientes INTO DATA(ls_cliente).
+
       APPEND VALUE #( %tky        = ls_cliente-%tky
                       %state_area = c_area-foto ) TO reported-cliente.
 
       IF zcl_pc_util=>validar_imagem( iv_conteudo     = ls_cliente-FotoCliente
                                       iv_mime_type    = ls_cliente-FotoMimeType
                                       iv_nome_arquivo = ls_cliente-FotoFileName ) = abap_false.
+
         APPEND VALUE #( %tky = ls_cliente-%tky ) TO failed-cliente.
+
         APPEND VALUE #( %tky                 = ls_cliente-%tky
                         %state_area          = c_area-foto
                         %msg                 = msg( zif_pc_msg=>foto_formato_invalido )
                         %element-FotoCliente = if_abap_behv=>mk-on ) TO reported-cliente.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
@@ -526,7 +690,11 @@ CLASS lhc_cliente IMPLEMENTATION.
       ( campo = c_col-numero     sinonimos = `NUM|NRO|NUMEROENDERECO`                    obrigatoria = abap_true )
       ( campo = c_col-complemento ) ).
 
+    " CPFs já cadastrados: lidos uma única vez, fora dos laços
+    SELECT cpf FROM zta_pc_cliente INTO TABLE @DATA(lt_cpf_db).
+
     LOOP AT keys INTO DATA(ls_key).
+
       CLEAR: lt_erros, lt_cli, lt_cpf_arq.
 
       IF zcl_pc_auth=>admin_pode_criar( ) = abap_false.
@@ -540,6 +708,7 @@ CLASS lhc_cliente IMPLEMENTATION.
                                       it_colunas   = lt_colunas
                             IMPORTING et_registros = DATA(lt_registros)
                                       et_erros     = lt_erros ).
+
       IF lt_erros IS NOT INITIAL.
         falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
                            CHANGING  cs_failed = failed cs_reported = reported ).
@@ -547,98 +716,134 @@ CLASS lhc_cliente IMPLEMENTATION.
       ENDIF.
 
       " 2) Validação linha a linha (todas as linhas são avaliadas antes de gravar)
-      SELECT cpf FROM zta_pc_cliente INTO TABLE @DATA(lt_cpf_db).
       DATA(lv_hoje) = cl_abap_context_info=>get_system_date( ).
 
       LOOP AT lt_registros INTO DATA(ls_reg).
+
         DATA(lv_pref)   = |Linha { ls_reg-linha }: |.
         DATA(lv_antes)  = lines( lt_erros ).
         DATA(ls_cli)    = VALUE ty_cliente( linha = ls_reg-linha ).
 
         DATA(lv_cpf_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cpf ).
+
         ls_cli-cpf = zcl_pc_importacao=>normalizar_cpf( lv_cpf_txt ).
+
         IF zcl_pc_util=>validar_cpf( ls_cli-cpf ) = abap_false.
           APPEND |{ lv_pref }CPF inválido ({ lv_cpf_txt }).| TO lt_erros.
+
         ELSEIF line_exists( lt_cpf_db[ cpf = ls_cli-cpf ] ).
           APPEND |{ lv_pref }já existe cliente com o CPF { zcl_pc_util=>formatar_cpf( ls_cli-cpf ) }.| TO lt_erros.
+
         ELSEIF line_exists( lt_cpf_arq[ table_line = ls_cli-cpf ] ).
           APPEND |{ lv_pref }CPF { zcl_pc_util=>formatar_cpf( ls_cli-cpf ) } repetido na planilha.| TO lt_erros.
+
         ELSE.
           INSERT ls_cli-cpf INTO TABLE lt_cpf_arq.
+
         ENDIF.
 
         DATA(lv_nome) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-nome ).
+
         IF lv_nome IS INITIAL.
           APPEND |{ lv_pref }Nome é obrigatório.| TO lt_erros.
+
         ELSEIF strlen( lv_nome ) > 255.
           APPEND |{ lv_pref }Nome excede 255 caracteres.| TO lt_erros.
+
         ELSE.
           ls_cli-nome = lv_nome.
+
         ENDIF.
 
         DATA(lv_email) = to_lower( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-email ) ).
+
         IF lv_email IS INITIAL OR zcl_pc_util=>validar_email( lv_email ) = abap_false.
           APPEND |{ lv_pref }E-mail inválido ({ lv_email }).| TO lt_erros.
+
         ELSEIF strlen( lv_email ) > 100.
           APPEND |{ lv_pref }E-mail excede 100 caracteres.| TO lt_erros.
+
         ELSE.
           ls_cli-email = lv_email.
+
         ENDIF.
 
         DATA(lv_tel) = zcl_pc_util=>somente_digitos( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-telefone ) ).
+
         IF strlen( lv_tel ) < 10 OR strlen( lv_tel ) > 11.
           APPEND |{ lv_pref }Telefone deve ter 10 ou 11 dígitos (DDD + número).| TO lt_erros.
+
         ELSE.
           ls_cli-telefone = lv_tel.
+
         ENDIF.
 
         DATA(lv_genero_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-genero ).
+
         IF lv_genero_txt IS NOT INITIAL.
           DATA(lv_genero) = zcl_pc_importacao=>converter_codelist( iv_lista = zif_pc_constants=>c_codelist-genero
                                                                    iv_texto = lv_genero_txt ).
           IF lv_genero IS INITIAL.
             APPEND |{ lv_pref }Gênero inválido ({ lv_genero_txt }). Use: { zcl_pc_importacao=>opcoes_codelist( zif_pc_constants=>c_codelist-genero ) }.| TO lt_erros.
+
           ELSE.
             ls_cli-genero = lv_genero.
+
           ENDIF.
         ENDIF.
 
         DATA(lv_nasc_txt) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-nascimento ).
+
         DATA(lv_nasc)     = zcl_pc_planilha=>para_data( lv_nasc_txt ).
+
         IF lv_nasc IS INITIAL.
           APPEND |{ lv_pref }Data de nascimento inválida ({ lv_nasc_txt }). Use AAAA-MM-DD ou DD/MM/AAAA.| TO lt_erros.
+
         ELSEIF lv_nasc > lv_hoje.
           APPEND |{ lv_pref }Data de nascimento não pode ser futura.| TO lt_erros.
+
         ELSE.
           ls_cli-nascimento = lv_nasc.
+
         ENDIF.
 
         DATA(lv_cep) = zcl_pc_importacao=>normalizar_cep( zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-cep ) ).
+
         IF strlen( lv_cep ) <> 8.
           APPEND |{ lv_pref }CEP deve ter 8 dígitos.| TO lt_erros.
+
         ELSE.
           ls_cli-cep = lv_cep.
+
         ENDIF.
 
         DATA(lv_numero) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-numero ).
+
         IF lv_numero IS INITIAL.
           APPEND |{ lv_pref }Número do endereço é obrigatório.| TO lt_erros.
+
         ELSEIF strlen( lv_numero ) > 20.
           APPEND |{ lv_pref }Número do endereço excede 20 caracteres.| TO lt_erros.
+
         ELSE.
           ls_cli-numero = lv_numero.
+
         ENDIF.
 
         DATA(lv_compl) = zcl_pc_planilha=>valor( is_registro = ls_reg iv_campo = c_col-complemento ).
+
         IF strlen( lv_compl ) > 100.
           APPEND |{ lv_pref }Complemento excede 100 caracteres.| TO lt_erros.
+
         ELSE.
           ls_cli-complemento = lv_compl.
+
         ENDIF.
 
         IF lines( lt_erros ) = lv_antes.
           APPEND ls_cli TO lt_cli.
         ENDIF.
+
       ENDLOOP.
 
       IF lt_erros IS NOT INITIAL.
@@ -652,9 +857,11 @@ CLASS lhc_cliente IMPLEMENTATION.
       "    validations rodam no save. Um erro em qualquer linha cancela tudo.
       DATA lt_cria_cli TYPE TABLE FOR CREATE zr_pc_cliente\\Cliente.
       DATA lt_cria_end TYPE TABLE FOR CREATE zr_pc_cliente\\Cliente\_Endereco.
+
       CLEAR: lt_cria_cli, lt_cria_end.
 
       LOOP AT lt_cli INTO ls_cli.
+
         APPEND VALUE #( %cid           = |CLI{ ls_cli-linha }|
                         Cpf            = ls_cli-cpf
                         Nome           = ls_cli-nome
@@ -662,6 +869,7 @@ CLASS lhc_cliente IMPLEMENTATION.
                         Telefone       = ls_cli-telefone
                         Genero         = ls_cli-genero
                         DataNascimento = ls_cli-nascimento ) TO lt_cria_cli.
+
         APPEND VALUE #( %cid_ref = |CLI{ ls_cli-linha }|
                         %target  = VALUE #( ( %cid        = |END{ ls_cli-linha }|
                                               Cep         = ls_cli-cep
@@ -673,20 +881,26 @@ CLASS lhc_cliente IMPLEMENTATION.
         ENTITY Cliente
           CREATE FIELDS ( Cpf Nome Email Telefone Genero DataNascimento )
           WITH lt_cria_cli
+
           CREATE BY \_Endereco FIELDS ( Cep Numero Complemento )
           WITH lt_cria_end
+
         MAPPED   DATA(ls_mapped)
         FAILED   DATA(ls_failed)
         REPORTED DATA(ls_reported).
 
       IF ls_failed-cliente IS NOT INITIAL OR ls_failed-endereco IS NOT INITIAL.
+
         APPEND `Não foi possível criar os clientes.` TO lt_erros.
+
         LOOP AT ls_reported-cliente INTO DATA(ls_rep_cli) WHERE %msg IS BOUND.
           APPEND |{ linha_do_cid( ls_rep_cli-%cid ) }{ ls_rep_cli-%msg->if_message~get_text( ) }| TO lt_erros.
         ENDLOOP.
+
         LOOP AT ls_reported-endereco INTO DATA(ls_rep_end) WHERE %msg IS BOUND.
           APPEND |{ linha_do_cid( ls_rep_end-%cid ) }{ ls_rep_end-%msg->if_message~get_text( ) }| TO lt_erros.
         ENDLOOP.
+
         falhar_importacao( EXPORTING it_erros = lt_erros iv_cid = ls_key-%cid
                            CHANGING  cs_failed = failed cs_reported = reported ).
         CONTINUE.
@@ -701,14 +915,16 @@ CLASS lhc_cliente IMPLEMENTATION.
           WITH CORRESPONDING #( ls_mapped-endereco )
         RESULT DATA(lt_enderecos).
 
-      LOOP AT lt_enderecos INTO DATA(ls_end)
-           WHERE CepStatus <> zif_pc_constants=>c_status_cep-validado.
+      LOOP AT lt_enderecos INTO DATA(ls_end) WHERE CepStatus <> zif_pc_constants=>c_status_cep-validado.
+
         READ TABLE ls_mapped-endereco INTO DATA(ls_map_end) WITH KEY EnderecoUUID = ls_end-EnderecoUUID.
-        DATA(lv_motivo) = COND string(
-          WHEN ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel
-          THEN `consulta de CEP indisponível no momento, tente novamente`
-          ELSE `CEP inexistente` ).
+
+        DATA(lv_motivo) = COND string( WHEN ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel
+                                       THEN `consulta de CEP indisponível no momento, tente novamente`
+                                       ELSE `CEP inexistente` ).
+
         APPEND |{ linha_do_cid( ls_map_end-%cid ) }CEP { ls_end-Cep }: { lv_motivo }.| TO lt_erros.
+
       ENDLOOP.
 
       IF lt_erros IS NOT INITIAL.
@@ -726,8 +942,8 @@ CLASS lhc_cliente IMPLEMENTATION.
 
 
   METHOD falhar_importacao.
-    APPEND VALUE #( %msg = zcx_pc_msg=>texto(
-                             |Importação cancelada: nenhum cliente foi gravado ({ lines( it_erros ) } erro(s)).| ) )
+
+    APPEND VALUE #( %msg = zcx_pc_msg=>texto( |Importação cancelada: nenhum cliente foi gravado ({ lines( it_erros ) } erro(s)).| ) )
            TO cs_reported-cliente.
 
     LOOP AT zcl_pc_importacao=>resumir_erros( it_erros ) INTO DATA(lv_erro).
@@ -739,47 +955,76 @@ CLASS lhc_cliente IMPLEMENTATION.
 
 
   METHOD linha_do_cid.
+
     DATA(lv_numero) = match( val = iv_cid pcre = `\d+` ).
+
     rv_texto = COND #( WHEN lv_numero IS NOT INITIAL THEN |Linha { lv_numero }: | ).
+
   ENDMETHOD.
 
 
   METHOD msg.
+
     ro_msg = NEW zcx_pc_msg( textid = textid
                              attr1  = attr1 ).
   ENDMETHOD.
 
 ENDCLASS.
 
-
-"! Handler da entidade Endereço (child)
+"! <h1>Handler da entidade Endereço (filha do BO {@link ZR_PC_CLIENTE})</h1>
+"! Feature control dos campos de CEP, endereço principal (action e precheck),
+"! consulta de CEP ({@link ZCL_PC_VIACEP}) e validations do endereço.
 CLASS lhc_endereco DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
+
     CONSTANTS:
+      "! State areas das validations (mensagens de estado no rascunho)
       BEGIN OF c_area,
+        "! {@link .METH:ValidarNumero}
         numero    TYPE string VALUE `VALIDAR_NUMERO`,
+        "! {@link .METH:ValidarCep}
         cep       TYPE string VALUE `VALIDAR_CEP`,
+        "! {@link .METH:ValidarCepUnico}
         cep_unico TYPE string VALUE `VALIDAR_CEP_UNICO`,
       END OF c_area.
 
+    "! Feature control: CEP somente leitura depois de gravado (faz parte da chave
+    "! de ZTA_PC_ENDERECO), Logradouro/Bairro editáveis só para CEP geral e
+    "! DefinirEnderecoPrincipal desabilitada no endereço que já é o principal.
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Endereco RESULT result.
 
+    "! Torna o endereço escolhido o principal do cliente e desmarca os demais
+    "! (uma única atualização EML). As restrições ficam em
+    "! {@link .METH:precheck_definir_principal}.
     METHODS DefinirEnderecoPrincipal FOR MODIFY
       IMPORTING keys FOR ACTION Endereco~DefinirEnderecoPrincipal RESULT result.
 
+    "! Precheck de DefinirEnderecoPrincipal: um único endereço por cliente na
+    "! chamada, que ainda não seja o principal e com CEP validado.
+    METHODS precheck_definir_principal FOR PRECHECK
+      IMPORTING keys FOR ACTION Endereco~DefinirEnderecoPrincipal.
+
+    "! Preenche logradouro, bairro, cidade e UF pelo CEP: reaproveita CEPs já
+    "! validados no cadastro (uma consulta) e consulta {@link ZCL_PC_VIACEP}
+    "! uma vez por CEP desconhecido. Endereço já gravado é ignorado.
     METHODS PreencherEnderecoViaCep FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Endereco~PreencherEnderecoViaCep.
 
+    "! O primeiro endereço de um cliente sem endereço principal vira o principal.
     METHODS DefinirPrincipalInicial FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Endereco~DefinirPrincipalInicial.
 
+    "! Número do endereço obrigatório (mensagem 008).
     METHODS ValidarNumero FOR VALIDATE ON SAVE
       IMPORTING keys FOR Endereco~ValidarNumero.
 
+    "! CEP com 8 dígitos e validado; CEP geral exige logradouro e bairro.
+    "! Sem chamada remota: avalia o que {@link .METH:PreencherEnderecoViaCep} gravou.
     METHODS ValidarCep FOR VALIDATE ON SAVE
       IMPORTING keys FOR Endereco~ValidarCep.
 
+    "! Um endereço por CEP em cada cliente, inclusive entre rascunhos (mensagem 047).
     METHODS ValidarCepUnico FOR VALIDATE ON SAVE
       IMPORTING keys FOR Endereco~ValidarCepUnico.
 ENDCLASS.
@@ -788,6 +1033,7 @@ ENDCLASS.
 CLASS lhc_endereco IMPLEMENTATION.
 
   METHOD get_instance_features.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Endereco
         FIELDS ( CepGeral EnderecoPrincipal )
@@ -797,11 +1043,13 @@ CLASS lhc_endereco IMPLEMENTATION.
     " Endereços já gravados (instância ativa, ou rascunho de um endereço ativo):
     " o CEP não pode mais mudar (faz parte da chave da tabela, ver BDEF).
     IF lt_enderecos IS NOT INITIAL.
+
       SELECT EnderecoUUID
         FROM zr_pc_endereco
         FOR ALL ENTRIES IN @lt_enderecos
         WHERE EnderecoUUID = @lt_enderecos-EnderecoUUID
         INTO TABLE @DATA(lt_gravados).
+
     ENDIF.
 
     result = VALUE #( FOR e IN lt_enderecos
@@ -809,19 +1057,66 @@ CLASS lhc_endereco IMPLEMENTATION.
                         %field-Cep        = COND #( WHEN line_exists( lt_gravados[ EnderecoUUID = e-EnderecoUUID ] )
                                                     THEN if_abap_behv=>fc-f-read_only
                                                     ELSE if_abap_behv=>fc-f-mandatory )
+
                         %field-Logradouro = COND #( WHEN e-CepGeral = abap_true
                                                     THEN if_abap_behv=>fc-f-mandatory
                                                     ELSE if_abap_behv=>fc-f-read_only )
+
                         %field-Bairro     = COND #( WHEN e-CepGeral = abap_true
                                                     THEN if_abap_behv=>fc-f-mandatory
                                                     ELSE if_abap_behv=>fc-f-read_only )
+
                         %action-DefinirEnderecoPrincipal = COND #( WHEN e-EnderecoPrincipal = abap_true
                                                                    THEN if_abap_behv=>fc-o-disabled
                                                                    ELSE if_abap_behv=>fc-o-enabled ) ) ).
   ENDMETHOD.
 
 
+  METHOD precheck_definir_principal.
+
+    READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
+      ENTITY Endereco
+        FIELDS ( ClienteUUID EnderecoPrincipal CepStatus )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_enderecos).
+
+    DATA lo_msg TYPE REF TO zcx_pc_msg.
+
+    LOOP AT lt_enderecos INTO DATA(ls_end).
+
+      CLEAR lo_msg.
+
+      " Só um endereço pode ser o principal: a seleção é única por cliente
+      DATA(lv_qtde_cliente) = REDUCE i( INIT n = 0
+                                        FOR o IN lt_enderecos
+                                        WHERE ( ClienteUUID = ls_end-ClienteUUID AND %is_draft = ls_end-%is_draft )
+                                        NEXT n = n + 1 ).
+
+      IF lv_qtde_cliente > 1.
+        lo_msg = NEW #( textid = zif_pc_msg=>endereco_principal_unico ).
+
+      ELSEIF ls_end-EnderecoPrincipal = abap_true.
+        lo_msg = NEW #( textid = zif_pc_msg=>endereco_ja_principal ).
+
+      ELSEIF ls_end-CepStatus <> zif_pc_constants=>c_status_cep-validado.
+        lo_msg = NEW #( textid = zif_pc_msg=>endereco_principal_cep_inval ).
+
+      ENDIF.
+
+      IF lo_msg IS BOUND.
+        APPEND VALUE #( %tky = ls_end-%tky ) TO failed-endereco.
+        APPEND VALUE #( %tky  = ls_end-%tky
+                        %msg  = lo_msg
+                        %path = VALUE #( cliente-%is_draft   = ls_end-%is_draft
+                                         cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
+      ENDIF.
+
+    ENDLOOP.
+  ENDMETHOD.
+
+
   METHOD DefinirEnderecoPrincipal.
+
     DATA lt_pais   TYPE TABLE FOR READ IMPORT zr_pc_cliente\\Cliente\_Endereco.
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_cliente\\Endereco.
 
@@ -833,9 +1128,11 @@ CLASS lhc_endereco IMPLEMENTATION.
 
     " Um cliente por linha (a última seleção do mesmo cliente prevalece)
     LOOP AT lt_alvos INTO DATA(ls_alvo).
+
       IF NOT line_exists( lt_pais[ %is_draft = ls_alvo-%is_draft ClienteUUID = ls_alvo-ClienteUUID ] ).
         APPEND VALUE #( %is_draft = ls_alvo-%is_draft ClienteUUID = ls_alvo-ClienteUUID ) TO lt_pais.
       ENDIF.
+
     ENDLOOP.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -845,29 +1142,36 @@ CLASS lhc_endereco IMPLEMENTATION.
       RESULT DATA(lt_irmaos).
 
     LOOP AT lt_pais INTO DATA(ls_pai).
+
       " Endereço escolhido para este cliente = último da lista de alvos
       DATA(lv_escolhido) = VALUE sysuuid_x16( ).
+
       LOOP AT lt_alvos INTO ls_alvo WHERE ClienteUUID = ls_pai-ClienteUUID AND %is_draft = ls_pai-%is_draft.
         lv_escolhido = ls_alvo-EnderecoUUID.
       ENDLOOP.
 
-      LOOP AT lt_irmaos INTO DATA(ls_irmao)
-           WHERE ClienteUUID = ls_pai-ClienteUUID AND %is_draft = ls_pai-%is_draft.
+      LOOP AT lt_irmaos INTO DATA(ls_irmao) WHERE ClienteUUID = ls_pai-ClienteUUID AND %is_draft = ls_pai-%is_draft.
+
         DATA(lv_principal) = xsdbool( ls_irmao-EnderecoUUID = lv_escolhido ).
+
         IF lv_principal <> ls_irmao-EnderecoPrincipal.
+
           " O Cep (mesmo valor) vai junto porque faz parte da chave de ZTA_PC_ENDERECO,
           " mas não da chave da entidade: sem ele o UPDATE procura a linha com CEP em
           " branco e gera RAISE_SHORTDUMP "UPDATE returned unexpected sy-subrc 4".
-          APPEND VALUE #( %tky              = ls_irmao-%tky
-                          EnderecoPrincipal = lv_principal
-                          Cep               = ls_irmao-Cep
+          APPEND VALUE #( %tky                       = ls_irmao-%tky
+                          EnderecoPrincipal          = lv_principal
+                          Cep                        = ls_irmao-Cep
                           %control-EnderecoPrincipal = if_abap_behv=>mk-on
                           %control-Cep               = if_abap_behv=>mk-on ) TO lt_update.
         ENDIF.
+
       ENDLOOP.
+
     ENDLOOP.
 
     IF lt_update IS NOT INITIAL.
+
       MODIFY ENTITIES OF zr_pc_cliente IN LOCAL MODE
         ENTITY Endereco UPDATE FROM lt_update
         FAILED DATA(ls_failed)
@@ -875,6 +1179,7 @@ CLASS lhc_endereco IMPLEMENTATION.
 
       failed   = CORRESPONDING #( DEEP ls_failed ).
       reported = CORRESPONDING #( DEEP ls_reported ).
+
     ENDIF.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -887,6 +1192,7 @@ CLASS lhc_endereco IMPLEMENTATION.
 
 
   METHOD PreencherEnderecoViaCep.
+
     " Única fase em que o ViaCEP é chamado (fase de interação). A fase de save
     " não faz I/O remoto: a validation apenas avalia CepStatus/Cidade/Uf.
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_cliente\\Endereco.
@@ -902,19 +1208,48 @@ CLASS lhc_endereco IMPLEMENTATION.
     " para completar a chave da tabela e reacionaria esta determination; pular
     " evita chamada ao ViaCEP e a perda de Logradouro/Bairro de CEP geral.
     IF lt_enderecos IS NOT INITIAL.
+
       SELECT EnderecoUUID
         FROM zr_pc_endereco
         FOR ALL ENTRIES IN @lt_enderecos
         WHERE EnderecoUUID = @lt_enderecos-EnderecoUUID
         INTO TABLE @DATA(lt_gravados).
+
+      " CEPs já validados em outro endereço do cadastro (mesma regra da value
+      " help ZC_PC_CEP_VH): uma única consulta para todos os CEPs informados.
+      " CEP geral fica de fora: logradouro/bairro variam por endereço.
+      DATA lt_ceps TYPE STANDARD TABLE OF zr_pc_endereco-Cep WITH EMPTY KEY.
+      lt_ceps = VALUE #( FOR e IN lt_enderecos ( CONV #( zcl_pc_util=>somente_digitos( e-Cep ) ) ) ).
+      DELETE lt_ceps WHERE table_line IS INITIAL.
+
+      IF lt_ceps IS NOT INITIAL.
+        SELECT Cep, Logradouro, Bairro, Cidade, Uf, Estado
+          FROM zr_pc_endereco
+          FOR ALL ENTRIES IN @lt_ceps
+          WHERE Cep       = @lt_ceps-table_line
+            AND CepStatus = @zif_pc_constants=>c_status_cep-validado
+            AND CepGeral  = @abap_false
+          INTO TABLE @DATA(lt_cadastrados).
+      ENDIF.
+
     ENDIF.
 
+    " Resultado do ViaCEP por CEP: o mesmo CEP em vários endereços gera uma só chamada
+    TYPES:
+      BEGIN OF ty_viacep_cache,
+        cep       TYPE string,
+        resultado TYPE zif_pc_viacep=>ty_resultado,
+      END OF ty_viacep_cache.
+    DATA lt_viacep TYPE SORTED TABLE OF ty_viacep_cache WITH UNIQUE KEY cep.
+
     LOOP AT lt_enderecos INTO DATA(ls_end).
+
       IF line_exists( lt_gravados[ EnderecoUUID = ls_end-EnderecoUUID ] ).
         CONTINUE.
       ENDIF.
-      DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
-      DATA(ls_dados) = VALUE zif_pc_viacep=>ty_endereco( ).
+
+      DATA(lv_cep)    = zcl_pc_util=>somente_digitos( ls_end-Cep ).
+      DATA(ls_dados)  = VALUE zif_pc_viacep=>ty_endereco( ).
       DATA(lv_status) = CONV zr_pc_endereco-CepStatus( space ).
       DATA(lv_geral)  = abap_false.
 
@@ -923,15 +1258,10 @@ CLASS lhc_endereco IMPLEMENTATION.
                             THEN space
                             ELSE zif_pc_constants=>c_status_cep-invalido ).
       ELSE.
-        " 1) CEP já validado em outro endereço do cadastro (mesma regra da value
-        "    help ZC_PC_CEP_VH): reaproveita os dados, sem chamada remota.
-        "    CEP geral fica de fora: logradouro/bairro variam por endereço.
-        SELECT SINGLE Logradouro, Bairro, Cidade, Uf, Estado
-          FROM zr_pc_endereco
-          WHERE Cep       = @lv_cep
-            AND CepStatus = @zif_pc_constants=>c_status_cep-validado
-            AND CepGeral  = @abap_false
-          INTO @DATA(ls_cadastrado).
+
+        " 1) CEP já validado em outro endereço do cadastro (lido antes do laço):
+        "    reaproveita os dados, sem chamada remota.
+        READ TABLE lt_cadastrados INTO DATA(ls_cadastrado) WITH KEY Cep = lv_cep.
 
         IF sy-subrc = 0.
           lv_status = zif_pc_constants=>c_status_cep-validado.
@@ -941,22 +1271,35 @@ CLASS lhc_endereco IMPLEMENTATION.
                                uf         = ls_cadastrado-Uf
                                estado     = ls_cadastrado-Estado ).
         ELSE.
-          " 2) CEP ainda não cadastrado: consulta o ViaCEP
-          DATA(ls_viacep) = zcl_pc_viacep=>consultar( lv_cep ).
+          " 2) CEP ainda não cadastrado: consulta o ViaCEP (uma vez por CEP)
+          READ TABLE lt_viacep INTO DATA(ls_cache) WITH TABLE KEY cep = lv_cep.
+          IF sy-subrc <> 0.
+            ls_cache = VALUE #( cep = lv_cep resultado = zcl_pc_viacep=>consultar( lv_cep ) ).
+            INSERT ls_cache INTO TABLE lt_viacep.
+          ENDIF.
+          DATA(ls_viacep) = ls_cache-resultado.
+
           IF ls_viacep-indisponivel = abap_true.
+
             lv_status = zif_pc_constants=>c_status_cep-indisponivel.
+
             APPEND VALUE #( %tky = ls_end-%tky
                             %msg = NEW zcx_pc_msg( textid   = zif_pc_msg=>cep_indisponivel
                                                    severity = if_abap_behv_message=>severity-warning )
+
                             %path = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                              cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
+
           ELSEIF ls_viacep-valido = abap_true.
+
             lv_status = zif_pc_constants=>c_status_cep-validado.
             ls_dados  = ls_viacep-endereco.
             lv_geral  = ls_viacep-cep_geral.
+
           ELSE.
             lv_status = zif_pc_constants=>c_status_cep-invalido.
           ENDIF.
+
         ENDIF.
       ENDIF.
 
@@ -984,6 +1327,7 @@ CLASS lhc_endereco IMPLEMENTATION.
         <ls_update_cep>-Cep          = lv_cep.
         <ls_update_cep>-%control-Cep = if_abap_behv=>mk-on.
       ENDIF.
+
     ENDLOOP.
 
     IF lt_update IS INITIAL.
@@ -1001,6 +1345,7 @@ CLASS lhc_endereco IMPLEMENTATION.
 
 
   METHOD DefinirPrincipalInicial.
+
     DATA lt_pais   TYPE TABLE FOR READ IMPORT zr_pc_cliente\\Cliente\_Endereco.
     DATA lt_update TYPE TABLE FOR UPDATE zr_pc_cliente\\Endereco.
 
@@ -1011,9 +1356,11 @@ CLASS lhc_endereco IMPLEMENTATION.
       RESULT DATA(lt_novos).
 
     LOOP AT lt_novos INTO DATA(ls_novo).
+
       IF NOT line_exists( lt_pais[ %is_draft = ls_novo-%is_draft ClienteUUID = ls_novo-ClienteUUID ] ).
         APPEND VALUE #( %is_draft = ls_novo-%is_draft ClienteUUID = ls_novo-ClienteUUID ) TO lt_pais.
       ENDIF.
+
     ENDLOOP.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -1024,15 +1371,19 @@ CLASS lhc_endereco IMPLEMENTATION.
 
     " Se o cliente ainda não tem endereço principal, o primeiro novo endereço vira principal
     LOOP AT lt_pais INTO DATA(ls_pai).
+
       IF line_exists( lt_todos[ ClienteUUID = ls_pai-ClienteUUID %is_draft = ls_pai-%is_draft EnderecoPrincipal = abap_true ] ).
         CONTINUE.
       ENDIF.
+
       READ TABLE lt_novos INTO ls_novo WITH KEY ClienteUUID = ls_pai-ClienteUUID %is_draft = ls_pai-%is_draft.
+
       IF sy-subrc = 0.
         APPEND VALUE #( %tky = ls_novo-%tky
                         EnderecoPrincipal = abap_true
                         %control-EnderecoPrincipal = if_abap_behv=>mk-on ) TO lt_update.
       ENDIF.
+
     ENDLOOP.
 
     CHECK lt_update IS NOT INITIAL.
@@ -1044,10 +1395,12 @@ CLASS lhc_endereco IMPLEMENTATION.
     LOOP AT ls_reported_prin-endereco INTO DATA(ls_rep_prin) WHERE %msg IS BOUND.
       APPEND CORRESPONDING #( ls_rep_prin ) TO reported-endereco.
     ENDLOOP.
+
   ENDMETHOD.
 
 
   METHOD ValidarNumero.
+
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
       ENTITY Endereco
         FIELDS ( ClienteUUID Numero )
@@ -1067,6 +1420,7 @@ CLASS lhc_endereco IMPLEMENTATION.
                         %path       = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                                cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
@@ -1087,23 +1441,31 @@ CLASS lhc_endereco IMPLEMENTATION.
                       %state_area = c_area-cep ) TO reported-endereco.
 
       CLEAR lo_msg.
+
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
 
       IF strlen( lv_cep ) <> 8.
         lo_msg = NEW #( textid = zif_pc_msg=>cep_invalido ).
+
       ELSEIF ls_end-CepStatus = zif_pc_constants=>c_status_cep-indisponivel.
         lo_msg = NEW #( textid = zif_pc_msg=>cep_indisponivel ).
+
       ELSEIF ls_end-CepStatus <> zif_pc_constants=>c_status_cep-validado
              OR ls_end-Cidade IS INITIAL
              OR ls_end-Uf IS INITIAL.
+
         lo_msg = NEW #( textid = zif_pc_msg=>cep_invalido ).
+
       ELSEIF ls_end-CepGeral = abap_true AND ls_end-Logradouro IS INITIAL.
         lo_msg = NEW #( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Logradouro' ).
+
       ELSEIF ls_end-CepGeral = abap_true AND ls_end-Bairro IS INITIAL.
         lo_msg = NEW #( textid = zif_pc_msg=>campo_obrigatorio attr1 = 'Bairro' ).
+
       ENDIF.
 
       IF lo_msg IS BOUND.
+
         APPEND VALUE #( %tky = ls_end-%tky ) TO failed-endereco.
         APPEND VALUE #( %tky         = ls_end-%tky
                         %state_area  = c_area-cep
@@ -1112,6 +1474,7 @@ CLASS lhc_endereco IMPLEMENTATION.
                         %path        = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                                 cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 
@@ -1131,10 +1494,13 @@ CLASS lhc_endereco IMPLEMENTATION.
     CHECK lt_enderecos IS NOT INITIAL.
 
     DATA lt_pais TYPE TABLE FOR READ IMPORT zr_pc_cliente\\Cliente\_Endereco.
+
     LOOP AT lt_enderecos INTO DATA(ls_end0).
+
       IF NOT line_exists( lt_pais[ %is_draft = ls_end0-%is_draft ClienteUUID = ls_end0-ClienteUUID ] ).
         APPEND VALUE #( %is_draft = ls_end0-%is_draft ClienteUUID = ls_end0-ClienteUUID ) TO lt_pais.
       ENDIF.
+
     ENDLOOP.
 
     READ ENTITIES OF zr_pc_cliente IN LOCAL MODE
@@ -1144,23 +1510,30 @@ CLASS lhc_endereco IMPLEMENTATION.
       RESULT DATA(lt_irmaos).
 
     LOOP AT lt_enderecos INTO DATA(ls_end).
+
       APPEND VALUE #( %tky        = ls_end-%tky
                       %state_area = c_area-cep_unico ) TO reported-endereco.
 
       DATA(lv_cep) = zcl_pc_util=>somente_digitos( ls_end-Cep ).
+
       CHECK strlen( lv_cep ) = 8.
 
       DATA(lv_duplicado) = abap_false.
+
       LOOP AT lt_irmaos INTO DATA(ls_irmao)
            WHERE %is_draft   = ls_end-%is_draft
              AND ClienteUUID = ls_end-ClienteUUID
              AND Cep         = ls_end-Cep
              AND EnderecoUUID <> ls_end-EnderecoUUID.
+
         lv_duplicado = abap_true.
+
         EXIT.
+
       ENDLOOP.
 
       IF lv_duplicado = abap_true.
+
         APPEND VALUE #( %tky = ls_end-%tky ) TO failed-endereco.
         APPEND VALUE #( %tky        = ls_end-%tky
                         %state_area = c_area-cep_unico
@@ -1169,6 +1542,7 @@ CLASS lhc_endereco IMPLEMENTATION.
                         %path       = VALUE #( cliente-%is_draft   = ls_end-%is_draft
                                                cliente-ClienteUUID = ls_end-ClienteUUID ) ) TO reported-endereco.
       ENDIF.
+
     ENDLOOP.
   ENDMETHOD.
 

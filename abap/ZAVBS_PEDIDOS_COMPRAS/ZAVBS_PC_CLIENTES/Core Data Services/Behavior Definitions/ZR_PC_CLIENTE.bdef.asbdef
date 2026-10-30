@@ -3,11 +3,22 @@ strict ( 2 );
 with draft;
 
 /* ---------------------------------------------------------------------
-   BO Cliente (root) + Endereço (child)
-   - Draft habilitado para cliente e endereço
-   - Autorização global: somente administrador altera (ZCL_PC_AUTH)
-   - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
-   --------------------------------------------------------------------- */
+ BO Cliente (root) + Endereço (child)
+ - Draft habilitado para cliente e endereço
+ - Autorização global: somente administrador altera (ZCL_PC_AUTH)
+ - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
+ - Inativação (ClienteAtivo = false) bloqueada quando o cliente tem pedido em
+   andamento (aberto, aguardando aprovação, processando reembolso ou rascunho):
+   precheck do update (retorno imediato) e ValidarInativacaoCliente no save
+ - ImportarPlanilha: permite importação em massa via planilha (.xlsx ou
+   .csv, criando clientes ativos, cada um com o endereço principal.
+ - Activate NÃO otimizada: a ativação otimizada grava no ativo só os campos
+   alterados no rascunho, sem o CEP, que é chave de ZTA_PC_ENDERECO mas não da
+   entidade Endereco. O UPDATE procurava a linha com CEP em branco e gerava
+   RAISE_SHORTDUMP "UPDATE returned unexpected sy-subrc 4" ao salvar qualquer
+   edição de endereço já gravado (ex.: trocar o endereço principal).
+ --------------------------------------------------------------------- */
+
 define behavior for ZR_PC_CLIENTE alias Cliente
 persistent table zta_pc_cliente
 draft table zta_pc_cliente_d
@@ -16,14 +27,10 @@ lock master total etag LastChangedAt
 authorization master ( global )
 {
   create;
-  update;
+  update ( precheck );
   delete ( features : instance, precheck );
 
   association _Endereco { create; with draft; }
-
-  /* Importação em massa por planilha (.xlsx ou .csv): cria clientes ativos,
-     cada um com o endereço principal. Tudo ou nada (ver ImportarPlanilha). */
-  static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
 
   field ( numbering : managed, readonly ) ClienteUUID;
   field ( readonly ) ScoreCliente, CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
@@ -39,12 +46,10 @@ authorization master ( global )
   validation ValidarDataNascimento on save { create; field DataNascimento; }
   validation ValidarGenero on save { create; field Genero; }
   validation ValidarFoto on save { create; field FotoCliente, FotoMimeType, FotoFileName; }
+  validation ValidarInativacaoCliente on save { field ClienteAtivo; }
 
-  /* Activate NÃO otimizada: a ativação otimizada grava no ativo só os campos
-     alterados no rascunho, sem o CEP, que é chave de ZTA_PC_ENDERECO mas não da
-     entidade Endereco. O UPDATE procurava a linha com CEP em branco e gerava
-     RAISE_SHORTDUMP "UPDATE returned unexpected sy-subrc 4" ao salvar qualquer
-     edição de endereço já gravado (ex.: trocar o endereço principal). */
+  static action ImportarPlanilha deep parameter ZPC_A_UPLOAD_INPUT;
+
   draft action Activate;
   draft action Discard;
   draft action Edit;
@@ -58,43 +63,59 @@ authorization master ( global )
     validation ValidarDataNascimento;
     validation ValidarGenero;
     validation ValidarFoto;
+    validation ValidarInativacaoCliente;
     validation Endereco~ValidarNumero;
     validation Endereco~ValidarCep;
     validation Endereco~ValidarCepUnico;
   }
 
   mapping for zta_pc_cliente
-  {
-    ClienteUUID        = cliente_uuid;
-    FotoCliente        = foto_cliente;
-    FotoMimeType       = foto_mime_type;
-    FotoFileName       = foto_file_name;
-    Cpf                = cpf;
-    Nome               = nome;
-    Email              = email;
-    Telefone           = telefone;
-    Genero             = genero;
-    DataNascimento     = data_nascimento;
-    ClienteAtivo       = cliente_ativo;
-    ScoreCliente       = score_cliente;
-    CreatedBy          = created_by;
-    CreatedAt          = created_at;
-    LastChangedBy      = last_changed_by;
-    LastChangedAt      = last_changed_at;
-    LocalLastChangedAt = local_last_changed_at;
-  }
+    {
+      ClienteUUID        = cliente_uuid;
+      FotoCliente        = foto_cliente;
+      FotoMimeType       = foto_mime_type;
+      FotoFileName       = foto_file_name;
+      Cpf                = cpf;
+      Nome               = nome;
+      Email              = email;
+      Telefone           = telefone;
+      Genero             = genero;
+      DataNascimento     = data_nascimento;
+      ClienteAtivo       = cliente_ativo;
+      ScoreCliente       = score_cliente;
+      CreatedBy          = created_by;
+      CreatedAt          = created_at;
+      LastChangedBy      = last_changed_by;
+      LastChangedAt      = last_changed_at;
+      LocalLastChangedAt = local_last_changed_at;
+    }
 }
+
+/* ---------------------------------------------------------------------
+ BO Endereço (child)
+ - Draft habilitado para endereço
+ - Autorização global: somente administrador altera (ZCL_PC_AUTH)
+ - Exclusão bloqueada quando existir pedido vinculado (features + precheck)
+ - "dependent by _Cliente" foi trocado por handler próprio: a checagem de
+   autorização "dependent" não é resolvida pelo runtime ao montar as
+   propriedades transacionais (%update/%delete/%action) de uma LIST READ
+   direta em Endereco, e gera RAISE_SHORTDUMP / CX_RAP_HANDLER_NOT
+   _IMPLEMENTED ("Handler not implemented; Method: GLOBAL_AUTHORIZATION").
+ - Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município.
+   Cep: obrigatório ao cadastrar; depois de gravado fica somente leitura, porque faz
+   parte da chave primária da tabela ZTA_PC_ENDERECO (um UPDATE que mudasse o CEP
+   procuraria a linha com o CEP novo e geraria RAISE_SHORTDUMP "UPDATE returned
+   unexpected sy-subrc 4"). Para trocar o CEP: excluir o endereço e cadastrar outro.
+ - DefinirEnderecoPrincipal: precheck recusa mais de um endereço do mesmo cliente na
+   mesma chamada, endereço que já é o principal e endereço com CEP não validado.
+
+ --------------------------------------------------------------------- */
 
 define behavior for ZR_PC_ENDERECO alias Endereco
 persistent table zta_pc_endereco
 draft table zta_pc_enderec_d
 etag master LocalLastChangedAt
 lock dependent by _Cliente
-/* "dependent by _Cliente" foi trocado por handler próprio: a checagem de
-   autorização "dependent" não é resolvida pelo runtime ao montar as
-   propriedades transacionais (%update/%delete/%action) de uma LIST READ
-   direta em Endereco, e gera RAISE_SHORTDUMP / CX_RAP_HANDLER_NOT_IMPLEMENTED
-   ("Handler not implemented; Method: GLOBAL_AUTHORIZATION"). */
 authorization master ( global )
 {
   update;
@@ -104,16 +125,11 @@ authorization master ( global )
 
   field ( numbering : managed, readonly ) EnderecoUUID;
   field ( readonly ) ClienteUUID, EnderecoPrincipal, CepGeral, Cidade, Uf, Estado,
-                     CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
-  /* Logradouro e Bairro vêm do ViaCEP e só ficam editáveis para CEP geral de município.
-     Cep: obrigatório ao cadastrar; depois de gravado fica somente leitura, porque faz
-     parte da chave primária da tabela ZTA_PC_ENDERECO (um UPDATE que mudasse o CEP
-     procuraria a linha com o CEP novo e geraria RAISE_SHORTDUMP "UPDATE returned
-     unexpected sy-subrc 4"). Para trocar o CEP: excluir o endereço e cadastrar outro. */
-  field ( features : instance ) Logradouro, Bairro, Cep;
+  CreatedBy, CreatedAt, LastChangedBy, LastChangedAt, LocalLastChangedAt;
   field ( mandatory ) Numero;
+  field ( features : instance ) Logradouro, Bairro, Cep;
 
-  action ( features : instance ) DefinirEnderecoPrincipal result [1] $self;
+  action ( features : instance, precheck ) DefinirEnderecoPrincipal result [1] $self;
 
   determination PreencherEnderecoViaCep on modify { create; field Cep; }
   determination DefinirPrincipalInicial on modify { create; }
@@ -125,28 +141,28 @@ authorization master ( global )
   side effects
   {
     field Cep affects field Logradouro, field Bairro, field Cidade, field Uf, field Estado,
-              field CepGeral, field CepStatus;
+        field CepGeral, field CepStatus;
   }
 
   mapping for zta_pc_endereco
-  {
-    EnderecoUUID       = endereco_uuid;
-    ClienteUUID        = cliente_uuid;
-    Cep                = cep;
-    Logradouro         = logradouro;
-    Numero             = numero;
-    Complemento        = complemento;
-    Bairro             = bairro;
-    Cidade             = cidade;
-    Uf                 = uf;
-    Estado             = estado;
-    CepGeral           = cep_geral;
-    CepStatus          = cep_status;
-    EnderecoPrincipal  = endereco_principal;
-    CreatedBy          = created_by;
-    CreatedAt          = created_at;
-    LastChangedBy      = last_changed_by;
-    LastChangedAt      = last_changed_at;
-    LocalLastChangedAt = local_last_changed_at;
-  }
+    {
+      EnderecoUUID       = endereco_uuid;
+      ClienteUUID        = cliente_uuid;
+      Cep                = cep;
+      Logradouro         = logradouro;
+      Numero             = numero;
+      Complemento        = complemento;
+      Bairro             = bairro;
+      Cidade             = cidade;
+      Uf                 = uf;
+      Estado             = estado;
+      CepGeral           = cep_geral;
+      CepStatus          = cep_status;
+      EnderecoPrincipal  = endereco_principal;
+      CreatedBy          = created_by;
+      CreatedAt          = created_at;
+      LastChangedBy      = last_changed_by;
+      LastChangedAt      = last_changed_at;
+      LocalLastChangedAt = local_last_changed_at;
+    }
 }
