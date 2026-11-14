@@ -29,8 +29,10 @@ npm run lint        # ESLint
 - As apps são servidas direto do `webapp/` de cada projeto (`fiori-tools-servestatic`, em
   `/apps/<sap.app.id>`): alterações nelas aparecem aqui sem build. Não é preciso rodar `npm install` nas apps
   para usá-las pelo launchpad, só para os comandos delas.
-- O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`). Para um SAP
-  S/4HANA On-Premise, troque o `backend` como em [`ui5/README.md`](../README.md#sistema-on-premise).
+- O sistema SAP vem do `ui5/.env` (copie `ui5/.env.example`; veja
+  [`ui5/README.md`](../README.md#configuração-do-sistema-sap-env)). No SAP BTP, ABAP environment, use
+  `SAP_AUTH_TYPE=reentranceTicket`; para um SAP S/4HANA On-Premise, troque os valores como em
+  [`ui5/README.md`](../README.md#sistema-on-premise).
 - No `start-mock`, os dados de Clientes, Estoque, Pedidos e Reembolsos são gerados pelo mock server (valores
   como `Nome_1`) e as ações não executam; as Análises usam os dados de demonstração de
   `webapp/localService/analitico/data/` (os mesmos `data/*.json` dos apps de análise).

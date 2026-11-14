@@ -33,8 +33,8 @@ server:
         ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
         backend:
           - path: /sap
-            url: https://6449ad14-b137-4a27-8017-6421c2c4f0b0.abap.us10.hana.ondemand.com
-            authenticationType: reentranceTicket
+            url: ${SAP_URL}
+            authenticationType: ${SAP_AUTH_TYPE:-reentranceTicket}
     - name: sap-fe-mockserver
       beforeMiddleware: csp
       configuration:

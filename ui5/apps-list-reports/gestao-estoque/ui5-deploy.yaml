@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
 # Deploy no ABAP Repository do SAP BTP ABAP Environment (npm run deploy):
-# cria/atualiza a aplicação BSP ZPC_ESTOQUE e o IAM App ZPC_ESTOQUE_UI5R no pacote ZAVBS_PC_ESTOQUE.
-# Pacotes do software component ZLOCAL (trial) não usam transporte.
+# cria/atualiza a aplicação BSP ZPC_ESTOQUE e o IAM App ZPC_ESTOQUE_UI5R no pacote ZAVBS_PC_ESTOQUE (variável SAP_PACKAGE_ESTOQUE do .env).
+# Sistema, mandante, pacote e transporte vêm do ui5/.env (ver ui5/.env.example);
+# pacotes do software component ZLOCAL (trial) não usam transporte (SAP_TRANSPORT vazio).
 
 specVersion: "4.0"
 metadata:
@@ -18,13 +19,13 @@ builder:
       configuration:
         ignoreCertErrors: false
         target:
-          url: https://6449ad14-b137-4a27-8017-6421c2c4f0b0.abap.us10.hana.ondemand.com
-          client: "100"
-          authenticationType: reentranceTicket
+          url: ${SAP_URL}
+          client: '${SAP_CLIENT}'
+          authenticationType: ${SAP_AUTH_TYPE:-reentranceTicket}
         app:
           name: ZPC_ESTOQUE
           description: Gestão de Estoque
-          package: ZAVBS_PC_ESTOQUE
-          transport: ""
+          package: ${SAP_PACKAGE_ESTOQUE}
+          transport: "${SAP_TRANSPORT}"
         exclude:
           - /test/
