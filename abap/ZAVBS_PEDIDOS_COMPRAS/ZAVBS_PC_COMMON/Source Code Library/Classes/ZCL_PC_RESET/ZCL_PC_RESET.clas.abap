@@ -81,8 +81,8 @@ CLASS zcl_pc_reset IMPLEMENTATION.
       ( `ZTA_PC_PAGAMENTO` ) ( `ZTA_PC_PAGTO_D` )
       ( `ZTA_PC_ITEM_PED` ) ( `ZTA_PC_ITPED_D` )
       ( `ZTA_PC_PEDIDO` ) ( `ZTA_PC_PEDIDO_D` )
-      " Reembolso
-      ( `ZTA_PC_REEMBOLSO` ) ( `ZTA_PC_REEMB_D` )
+      " Reembolso (BO sem draft)
+      ( `ZTA_PC_REEMBOLSO` )
       " Estoque
       ( `ZTA_PC_ITEM` ) ( `ZTA_PC_ITEM_D` )
       " Clientes
