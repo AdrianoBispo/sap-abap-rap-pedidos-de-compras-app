@@ -10,21 +10,14 @@ define table zta_pc_snpitm_d {
   pedidouuid           : sysuuid_x16;
   itempedidouuid       : sysuuid_x16;
   itemuuid             : sysuuid_x16;
-  sku                  : abap.char(21);
-  nome                 : abap.char(120);
-  descricao            : abap.char(500);
-  categoria            : abap.char(30);
-  quantidade           : abap.int4;
-  currency             : abap.cuky;
+  include zpc_s_dados_item;
+  quantidade           : zpc_de_quantidade;
+  currency             : zpc_de_moeda;
   @Semantics.amount.currencyCode : 'zta_pc_snpitm_d.currency'
-  precounitario        : abap.curr(15,2);
+  precounitario        : zpc_de_preco_unitario;
   @Semantics.amount.currencyCode : 'zta_pc_snpitm_d.currency'
-  valortotal           : abap.curr(15,2);
-  createdby            : abp_creation_user;
-  createdat            : abp_creation_tstmpl;
-  lastchangedby        : abp_lastchange_user;
-  lastchangedat        : abp_lastchange_tstmpl;
-  locallastchangedat   : abp_locinst_lastchange_tstmpl;
+  valortotal           : zpc_de_valor_total;
+  include zpc_s_admin_d;
   "%admin"             : include sych_bdl_draft_admin_inc;
 
 }

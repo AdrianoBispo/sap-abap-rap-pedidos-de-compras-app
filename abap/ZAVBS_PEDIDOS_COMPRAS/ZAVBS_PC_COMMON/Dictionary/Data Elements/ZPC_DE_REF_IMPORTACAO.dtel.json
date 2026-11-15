@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Referência do pedido na planilha importada",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_40"
+  },
+  "fieldLabels": {
+    "short": "Ref.import",
+    "shortLength": 10,
+    "medium": "Ref. da importação",
+    "mediumLength": 20,
+    "long": "Referência do pedido na importação",
+    "longLength": 40,
+    "heading": "Referência da importação",
+    "headingLength": 55
+  }
+}

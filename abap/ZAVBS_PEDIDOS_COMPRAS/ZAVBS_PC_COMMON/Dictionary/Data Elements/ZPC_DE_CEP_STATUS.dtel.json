@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Status da consulta do CEP",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_CEP_STATUS"
+  },
+  "fieldLabels": {
+    "short": "Status CEP",
+    "shortLength": 10,
+    "medium": "Status do CEP",
+    "mediumLength": 20,
+    "long": "Status da consulta do CEP",
+    "longLength": 40,
+    "heading": "Status do CEP",
+    "headingLength": 55
+  }
+}

@@ -5,27 +5,20 @@
 @AbapCatalog.dataMaintenance : #RESTRICTED
 define table zta_pc_item {
 
-  key client            : abap.clnt not null;
-  key item_uuid         : sysuuid_x16 not null;
-  foto_item             : abap.rawstring(0);
-  foto_mime_type        : abap.char(50);
-  foto_file_name        : abap.char(255);
-  sku                   : abap.char(21);
-  nome                  : abap.char(120);
-  descricao             : abap.char(500);
-  categoria             : abap.char(30);
-  qtde_estoque          : abap.int4;
-  qtde_reservada        : abap.int4;
-  qtde_disponivel       : abap.int4;
-  status_estoque        : abap.char(30);
-  currency              : abap.cuky;
+  key client      : abap.clnt not null;
+  key item_uuid   : sysuuid_x16 not null;
+  foto_item       : zpc_de_foto;
+  foto_mime_type  : zpc_de_mime_type;
+  foto_file_name  : zpc_de_nome_arquivo;
+  include zpc_s_dados_item;
+  qtde_estoque    : zpc_de_qtde_estoque;
+  qtde_reservada  : zpc_de_qtde_reservada;
+  qtde_disponivel : zpc_de_qtde_disponivel;
+  status_estoque  : zpc_de_status_estoque;
+  currency        : zpc_de_moeda;
   @Semantics.amount.currencyCode : 'zta_pc_item.currency'
-  preco_unitario        : abap.curr(15,2);
-  item_ativo            : abap_boolean;
-  created_by            : abp_creation_user;
-  created_at            : abp_creation_tstmpl;
-  last_changed_by       : abp_lastchange_user;
-  last_changed_at       : abp_lastchange_tstmpl;
-  local_last_changed_at : abp_locinst_lastchange_tstmpl;
+  preco_unitario  : zpc_de_preco_unitario;
+  item_ativo      : abap_boolean;
+  include zpc_s_admin;
 
 }

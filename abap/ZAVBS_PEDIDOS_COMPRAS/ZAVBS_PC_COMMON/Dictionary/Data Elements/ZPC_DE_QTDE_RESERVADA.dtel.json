@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Quantidade reservada em pedidos",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_QUANTIDADE"
+  },
+  "fieldLabels": {
+    "short": "Reservado",
+    "shortLength": 10,
+    "medium": "Qtde. reservada",
+    "mediumLength": 20,
+    "long": "Quantidade reservada",
+    "longLength": 40,
+    "heading": "Qtde. reservada",
+    "headingLength": 55
+  }
+}

@@ -23,7 +23,7 @@ define view entity ZI_PC_PEDIDO_CUBE
       _Cliente._EnderecoPrincipal.Uf    as Uf,
 
       @Semantics.calendar.yearMonth: true
-      cast( left( cast( tstmp_to_dats( cast( CreatedAt as abap.dec(15,0) ), 'UTC', $session.client, 'NULL' ) as abap.char(8) ), 6 ) as abap.numc(6) ) as MesCriacao,
+      cast( left( cast( tstmp_to_dats( cast( CreatedAt as abap.dec(15,0) ), 'UTC', $session.client, 'NULL' ) as abap.char(8) ), 6 ) as zpc_t_ano_mes ) as MesCriacao,
 
       Currency,
 
@@ -37,5 +37,5 @@ define view entity ZI_PC_PEDIDO_CUBE
       ValorTotal                        as ValorMedio,
 
       @Aggregation.default: #SUM
-      cast( 1 as abap.int4 )            as QtdePedidos
+      cast( 1 as zpc_t_contador )      as QtdePedidos
 }

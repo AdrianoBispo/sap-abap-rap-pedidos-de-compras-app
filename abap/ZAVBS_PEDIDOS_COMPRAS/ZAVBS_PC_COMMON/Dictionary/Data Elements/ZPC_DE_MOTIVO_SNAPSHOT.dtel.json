@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Motivo da geração do snapshot",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_40"
+  },
+  "fieldLabels": {
+    "short": "Motivo",
+    "shortLength": 10,
+    "medium": "Motivo do snapshot",
+    "mediumLength": 20,
+    "long": "Motivo do snapshot",
+    "longLength": 40,
+    "heading": "Motivo do snapshot",
+    "headingLength": 55
+  }
+}

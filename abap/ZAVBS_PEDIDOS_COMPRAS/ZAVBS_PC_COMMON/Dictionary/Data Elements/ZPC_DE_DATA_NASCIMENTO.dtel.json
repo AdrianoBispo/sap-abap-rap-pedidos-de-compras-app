@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Data de nascimento do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_DATA"
+  },
+  "fieldLabels": {
+    "short": "Nascimento",
+    "shortLength": 10,
+    "medium": "Data de nascimento",
+    "mediumLength": 20,
+    "long": "Data de nascimento",
+    "longLength": 40,
+    "heading": "Data de nascimento",
+    "headingLength": 55
+  }
+}

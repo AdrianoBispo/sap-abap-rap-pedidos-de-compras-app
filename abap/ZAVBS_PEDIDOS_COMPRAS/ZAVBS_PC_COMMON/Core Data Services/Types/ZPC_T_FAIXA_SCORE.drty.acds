@@ -1,0 +1,2 @@
+@EndUserText.label: 'Faixa do score do cliente (BAIXO, MEDIO, ALTO)'
+define type ZPC_T_FAIXA_SCORE : abap.char(5);

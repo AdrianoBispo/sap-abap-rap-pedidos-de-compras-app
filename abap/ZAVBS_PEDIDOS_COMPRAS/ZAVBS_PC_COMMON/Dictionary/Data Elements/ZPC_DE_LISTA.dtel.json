@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Nome da lista de códigos",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_LISTA"
+  },
+  "fieldLabels": {
+    "short": "Lista",
+    "shortLength": 10,
+    "medium": "Lista de códigos",
+    "mediumLength": 20,
+    "long": "Lista de códigos",
+    "longLength": 40,
+    "heading": "Lista de códigos",
+    "headingLength": 55
+  }
+}

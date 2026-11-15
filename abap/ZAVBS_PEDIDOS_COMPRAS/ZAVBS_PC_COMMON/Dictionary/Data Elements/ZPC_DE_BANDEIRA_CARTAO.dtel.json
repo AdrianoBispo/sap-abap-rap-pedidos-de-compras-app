@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Bandeira do cartão",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_30"
+  },
+  "fieldLabels": {
+    "short": "Bandeira",
+    "shortLength": 10,
+    "medium": "Bandeira do cartão",
+    "mediumLength": 20,
+    "long": "Bandeira do cartão",
+    "longLength": 40,
+    "heading": "Bandeira do cartão",
+    "headingLength": 55
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Descrição do código",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_60"
+  },
+  "fieldLabels": {
+    "short": "Descrição",
+    "shortLength": 10,
+    "medium": "Descrição",
+    "mediumLength": 20,
+    "long": "Descrição do código",
+    "longLength": 40,
+    "heading": "Descrição",
+    "headingLength": 55
+  }
+}

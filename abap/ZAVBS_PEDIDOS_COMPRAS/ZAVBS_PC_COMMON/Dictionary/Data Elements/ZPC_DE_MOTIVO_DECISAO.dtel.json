@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Motivo da decisão do reembolso",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_500"
+  },
+  "fieldLabels": {
+    "short": "Decisão",
+    "shortLength": 10,
+    "medium": "Motivo da decisão",
+    "mediumLength": 20,
+    "long": "Motivo da decisão",
+    "longLength": 40,
+    "heading": "Motivo da decisão",
+    "headingLength": 55
+  }
+}

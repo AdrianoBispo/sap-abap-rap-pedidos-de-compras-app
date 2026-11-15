@@ -7,29 +7,25 @@ define table zta_pc_pedido {
 
   key client            : abap.clnt not null;
   key pedido_uuid       : sysuuid_x16 not null;
-  numero_pedido         : abap.char(10);
+  numero_pedido         : zpc_de_numero_pedido;
   cliente_uuid          : sysuuid_x16;
   endereco_uuid         : sysuuid_x16;
-  endereco_completo     : abap.char(500);
-  status_pedido         : abap.char(40);
-  status_pagamento      : abap.char(30);
-  observacao            : abap.char(500);
-  referencia_importacao : abap.char(40);
-  currency              : abap.cuky;
+  endereco_completo     : zpc_de_endereco_completo;
+  status_pedido         : zpc_de_status_pedido;
+  status_pagamento      : zpc_de_status_pagamento;
+  observacao            : zpc_de_observacao;
+  referencia_importacao : zpc_de_ref_importacao;
+  currency              : zpc_de_moeda;
   @Semantics.amount.currencyCode : 'zta_pc_pedido.currency'
-  valor_total           : abap.curr(15,2);
+  valor_total           : zpc_de_valor_total;
   data_finalizacao      : timestampl;
-  motivo_cancelamento   : abap.char(500);
+  motivo_cancelamento   : zpc_de_motivo_cancelamento;
   data_cancelamento     : timestampl;
   cancelado_por         : abp_lastchange_user;
   pedido_encerrado      : xfeld;
   pedido_ativo_sem_hist : xfeld;
   pedido_nao_finalizado : xfeld;
   pedido_nao_cancelado  : xfeld;
-  created_by            : abp_creation_user;
-  created_at            : abp_creation_tstmpl;
-  last_changed_by       : abp_lastchange_user;
-  last_changed_at       : abp_lastchange_tstmpl;
-  local_last_changed_at : abp_locinst_lastchange_tstmpl;
+  include zpc_s_admin;
 
 }

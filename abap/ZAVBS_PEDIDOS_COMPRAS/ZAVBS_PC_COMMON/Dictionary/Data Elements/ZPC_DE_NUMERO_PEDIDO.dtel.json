@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Número do pedido",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_NUMERO_PEDIDO"
+  },
+  "fieldLabels": {
+    "short": "Pedido",
+    "shortLength": 10,
+    "medium": "Número do pedido",
+    "mediumLength": 20,
+    "long": "Número do pedido",
+    "longLength": 40,
+    "heading": "Número do pedido",
+    "headingLength": 55
+  }
+}

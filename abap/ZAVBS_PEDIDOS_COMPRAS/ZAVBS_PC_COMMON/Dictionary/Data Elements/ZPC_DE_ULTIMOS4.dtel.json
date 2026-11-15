@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Últimos 4 dígitos do cartão",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_ULTIMOS4"
+  },
+  "fieldLabels": {
+    "short": "Final",
+    "shortLength": 10,
+    "medium": "Final do cartão",
+    "mediumLength": 20,
+    "long": "Últimos 4 dígitos do cartão",
+    "longLength": 40,
+    "heading": "Final do cartão",
+    "headingLength": 55
+  }
+}

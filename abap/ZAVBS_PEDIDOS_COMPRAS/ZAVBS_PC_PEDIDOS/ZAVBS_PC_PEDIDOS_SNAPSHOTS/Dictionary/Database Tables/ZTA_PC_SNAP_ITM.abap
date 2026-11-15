@@ -10,20 +10,13 @@ define table zta_pc_snap_itm {
   pedido_uuid            : sysuuid_x16;
   item_pedido_uuid       : sysuuid_x16;
   item_uuid              : sysuuid_x16;
-  sku                    : abap.char(21);
-  nome                   : abap.char(120);
-  descricao              : abap.char(500);
-  categoria              : abap.char(30);
-  quantidade             : abap.int4;
-  currency               : abap.cuky;
+  include zpc_s_dados_item;
+  quantidade             : zpc_de_quantidade;
+  currency               : zpc_de_moeda;
   @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
-  preco_unitario         : abap.curr(15,2);
+  preco_unitario         : zpc_de_preco_unitario;
   @Semantics.amount.currencyCode : 'zta_pc_snap_itm.currency'
-  valor_total            : abap.curr(15,2);
-  created_by             : abp_creation_user;
-  created_at             : abp_creation_tstmpl;
-  last_changed_by        : abp_lastchange_user;
-  last_changed_at        : abp_lastchange_tstmpl;
-  local_last_changed_at  : abp_locinst_lastchange_tstmpl;
+  valor_total            : zpc_de_valor_total;
+  include zpc_s_admin;
 
 }

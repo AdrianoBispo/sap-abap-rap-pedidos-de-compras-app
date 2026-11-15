@@ -6,10 +6,10 @@
 define table zta_pc_codelist {
 
   key client  : abap.clnt not null;
-  key lista   : abap.char(30) not null;
-  key codigo  : abap.char(40) not null;
-  descricao   : abap.char(60);
-  criticality : abap.int1;
-  ordem       : abap.int2;
+  key lista   : zpc_de_lista not null;
+  key codigo  : zpc_de_codigo not null;
+  descricao   : zpc_de_descricao_codigo;
+  criticality : zpc_de_criticality;
+  ordem       : zpc_de_ordem;
 
 }

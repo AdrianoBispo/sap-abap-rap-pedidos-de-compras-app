@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Ordem de exibição",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_ORDEM"
+  },
+  "fieldLabels": {
+    "short": "Ordem",
+    "shortLength": 10,
+    "medium": "Ordem",
+    "mediumLength": 20,
+    "long": "Ordem de exibição",
+    "longLength": 40,
+    "heading": "Ordem",
+    "headingLength": 55
+  }
+}

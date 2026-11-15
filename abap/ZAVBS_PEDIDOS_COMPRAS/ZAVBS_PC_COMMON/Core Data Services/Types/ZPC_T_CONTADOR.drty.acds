@@ -1,0 +1,2 @@
+@EndUserText.label: 'Contador de registros (medida analítica)'
+define type ZPC_T_CONTADOR : abap.int4;

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Moeda",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_MOEDA"
+  },
+  "fieldLabels": {
+    "short": "Moeda",
+    "shortLength": 10,
+    "medium": "Moeda",
+    "mediumLength": 20,
+    "long": "Moeda",
+    "longLength": 40,
+    "heading": "Moeda",
+    "headingLength": 55
+  }
+}

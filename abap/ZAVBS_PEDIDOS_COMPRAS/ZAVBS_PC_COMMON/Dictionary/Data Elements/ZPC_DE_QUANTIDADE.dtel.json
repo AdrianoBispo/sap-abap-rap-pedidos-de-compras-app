@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Quantidade do item no pedido",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_QUANTIDADE"
+  },
+  "fieldLabels": {
+    "short": "Qtde.",
+    "shortLength": 10,
+    "medium": "Quantidade",
+    "mediumLength": 20,
+    "long": "Quantidade do item no pedido",
+    "longLength": 40,
+    "heading": "Quantidade",
+    "headingLength": 55
+  }
+}

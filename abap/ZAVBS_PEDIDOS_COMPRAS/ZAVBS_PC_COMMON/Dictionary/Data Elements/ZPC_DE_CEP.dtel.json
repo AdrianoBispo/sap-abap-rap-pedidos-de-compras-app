@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "CEP do endereço",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_CEP"
+  },
+  "fieldLabels": {
+    "short": "CEP",
+    "shortLength": 10,
+    "medium": "CEP",
+    "mediumLength": 20,
+    "long": "CEP",
+    "longLength": 40,
+    "heading": "CEP",
+    "headingLength": 55
+  }
+}

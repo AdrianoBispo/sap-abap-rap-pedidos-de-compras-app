@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Motivo da solicitação do reembolso",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_500"
+  },
+  "fieldLabels": {
+    "short": "Motivo",
+    "shortLength": 10,
+    "medium": "Motivo solicitação",
+    "mediumLength": 20,
+    "long": "Motivo da solicitação",
+    "longLength": 40,
+    "heading": "Motivo da solicitação",
+    "headingLength": 55
+  }
+}

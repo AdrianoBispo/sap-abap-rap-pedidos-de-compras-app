@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Número do endereço",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_20"
+  },
+  "fieldLabels": {
+    "short": "Número",
+    "shortLength": 10,
+    "medium": "Número",
+    "mediumLength": 20,
+    "long": "Número do endereço",
+    "longLength": 40,
+    "heading": "Número",
+    "headingLength": 55
+  }
+}
