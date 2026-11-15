@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Logradouro do endereço",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_150"
+  },
+  "fieldLabels": {
+    "short": "Logradouro",
+    "shortLength": 10,
+    "medium": "Logradouro",
+    "mediumLength": 20,
+    "long": "Logradouro",
+    "longLength": 40,
+    "heading": "Logradouro",
+    "headingLength": 55
+  }
+}

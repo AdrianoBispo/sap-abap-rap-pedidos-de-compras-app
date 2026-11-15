@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Motivo do cancelamento do pedido",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_500"
+  },
+  "fieldLabels": {
+    "short": "Motivo",
+    "shortLength": 10,
+    "medium": "Motivo cancelamento",
+    "mediumLength": 20,
+    "long": "Motivo do cancelamento",
+    "longLength": 40,
+    "heading": "Motivo do cancelamento",
+    "headingLength": 55
+  }
+}

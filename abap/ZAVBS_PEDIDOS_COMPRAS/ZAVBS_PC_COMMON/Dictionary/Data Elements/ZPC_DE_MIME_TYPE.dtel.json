@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Tipo MIME do arquivo",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_50"
+  },
+  "fieldLabels": {
+    "short": "Tipo MIME",
+    "shortLength": 10,
+    "medium": "Tipo MIME",
+    "mediumLength": 20,
+    "long": "Tipo MIME do arquivo",
+    "longLength": 40,
+    "heading": "Tipo MIME",
+    "headingLength": 55
+  }
+}

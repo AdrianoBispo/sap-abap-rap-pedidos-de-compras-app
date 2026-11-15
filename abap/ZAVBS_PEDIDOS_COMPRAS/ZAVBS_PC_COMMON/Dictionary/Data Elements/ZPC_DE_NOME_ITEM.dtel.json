@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Nome do item",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_120"
+  },
+  "fieldLabels": {
+    "short": "Item",
+    "shortLength": 10,
+    "medium": "Nome do item",
+    "mediumLength": 20,
+    "long": "Nome do item",
+    "longLength": 40,
+    "heading": "Nome do item",
+    "headingLength": 55
+  }
+}

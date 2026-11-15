@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Número do cartão mascarado",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_30"
+  },
+  "fieldLabels": {
+    "short": "Cartão",
+    "shortLength": 10,
+    "medium": "Cartão mascarado",
+    "mediumLength": 20,
+    "long": "Cartão mascarado",
+    "longLength": 40,
+    "heading": "Cartão",
+    "headingLength": 55
+  }
+}

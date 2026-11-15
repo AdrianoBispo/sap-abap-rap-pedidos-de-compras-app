@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Observação",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_500"
+  },
+  "fieldLabels": {
+    "short": "Observação",
+    "shortLength": 10,
+    "medium": "Observação",
+    "mediumLength": 20,
+    "long": "Observação",
+    "longLength": 40,
+    "heading": "Observação",
+    "headingLength": 55
+  }
+}

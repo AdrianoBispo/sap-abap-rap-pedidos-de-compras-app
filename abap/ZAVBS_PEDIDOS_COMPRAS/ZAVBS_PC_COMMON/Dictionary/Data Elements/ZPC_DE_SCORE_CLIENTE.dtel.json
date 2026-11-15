@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Score do cliente (0 a 100)",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_SCORE"
+  },
+  "fieldLabels": {
+    "short": "Score",
+    "shortLength": 10,
+    "medium": "Score do cliente",
+    "mediumLength": 20,
+    "long": "Score do cliente",
+    "longLength": 40,
+    "heading": "Score",
+    "headingLength": 55
+  }
+}

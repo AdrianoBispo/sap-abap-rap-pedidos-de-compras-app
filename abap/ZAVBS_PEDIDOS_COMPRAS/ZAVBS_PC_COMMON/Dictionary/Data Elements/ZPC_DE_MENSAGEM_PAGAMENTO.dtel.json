@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Mensagem do processamento do pagamento",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_255"
+  },
+  "fieldLabels": {
+    "short": "Mensagem",
+    "shortLength": 10,
+    "medium": "Mensagem",
+    "mediumLength": 20,
+    "long": "Mensagem do pagamento",
+    "longLength": 40,
+    "heading": "Mensagem do pagamento",
+    "headingLength": 55
+  }
+}

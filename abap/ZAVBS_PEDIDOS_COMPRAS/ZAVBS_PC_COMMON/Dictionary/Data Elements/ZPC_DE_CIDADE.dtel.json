@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Cidade do endereço",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_100"
+  },
+  "fieldLabels": {
+    "short": "Cidade",
+    "shortLength": 10,
+    "medium": "Cidade",
+    "mediumLength": 20,
+    "long": "Cidade",
+    "longLength": 40,
+    "heading": "Cidade",
+    "headingLength": 55
+  }
+}

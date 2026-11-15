@@ -34,8 +34,8 @@ define view entity ZI_PC_ITEM_CUBE
 
       /* Valor do estoque físico: preço unitário x quantidade em estoque */
       @Aggregation.default: #SUM
-      cast( cast( PrecoUnitario as abap.dec( 15, 2 ) ) * QtdeEstoque as abap.dec( 17, 2 ) ) as ValorEstoque,
+      cast( cast( PrecoUnitario as abap.dec( 15, 2 ) ) * QtdeEstoque as zpc_t_valor_estoque ) as ValorEstoque,
 
       @Aggregation.default: #SUM
-      cast( 1 as abap.int4 )       as QtdeItens
+      cast( 1 as zpc_t_contador ) as QtdeItens
 }

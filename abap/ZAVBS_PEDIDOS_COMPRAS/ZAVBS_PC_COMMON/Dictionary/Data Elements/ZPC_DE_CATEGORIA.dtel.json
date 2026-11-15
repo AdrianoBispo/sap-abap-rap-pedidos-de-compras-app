@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Categoria do item",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_CATEGORIA"
+  },
+  "fieldLabels": {
+    "short": "Categoria",
+    "shortLength": 10,
+    "medium": "Categoria",
+    "mediumLength": 20,
+    "long": "Categoria do item",
+    "longLength": 40,
+    "heading": "Categoria",
+    "headingLength": 55
+  }
+}

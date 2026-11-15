@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Método de pagamento",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_METODO_PAGAMENTO"
+  },
+  "fieldLabels": {
+    "short": "Método",
+    "shortLength": 10,
+    "medium": "Método de pagamento",
+    "mediumLength": 20,
+    "long": "Método de pagamento",
+    "longLength": 40,
+    "heading": "Método de pagamento",
+    "headingLength": 55
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Criticidade do Fiori (0 a 3)",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_CRITICALITY"
+  },
+  "fieldLabels": {
+    "short": "Critic.",
+    "shortLength": 10,
+    "medium": "Criticidade",
+    "mediumLength": 20,
+    "long": "Criticidade",
+    "longLength": 40,
+    "heading": "Criticidade",
+    "headingLength": 55
+  }
+}

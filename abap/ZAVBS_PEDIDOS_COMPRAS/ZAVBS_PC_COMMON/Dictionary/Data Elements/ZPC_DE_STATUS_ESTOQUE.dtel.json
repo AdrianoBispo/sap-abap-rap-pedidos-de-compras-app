@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Status do estoque",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_STATUS_ESTOQUE"
+  },
+  "fieldLabels": {
+    "short": "Status",
+    "shortLength": 10,
+    "medium": "Status do estoque",
+    "mediumLength": 20,
+    "long": "Status do estoque",
+    "longLength": 40,
+    "heading": "Status do estoque",
+    "headingLength": 55
+  }
+}

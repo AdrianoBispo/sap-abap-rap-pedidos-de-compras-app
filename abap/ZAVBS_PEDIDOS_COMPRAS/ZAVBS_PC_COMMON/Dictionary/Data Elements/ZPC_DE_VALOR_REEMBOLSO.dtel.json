@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Valor do reembolso",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_VALOR"
+  },
+  "fieldLabels": {
+    "short": "Valor",
+    "shortLength": 10,
+    "medium": "Valor do reembolso",
+    "mediumLength": 20,
+    "long": "Valor do reembolso",
+    "longLength": 40,
+    "heading": "Valor do reembolso",
+    "headingLength": 55
+  }
+}

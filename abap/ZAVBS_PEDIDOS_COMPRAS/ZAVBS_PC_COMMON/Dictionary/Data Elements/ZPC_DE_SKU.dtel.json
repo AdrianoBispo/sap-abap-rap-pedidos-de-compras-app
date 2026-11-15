@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "SKU do item",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_SKU"
+  },
+  "fieldLabels": {
+    "short": "SKU",
+    "shortLength": 10,
+    "medium": "SKU",
+    "mediumLength": 20,
+    "long": "SKU do item",
+    "longLength": 40,
+    "heading": "SKU",
+    "headingLength": 55
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Preço unitário",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_VALOR"
+  },
+  "fieldLabels": {
+    "short": "Preço un.",
+    "shortLength": 10,
+    "medium": "Preço unitário",
+    "mediumLength": 20,
+    "long": "Preço unitário",
+    "longLength": 40,
+    "heading": "Preço unitário",
+    "headingLength": 55
+  }
+}

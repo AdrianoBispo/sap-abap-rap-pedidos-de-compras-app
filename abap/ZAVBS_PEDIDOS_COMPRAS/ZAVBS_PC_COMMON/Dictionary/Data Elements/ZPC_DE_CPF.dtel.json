@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "CPF do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_CPF"
+  },
+  "fieldLabels": {
+    "short": "CPF",
+    "shortLength": 10,
+    "medium": "CPF",
+    "mediumLength": 20,
+    "long": "CPF do cliente",
+    "longLength": 40,
+    "heading": "CPF",
+    "headingLength": 55
+  }
+}

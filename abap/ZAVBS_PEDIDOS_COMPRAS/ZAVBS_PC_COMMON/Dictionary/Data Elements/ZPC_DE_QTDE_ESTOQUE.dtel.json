@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Quantidade em estoque",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_QUANTIDADE"
+  },
+  "fieldLabels": {
+    "short": "Estoque",
+    "shortLength": 10,
+    "medium": "Qtde. em estoque",
+    "mediumLength": 20,
+    "long": "Quantidade em estoque",
+    "longLength": 40,
+    "heading": "Qtde. em estoque",
+    "headingLength": 55
+  }
+}

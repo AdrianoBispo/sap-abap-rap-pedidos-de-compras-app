@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Status do pagamento",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_STATUS_PAGAMENTO"
+  },
+  "fieldLabels": {
+    "short": "Pagamento",
+    "shortLength": 10,
+    "medium": "Status do pagamento",
+    "mediumLength": 20,
+    "long": "Status do pagamento",
+    "longLength": 40,
+    "heading": "Status do pagamento",
+    "headingLength": 55
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "E-mail do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_EMAIL"
+  },
+  "fieldLabels": {
+    "short": "E-mail",
+    "shortLength": 10,
+    "medium": "E-mail",
+    "mediumLength": 20,
+    "long": "E-mail do cliente",
+    "longLength": 40,
+    "heading": "E-mail",
+    "headingLength": 55
+  }
+}

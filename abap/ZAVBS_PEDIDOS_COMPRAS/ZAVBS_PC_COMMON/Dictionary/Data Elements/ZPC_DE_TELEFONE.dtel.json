@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Telefone do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TELEFONE"
+  },
+  "fieldLabels": {
+    "short": "Telefone",
+    "shortLength": 10,
+    "medium": "Telefone",
+    "mediumLength": 20,
+    "long": "Telefone do cliente",
+    "longLength": 40,
+    "heading": "Telefone",
+    "headingLength": 55
+  }
+}

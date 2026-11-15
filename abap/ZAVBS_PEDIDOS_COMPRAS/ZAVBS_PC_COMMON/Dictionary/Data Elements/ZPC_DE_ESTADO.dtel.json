@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Nome do estado",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_100"
+  },
+  "fieldLabels": {
+    "short": "Estado",
+    "shortLength": 10,
+    "medium": "Estado",
+    "mediumLength": 20,
+    "long": "Estado",
+    "longLength": 40,
+    "heading": "Estado",
+    "headingLength": 55
+  }
+}

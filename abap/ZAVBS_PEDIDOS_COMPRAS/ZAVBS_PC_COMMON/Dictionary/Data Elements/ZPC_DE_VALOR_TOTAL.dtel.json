@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Valor total",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_VALOR"
+  },
+  "fieldLabels": {
+    "short": "Total",
+    "shortLength": 10,
+    "medium": "Valor total",
+    "mediumLength": 20,
+    "long": "Valor total",
+    "longLength": 40,
+    "heading": "Valor total",
+    "headingLength": 55
+  }
+}

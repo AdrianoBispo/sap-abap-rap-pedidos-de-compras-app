@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Endereço completo em uma linha",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_500"
+  },
+  "fieldLabels": {
+    "short": "Endereço",
+    "shortLength": 10,
+    "medium": "Endereço completo",
+    "mediumLength": 20,
+    "long": "Endereço completo",
+    "longLength": 40,
+    "heading": "Endereço completo",
+    "headingLength": 55
+  }
+}

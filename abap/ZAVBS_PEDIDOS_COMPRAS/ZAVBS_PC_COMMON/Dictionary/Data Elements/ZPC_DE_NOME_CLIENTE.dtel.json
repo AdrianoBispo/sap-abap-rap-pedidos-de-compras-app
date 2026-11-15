@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Nome do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_255"
+  },
+  "fieldLabels": {
+    "short": "Cliente",
+    "shortLength": 10,
+    "medium": "Nome do cliente",
+    "mediumLength": 20,
+    "long": "Nome do cliente",
+    "longLength": 40,
+    "heading": "Nome do cliente",
+    "headingLength": 55
+  }
+}

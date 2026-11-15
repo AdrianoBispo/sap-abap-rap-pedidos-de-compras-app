@@ -1,0 +1,2 @@
+@EndUserText.label: 'Ano e mês (AAAAMM)'
+define type ZPC_T_ANO_MES : abap.numc(6);

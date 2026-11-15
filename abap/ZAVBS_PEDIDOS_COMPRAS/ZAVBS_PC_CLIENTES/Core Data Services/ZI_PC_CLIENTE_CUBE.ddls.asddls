@@ -21,13 +21,13 @@ define view entity ZI_PC_CLIENTE_CUBE
       /* Faixa do score: BAIXO (até 40), MEDIO (até 70), ALTO (acima de 70) */
       cast( case when ScoreCliente < 40 then 'BAIXO'
                   when ScoreCliente <= 70 then 'MEDIO'
-                  else 'ALTO' end as abap.char(5) ) as FaixaScore,
+                  else 'ALTO' end as zpc_t_faixa_score ) as FaixaScore,
 
       @Semantics.calendar.yearMonth: true
-      cast( left( cast( tstmp_to_dats( cast( CreatedAt as abap.dec(15,0) ), 'UTC', $session.client, 'NULL' ) as abap.char(8) ), 6 ) as abap.numc(6) ) as MesCadastro,
+      cast( left( cast( tstmp_to_dats( cast( CreatedAt as abap.dec(15,0) ), 'UTC', $session.client, 'NULL' ) as abap.char(8) ), 6 ) as zpc_t_ano_mes ) as MesCadastro,
 
       @Aggregation.default: #SUM
-      cast( 1 as abap.int4 )              as QtdeClientes,
+      cast( 1 as zpc_t_contador )        as QtdeClientes,
 
       @Aggregation.default: #AVG
       ScoreCliente                        as ScoreMedio

@@ -1,0 +1,2 @@
+@EndUserText.label: 'Valor do estoque (preço x quantidade)'
+define type ZPC_T_VALOR_ESTOQUE : abap.dec(17,2);

@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Conteúdo da foto (cliente ou item)",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_ARQUIVO"
+  },
+  "fieldLabels": {
+    "short": "Foto",
+    "shortLength": 10,
+    "medium": "Foto",
+    "mediumLength": 20,
+    "long": "Conteúdo da foto",
+    "longLength": 40,
+    "heading": "Foto",
+    "headingLength": 55
+  }
+}

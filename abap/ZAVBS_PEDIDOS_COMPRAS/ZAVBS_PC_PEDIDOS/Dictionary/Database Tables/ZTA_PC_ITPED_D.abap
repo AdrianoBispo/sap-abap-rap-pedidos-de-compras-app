@@ -9,18 +9,14 @@ define table zta_pc_itped_d {
   key itempedidouuid    : sysuuid_x16 not null;
   pedidouuid            : sysuuid_x16;
   itemuuid              : sysuuid_x16;
-  qtdeitempedido        : abap.int4;
-  currency              : abap.cuky;
+  qtdeitempedido        : zpc_de_quantidade;
+  currency              : zpc_de_moeda;
   @Semantics.amount.currencyCode : 'zta_pc_itped_d.currency'
-  precounitariosnapshot : abap.curr(15,2);
+  precounitariosnapshot : zpc_de_preco_unitario;
   @Semantics.amount.currencyCode : 'zta_pc_itped_d.currency'
-  valortotal            : abap.curr(15,2);
-  observacao            : abap.char(500);
-  createdby             : abp_creation_user;
-  createdat             : abp_creation_tstmpl;
-  lastchangedby         : abp_lastchange_user;
-  lastchangedat         : abp_lastchange_tstmpl;
-  locallastchangedat    : abp_locinst_lastchange_tstmpl;
+  valortotal            : zpc_de_valor_total;
+  observacao            : zpc_de_observacao;
+  include zpc_s_admin_d;
   "%admin"              : include sych_bdl_draft_admin_inc;
 
 }

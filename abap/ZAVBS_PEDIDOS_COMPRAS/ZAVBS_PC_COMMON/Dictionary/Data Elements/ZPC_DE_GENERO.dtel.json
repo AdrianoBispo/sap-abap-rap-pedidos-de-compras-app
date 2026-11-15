@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Gênero do cliente",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_GENERO"
+  },
+  "fieldLabels": {
+    "short": "Gênero",
+    "shortLength": 10,
+    "medium": "Gênero",
+    "mediumLength": 20,
+    "long": "Gênero do cliente",
+    "longLength": 40,
+    "heading": "Gênero",
+    "headingLength": 55
+  }
+}

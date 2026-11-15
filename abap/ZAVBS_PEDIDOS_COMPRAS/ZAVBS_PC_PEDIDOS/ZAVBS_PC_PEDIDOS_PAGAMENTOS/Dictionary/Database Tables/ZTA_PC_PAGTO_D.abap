@@ -8,19 +8,15 @@ define table zta_pc_pagto_d {
   key mandt             : mandt not null;
   key pagamentouuid     : sysuuid_x16 not null;
   pedidouuid            : sysuuid_x16;
-  metodopagamento       : abap.char(20);
-  statuspagamento       : abap.char(30);
-  bandeiracartao        : abap.char(30);
-  ultimos4digitoscartao : abap.char(4);
-  cartaomascarado       : abap.char(30);
-  codigoautorizacao     : abap.char(50);
-  mensagempagamento     : abap.char(255);
+  metodopagamento       : zpc_de_metodo_pagamento;
+  statuspagamento       : zpc_de_status_pagamento;
+  bandeiracartao        : zpc_de_bandeira_cartao;
+  ultimos4digitoscartao : zpc_de_ultimos4;
+  cartaomascarado       : zpc_de_cartao_mascarado;
+  codigoautorizacao     : zpc_de_cod_autorizacao;
+  mensagempagamento     : zpc_de_mensagem_pagamento;
   datapagamento         : timestampl;
-  createdby             : abp_creation_user;
-  createdat             : abp_creation_tstmpl;
-  lastchangedby         : abp_lastchange_user;
-  lastchangedat         : abp_lastchange_tstmpl;
-  locallastchangedat    : abp_locinst_lastchange_tstmpl;
+  include zpc_s_admin_d;
   "%admin"              : include sych_bdl_draft_admin_inc;
 
 }

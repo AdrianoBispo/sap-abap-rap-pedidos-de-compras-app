@@ -289,8 +289,11 @@ On-Premise — a constante deve ser `abap_false`, e nunca deve ser transportada 
 Convenções: chaves UUID (`RAW 16`) com `numbering : managed`; valores monetários `CURR(15,2)` com referência a
 um campo `CUKY`; booleanos como `abap_boolean`; campos administrativos `CreatedBy`, `CreatedAt`,
 `LastChangedBy`, `LastChangedAt` e `LocalLastChangedAt` em todas as tabelas (`LocalLastChangedAt` = ETag da
-entidade; `LastChangedAt` = total ETag do root). As tabelas devem usar tipos embutidos do ABAP, sem domínios
-nem elementos de dados próprios.
+entidade; `LastChangedAt` = total ETag do root). Os campos das tabelas não devem usar tipos embutidos do ABAP:
+cada campo de negócio deve ser tipado por um elemento de dados próprio, com rótulos, apoiado em um domínio que
+defina tipo e tamanho; grupos de campos que se repetem entre tabelas (campos administrativos, dados do cliente,
+endereço e dados do item) devem vir de estruturas de include compartilhadas, inclusive nas tabelas draft. Campos
+calculados nas CDS devem usar CDS Simple Types próprios, e não tipos embutidos.
 
 ### 7.1 Objetos persistentes
 

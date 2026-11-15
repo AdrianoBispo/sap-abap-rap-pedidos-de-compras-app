@@ -46,6 +46,12 @@ abap/
 └── ZAVBS_PEDIDOS_COMPRAS            pacote principal (só estrutura, sem objetos)
     ├── ZAVBS_PC_COMMON              constantes, mensagens, utilitários, autorização, numeração,
     │   │                            CodeLists, setup, consultas do serviço analítico ZUI_PC_ANALITICO
+    │   │                            e os tipos do dicionário usados por todos os pacotes (seção 1.4)
+    │   ├── Core Data Services/Types/    CDS Simple Types ZPC_T_* (tipos das medidas e dimensões dos cubos)
+    │   ├── Dictionary/
+    │   │   ├── Domains/             domínios ZPC_DO_* (*.doma.xml)
+    │   │   ├── Data Elements/       elementos de dados ZPC_DE_* (*.dtel.json)
+    │   │   └── Structures/          estruturas de include ZPC_S_* (*.abap)
     │   └── Source Code Library/
     │       ├── Classes/
     │       │   ├── ZCL_PC_VIACEP/       ViaCEP — versão ABAP Cloud (BTP): cl_http_destination_provider
@@ -68,9 +74,13 @@ Dentro de cada pacote, as pastas seguem a árvore do *Project Explorer* do ADT:
 ZAVBS_PC_<domínio>/
 ├── Core Data Services/          Data Definitions (*.ddls.asddls)
 │   ├── Behavior Definitions/    *.bdef.asbdef
-│   └── Metadata Extensions/     *.ddlx.asddlxs
+│   ├── Metadata Extensions/     *.ddlx.asddlxs
+│   └── Types/                   CDS Simple Types (*.drty.acds; só em ZAVBS_PC_COMMON)
 ├── Dictionary/
-│   └── Database Tables/         *.abap
+│   ├── Database Tables/         *.abap
+│   ├── Domains/                 *.doma.xml (só em ZAVBS_PC_COMMON)
+│   ├── Data Elements/           *.dtel.json (só em ZAVBS_PC_COMMON)
+│   └── Structures/              *.abap (só em ZAVBS_PC_COMMON)
 └── Source Code Library/
     ├── Classes/                 uma pasta por classe (*.clas.*.abap)
     ├── Interfaces/              um arquivo por interface (*.intf.abap)
@@ -96,9 +106,10 @@ ZAVBS_PC_<domínio>/
   `ZC_PC_*_ANALISE` ficam no pacote de cada domínio.
 
 > [!NOTE]
-> O backend não usa domínios, elementos de dados nem estruturas próprios: as tabelas usam tipos técnicos
-> embutidos do ABAP (`abap.char`, `abap.cuki`, `xfeld` etc.). A única exceção é o domínio `ZPC_NR_NUMC10`,
-> exigido pelo objeto de numeração e criado manualmente ([seção 8.1](#81-objetos-criados-manualmente)).
+> As tabelas não usam tipos técnicos embutidos (`abap.char`, `abap.int4`, `abap.curr` etc.): cada campo é
+> tipado por um elemento de dados `ZPC_DE_*` (ou por um tipo padrão como `sysuuid_x16`, `abap_boolean`,
+> `timestampl` e os `abp_*` do RAP), e os grupos de campos repetidos vêm de estruturas de include `ZPC_S_*`.
+> Detalhes na [seção 1.4](#14-tipos-do-dicionário-domínios-elementos-de-dados-estruturas-e-cds-types).
 
 ### 1.1. Convenção de arquivos
 
@@ -107,6 +118,10 @@ Um arquivo por objeto ADT:
 | Extensão | Objeto no ADT |
 | --- | --- |
 | `*.abap` (em `Dictionary/Database Tables/`) | Database Table (editor de código-fonte) |
+| `*.abap` (em `Dictionary/Structures/`) | Structure (editor de código-fonte) |
+| `*.doma.xml` (em `Dictionary/Domains/`) | Domain (tipo, comprimento, decimais e minúsculas; no ADT é um formulário) |
+| `*.dtel.json` (em `Dictionary/Data Elements/`) | Data Element, no formato ABAP File Format (AFF) que o ADT exporta |
+| `*.drty.acds` (em `Core Data Services/Types/`) | Type (CDS Simple Type) |
 | `*.ddls.asddls` | Data Definition (CDS view entity / projection / abstract entity) |
 | `*.ddlx.asddlxs` (em `Metadata Extensions/`) | Metadata Extension |
 | `*.bdef.asbdef` (em `Behavior Definitions/`) | Behavior Definition |
@@ -172,6 +187,97 @@ Cobertura dos objetos deste projeto na extensão do VS Code, segundo a lista pub
 - No VS Code, a mesma IDE atende ao front-end com SAP Fiori tools ([`ui5/README.md`](../ui5/README.md)).
 
 ---
+
+### 1.4. Tipos do dicionário: domínios, elementos de dados, estruturas e CDS types
+
+Os tipos ficam em `ZAVBS_PC_COMMON` e são reutilizados pelos outros pacotes, em três camadas:
+
+1. **Domínio (`ZPC_DO_*`)** — características técnicas: tipo, comprimento, decimais e se aceita minúsculas.
+   Campos de texto livre compartilham domínios por tamanho (`ZPC_DO_TEXTO_100`, `ZPC_DO_TEXTO_500` etc.);
+   códigos de lista (status, gênero, categoria, método de pagamento) têm domínio próprio.
+2. **Elemento de dados (`ZPC_DE_*`)** — o significado de negócio do campo, com os rótulos curto, médio, longo
+   e de cabeçalho. Vários elementos podem usar o mesmo domínio (`ZPC_DE_PRECO_UNITARIO`, `ZPC_DE_VALOR_TOTAL`
+   e `ZPC_DE_VALOR_REEMBOLSO` usam `ZPC_DO_VALOR`).
+3. **Estrutura de include (`ZPC_S_*`)** — um grupo de campos que se repete em várias tabelas, incluído com
+   `include zpc_s_...;`. É o equivalente aos *aspects* do CAP: `ZPC_S_ADMIN` cumpre o papel do aspect
+   `managed` (campos de auditoria preenchidos pelo RAP).
+
+As tabelas draft têm os nomes das colunas iguais aos elementos da CDS (`createdby`, `datanascimento`), por
+isso as estruturas com campos de nome composto têm uma variante `_D` para elas. Estruturas cujos campos têm
+uma palavra só (`ZPC_S_ENDERECO`, `ZPC_S_DADOS_ITEM`) servem às duas.
+
+| Estrutura | Campos | Incluída em |
+| --- | --- | --- |
+| `ZPC_S_ADMIN` | `created_by`, `created_at`, `last_changed_by`, `last_changed_at`, `local_last_changed_at` | `ZTA_PC_CLIENTE`, `ZTA_PC_ENDERECO`, `ZTA_PC_ITEM`, `ZTA_PC_ITEM_PED`, `ZTA_PC_PEDIDO`, `ZTA_PC_PAGAMENTO`, `ZTA_PC_SNAP_CLI`, `ZTA_PC_SNAP_ITM`, `ZTA_PC_REEMBOLSO` |
+| `ZPC_S_ADMIN_D` | `createdby`, `createdat`, `lastchangedby`, `lastchangedat`, `locallastchangedat` | `ZTA_PC_CLIENTE_D`, `ZTA_PC_ENDEREC_D`, `ZTA_PC_ITEM_D`, `ZTA_PC_ITPED_D`, `ZTA_PC_PEDIDO_D`, `ZTA_PC_PAGTO_D`, `ZTA_PC_SNPCLI_D`, `ZTA_PC_SNPITM_D` |
+| `ZPC_S_DADOS_CLIENTE` | `cpf`, `nome`, `email`, `telefone`, `genero`, `data_nascimento`, `cliente_ativo`, `score_cliente` | `ZTA_PC_CLIENTE`, `ZTA_PC_SNAP_CLI` |
+| `ZPC_S_DADOS_CLIENTE_D` | `cpf`, `nome`, `email`, `telefone`, `genero`, `datanascimento`, `clienteativo`, `scorecliente` | `ZTA_PC_CLIENTE_D`, `ZTA_PC_SNPCLI_D` |
+| `ZPC_S_ENDERECO` | `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `uf`, `estado` | `ZTA_PC_ENDERECO`, `ZTA_PC_ENDEREC_D`, `ZTA_PC_SNAP_CLI`, `ZTA_PC_SNPCLI_D` |
+| `ZPC_S_DADOS_ITEM` | `sku`, `nome`, `descricao`, `categoria` | `ZTA_PC_ITEM`, `ZTA_PC_ITEM_D`, `ZTA_PC_SNAP_ITM`, `ZTA_PC_SNPITM_D` |
+
+As CDS view entities não aceitam include de campos. Nelas a reutilização vem dos tipos: os campos lidos das
+tabelas herdam o elemento de dados, e os campos calculados nos cubos usam **CDS Simple Types**
+(`define type`), em vez de `cast( ... as abap.int4 )`:
+
+| CDS Simple Type | Tipo | Uso |
+| --- | --- | --- |
+| `ZPC_T_CONTADOR` | `abap.int4` | Medidas de contagem dos cubos (`QtdeClientes`, `QtdeItens`, `QtdePedidos`, `QtdeReembolsos`) |
+| `ZPC_T_ANO_MES` | `abap.numc(6)` | Dimensões de mês (`MesCadastro`, `MesCriacao`, `MesSolicitacao`) |
+| `ZPC_T_FAIXA_SCORE` | `abap.char(5)` | `FaixaScore` do cubo de clientes |
+| `ZPC_T_VALOR_ESTOQUE` | `abap.dec(17,2)` | `ValorEstoque` do cubo de estoque |
+
+> [!NOTE]
+> No ADT, "Aspect" (`DRAS`) é outro objeto: o *access control aspect* das CDS, usado só dentro de Access
+> Controls (DCL) para filtrar linhas por usuário. Ele não modulariza campos e não é usado aqui; o controle
+> de leitura com DCL está na [seção 7](#7-controle-de-leitura-nas-cds-views-com-access-control-dcl).
+
+<details>
+<summary><b>Domínios (36)</b></summary>
+
+| Domínio | Tipo | Comprimento | Minúsculas | Descrição |
+| --- | --- | --- | --- | --- |
+| `ZPC_DO_CPF` | CHAR | 11 | não | CPF (11 dígitos, sem máscara) |
+| `ZPC_DO_TELEFONE` | CHAR | 11 | não | Telefone (DDD + número, só dígitos) |
+| `ZPC_DO_EMAIL` | CHAR | 100 | sim | Endereço de e-mail |
+| `ZPC_DO_CEP` | CHAR | 8 | não | CEP (8 dígitos, sem máscara) |
+| `ZPC_DO_UF` | CHAR | 2 | não | Sigla da unidade federativa |
+| `ZPC_DO_SKU` | CHAR | 21 | não | SKU do item de estoque |
+| `ZPC_DO_NUMERO_PEDIDO` | CHAR | 10 | não | Número do pedido de compra |
+| `ZPC_DO_LISTA` | CHAR | 30 | não | Nome de uma lista de códigos |
+| `ZPC_DO_CODIGO` | CHAR | 40 | não | Código de uma lista de códigos |
+| `ZPC_DO_GENERO` | CHAR | 30 | não | Gênero do cliente (lista GENERO) |
+| `ZPC_DO_CATEGORIA` | CHAR | 30 | não | Categoria do item (lista CATEGORIA) |
+| `ZPC_DO_STATUS_ESTOQUE` | CHAR | 30 | não | Status do estoque (lista STATUS_ESTOQUE) |
+| `ZPC_DO_STATUS_PEDIDO` | CHAR | 40 | não | Status do pedido (lista STATUS_PEDIDO) |
+| `ZPC_DO_STATUS_PAGAMENTO` | CHAR | 30 | não | Status do pagamento (lista STATUS_PAGAMENTO) |
+| `ZPC_DO_STATUS_REEMBOLSO` | CHAR | 20 | não | Status do reembolso (lista STATUS_REEMBOLSO) |
+| `ZPC_DO_METODO_PAGAMENTO` | CHAR | 20 | não | Método de pagamento (lista METODO_PAGAMENTO) |
+| `ZPC_DO_CEP_STATUS` | CHAR | 1 | não | Status da consulta do CEP |
+| `ZPC_DO_ULTIMOS4` | CHAR | 4 | não | Últimos 4 dígitos do cartão |
+| `ZPC_DO_TEXTO_20` | CHAR | 20 | sim | Texto livre de 20 caracteres |
+| `ZPC_DO_TEXTO_30` | CHAR | 30 | sim | Texto livre de 30 caracteres |
+| `ZPC_DO_TEXTO_40` | CHAR | 40 | sim | Texto livre de 40 caracteres |
+| `ZPC_DO_TEXTO_50` | CHAR | 50 | sim | Texto livre de 50 caracteres |
+| `ZPC_DO_TEXTO_60` | CHAR | 60 | sim | Texto livre de 60 caracteres |
+| `ZPC_DO_TEXTO_100` | CHAR | 100 | sim | Texto livre de 100 caracteres |
+| `ZPC_DO_TEXTO_120` | CHAR | 120 | sim | Texto livre de 120 caracteres |
+| `ZPC_DO_TEXTO_150` | CHAR | 150 | sim | Texto livre de 150 caracteres |
+| `ZPC_DO_TEXTO_255` | CHAR | 255 | sim | Texto livre de 255 caracteres |
+| `ZPC_DO_TEXTO_500` | CHAR | 500 | sim | Texto livre de 500 caracteres |
+| `ZPC_DO_QUANTIDADE` | INT4 | 10 | não | Quantidade (número inteiro) |
+| `ZPC_DO_VALOR` | CURR | 15,2 | não | Valor monetário |
+| `ZPC_DO_MOEDA` | CUKY | 5 | não | Moeda |
+| `ZPC_DO_SCORE` | DEC | 5,2 | não | Score de 0,00 a 100,00 |
+| `ZPC_DO_CRITICALITY` | INT1 | 3 | não | Criticidade do Fiori (0 a 3) |
+| `ZPC_DO_ORDEM` | INT2 | 5 | não | Ordem de exibição |
+| `ZPC_DO_DATA` | DATS | 8 | não | Data |
+| `ZPC_DO_ARQUIVO` | RAWSTRING | — | não | Conteúdo binário de arquivo |
+
+</details>
+
+Os 54 elementos de dados estão em
+[`ZAVBS_PC_COMMON/Dictionary/Data Elements/`](ZAVBS_PEDIDOS_COMPRAS/ZAVBS_PC_COMMON/Dictionary/Data%20Elements/), um
+arquivo por elemento, com domínio e rótulos.
 
 ## 2. O que muda entre os cenários
 
@@ -1198,13 +1304,17 @@ ADT podem ser criados no Eclipse ou no VS Code, exceto os que a extensão do VS 
    `ZCL_PC_VIACEP` (BTP: pasta `ZCL_PC_VIACEP/`; On-Premise: pasta `ZCL_PC_VIACEP_T2/`), `ZCL_PC_AUTH`,
    `ZCL_PC_NUMERACAO`. Cada classe com interface própria (tabela abaixo) é ativada junto com ela, ou depois
    dela.
-3. **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
+3. Tipos do dicionário em `ZAVBS_PC_COMMON` ([seção 1.4](#14-tipos-do-dicionário-domínios-elementos-de-dados-estruturas-e-cds-types)):
+   domínios `ZPC_DO_*` → elementos de dados `ZPC_DE_*` → estruturas `ZPC_S_*` → CDS types `ZPC_T_*`. Cada
+   camada pode ser ativada em lote; a seguinte depende da anterior.
+   **Todas** as tabelas ativas (pastas `Dictionary/Database Tables/`, inclusive `ZTA_PC_CODELIST`).
 4. CDS base: `ZR_PC_CODELIST` e as value helps de CodeList (`ZC_PC_*_VH`) → `ZR_PC_CLIENTE`/`ZR_PC_ENDERECO`
    (ativar juntas) → `ZR_PC_ITEM` → as views `ZR_PC_*` do pedido, incluindo `ZR_PC_REEMBOLSO` (BO próprio,
    root), que precisa estar ativa, com sua BDEF, antes da behavior pool do Pedido.
 5. Abstract entities `ZPC_A_*` e value helps `ZC_PC_*_VH` (inclusive `ZC_PC_CEP_VH`).
-6. Tabelas draft `ZTA_PC_*_D`, geradas pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o nome
-   declarado em `draft table` de cada BDEF `ZR_*` ([seção 8.3](#83-tabelas-draft)).
+6. Tabelas draft `ZTA_PC_*_D`: crie cada uma pelo *quick fix* (*Ctrl+1 → Create draft table*) sobre o nome
+   declarado em `draft table` de cada BDEF `ZR_*` e substitua o conteúdo gerado pelo arquivo do repositório,
+   que usa os mesmos elementos de dados e includes da tabela ativa ([seção 8.3](#83-tabelas-draft)).
 7. Projections `ZC_*_APP` (ativar cada BO em conjunto) e Metadata Extensions.
 8. Behavior Definitions `ZR_*` → Behavior Pools `ZBP_R_*` (*Global Class* + *Local Types*) → BDEF de
    projeção `ZC_*`.
@@ -1258,6 +1368,10 @@ draft precisa ser o nome **completo** do elemento CDS:
 
 As tabelas draft dos snapshots são apenas técnicas e ficam vazias: os snapshots só são criados por
 `internal create` sobre a instância ativa.
+
+O *quick fix* gera a tabela draft com os tipos técnicos de cada elemento. Os arquivos do repositório trazem
+a versão final, com os elementos de dados `ZPC_DE_*` e as estruturas `ZPC_S_*_D`/`ZPC_S_ADMIN_D` (seção 1.4):
+as duas formas são compatíveis com a BDEF, mas a do repositório mantém tabela ativa e draft com os mesmos tipos.
 
 ---
 
@@ -1573,6 +1687,18 @@ Pelo *preview* do Service Binding ou pelas apps em `ui5/`:
 ---
 
 ## 13. Histórico de correções do backend
+
+<details>
+<summary><b>v2.16 — Tipos do dicionário e CDS types</b></summary>
+
+| Ajuste | Objetos |
+| --- | --- |
+| Domínios, elementos de dados e estruturas de include no lugar dos tipos técnicos embutidos (`abap.char`, `abap.int4`, `abap.curr`...) em todas as tabelas ativas e draft | `ZPC_DO_*`, `ZPC_DE_*`, `ZPC_S_*`, todas as `ZTA_PC_*` |
+| Campos de auditoria em `ZPC_S_ADMIN` / `ZPC_S_ADMIN_D`, dados do cliente, endereço e dados do item em includes compartilhados com os snapshots | `ZPC_S_ADMIN`, `ZPC_S_ADMIN_D`, `ZPC_S_DADOS_CLIENTE`, `ZPC_S_DADOS_CLIENTE_D`, `ZPC_S_ENDERECO`, `ZPC_S_DADOS_ITEM` |
+| Casts dos cubos com CDS Simple Types em vez de tipos embutidos | `ZPC_T_CONTADOR`, `ZPC_T_ANO_MES`, `ZPC_T_FAIXA_SCORE`, `ZPC_T_VALOR_ESTOQUE`, `ZI_PC_*_CUBE` |
+| Colunas `peso`, `altura`, `largura` e `profundidade` que tinham sobrado na tabela draft do item (removidas do BO na v1.5) | `ZTA_PC_ITEM_D` |
+
+</details>
 
 <details>
 <summary><b>v2.15 — Confirmações, prechecks e processamento em lote</b></summary>

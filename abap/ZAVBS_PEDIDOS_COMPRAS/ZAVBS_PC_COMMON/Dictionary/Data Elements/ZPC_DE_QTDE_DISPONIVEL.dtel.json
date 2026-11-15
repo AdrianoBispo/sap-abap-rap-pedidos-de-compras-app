@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Quantidade disponível para venda",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_QUANTIDADE"
+  },
+  "fieldLabels": {
+    "short": "Disponível",
+    "shortLength": 10,
+    "medium": "Qtde. disponível",
+    "mediumLength": 20,
+    "long": "Quantidade disponível",
+    "longLength": 40,
+    "heading": "Qtde. disponível",
+    "headingLength": 55
+  }
+}

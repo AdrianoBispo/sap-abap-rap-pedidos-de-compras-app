@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Nome do arquivo",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_TEXTO_255"
+  },
+  "fieldLabels": {
+    "short": "Arquivo",
+    "shortLength": 10,
+    "medium": "Nome do arquivo",
+    "mediumLength": 20,
+    "long": "Nome do arquivo",
+    "longLength": 40,
+    "heading": "Nome do arquivo",
+    "headingLength": 55
+  }
+}

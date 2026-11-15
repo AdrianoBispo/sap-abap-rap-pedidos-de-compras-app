@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Unidade federativa do endereço",
+    "originalLanguage": "pt",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "dataTypeInformation": {
+    "category": "domain",
+    "typeName": "ZPC_DO_UF"
+  },
+  "fieldLabels": {
+    "short": "UF",
+    "shortLength": 10,
+    "medium": "UF",
+    "mediumLength": 20,
+    "long": "Unidade federativa",
+    "longLength": 40,
+    "heading": "UF",
+    "headingLength": 55
+  }
+}

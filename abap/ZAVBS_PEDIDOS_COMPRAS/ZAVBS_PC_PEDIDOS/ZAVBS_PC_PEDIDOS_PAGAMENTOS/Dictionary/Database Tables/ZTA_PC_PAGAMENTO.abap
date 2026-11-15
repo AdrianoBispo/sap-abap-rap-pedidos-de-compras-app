@@ -5,21 +5,17 @@
 @AbapCatalog.dataMaintenance : #RESTRICTED
 define table zta_pc_pagamento {
 
-  key client            : abap.clnt not null;
-  key pagamento_uuid    : sysuuid_x16 not null;
-  pedido_uuid           : sysuuid_x16;
-  metodo_pagamento      : abap.char(20);
-  status_pagamento      : abap.char(30);
-  bandeira_cartao       : abap.char(30);
-  ultimos4_digitos      : abap.char(4);
-  cartao_mascarado      : abap.char(30);
-  codigo_autorizacao    : abap.char(50);
-  mensagem_pagamento    : abap.char(255);
-  data_pagamento        : timestampl;
-  created_by            : abp_creation_user;
-  created_at            : abp_creation_tstmpl;
-  last_changed_by       : abp_lastchange_user;
-  last_changed_at       : abp_lastchange_tstmpl;
-  local_last_changed_at : abp_locinst_lastchange_tstmpl;
+  key client         : abap.clnt not null;
+  key pagamento_uuid : sysuuid_x16 not null;
+  pedido_uuid        : sysuuid_x16;
+  metodo_pagamento   : zpc_de_metodo_pagamento;
+  status_pagamento   : zpc_de_status_pagamento;
+  bandeira_cartao    : zpc_de_bandeira_cartao;
+  ultimos4_digitos   : zpc_de_ultimos4;
+  cartao_mascarado   : zpc_de_cartao_mascarado;
+  codigo_autorizacao : zpc_de_cod_autorizacao;
+  mensagem_pagamento : zpc_de_mensagem_pagamento;
+  data_pagamento     : timestampl;
+  include zpc_s_admin;
 
 }
