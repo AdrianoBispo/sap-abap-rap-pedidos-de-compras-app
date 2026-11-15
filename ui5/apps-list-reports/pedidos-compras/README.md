@@ -120,9 +120,10 @@ npm run start-local # como o start, com SAPUI5 local
 npm run start-noflp # index.html, sem launchpad
 ```
 
-O `ui5.yaml` aponta para o SAP BTP, ABAP environment (`authenticationType: reentranceTicket`: o navegador
-abre o login do BTP na primeira chamada). Para um SAP S/4HANA On-Premise, troque o `backend` como em
-[`ui5/README.md`](../../README.md#sistema-on-premise). O mock server não executa as ações nem as regras do
+O sistema SAP vem do `ui5/.env` (copie `ui5/.env.example` e preencha `SAP_URL` e `SAP_CLIENT`; veja
+[`ui5/README.md`](../../README.md#configuração-do-sistema-sap-env)). No SAP BTP, ABAP environment, use
+`SAP_AUTH_TYPE=reentranceTicket`: o navegador abre o login do BTP na primeira chamada. Para um SAP
+S/4HANA On-Premise, troque os valores como em [`ui5/README.md`](../../README.md#sistema-on-premise). O mock server não executa as ações nem as regras do
 backend: use-o só para a interface.
 
 ## Validar
@@ -143,13 +144,13 @@ npm run undeploy      # remove a BSP
 
 | | SAP BTP, ABAP environment | SAP S/4HANA On-Premise |
 | --- | --- | --- |
-| `ui5-deploy.yaml` | Como está: URL do sistema, `reentranceTicket`, `transport: ""` (pacotes do `ZLOCAL`) | URL e mandante do sistema, `credentials` por variáveis de ambiente e ordem de transporte Workbench |
+| `ui5/.env` | URL do sistema, `SAP_AUTH_TYPE=reentranceTicket`, `SAP_TRANSPORT` vazio (pacotes do `ZLOCAL`) | URL e mandante do sistema, `SAP_AUTH_TYPE=basic` com `FIORI_TOOLS_USER`/`FIORI_TOOLS_PASSWORD` e `SAP_TRANSPORT` com a ordem Workbench |
 | O que é criado | BSP `ZPC_PEDIDOS` e IAM App `ZPC_PEDIDOS_UI5R` | Só a BSP `ZPC_PEDIDOS` |
 | Acesso | Tile pelo business catalog (ou tile URL no SAP Build Work Zone) | Catálogo `/UI2/FLPAM` e role `PFCG` |
 | URL direta | `https://<id>.abap-web.<região>.hana.ondemand.com/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` | `https://<host>:<porta>/sap/bc/ui5_ui5/sap/zpc_pedidos/index.html` |
 
 O prefixo `ZAVBS` do pacote `ZAVBS_PC_PEDIDOS` é uma escolha pessoal do autor (iniciais do nome) e é opcional: no seu
-projeto, troque o `package:` do `ui5-deploy.yaml` pelo pacote que você criou (sugestão genérica:
+projeto, informe em `SAP_PACKAGE_PEDIDOS` do `ui5/.env` o pacote que você criou (sugestão genérica:
 `ZPK_PC_PEDIDOS`; veja [`abap/README.md`](../../../abap/README.md#12-prefixo-dos-pacotes)).
 Configuração On-Premise e conteúdo do launchpad: [`ui5/README.md`](../../README.md#sistema-on-premise).
 Autorização: objeto `ZPC_PEDIDO` (01 criar e importar, 02 alterar, 16 pagar, aprovar e cancelar), em

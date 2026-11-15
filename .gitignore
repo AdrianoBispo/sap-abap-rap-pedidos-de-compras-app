@@ -1,0 +1,7 @@
+# Configuração local do sistema SAP (cópia preenchida de ui5/.env.example)
+.env
+.env.*
+!.env.example
+
+# YAML gerado por ui5/scripts/sap-env.mjs a partir dos ui5*.yaml
+.sap-env.*.yaml

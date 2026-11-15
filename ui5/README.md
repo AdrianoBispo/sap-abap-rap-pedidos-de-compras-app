@@ -33,8 +33,8 @@ tabelas, tile) e a configuração das ferramentas.
 
 ```
 <app>/
-├── package.json          scripts start / start-mock / build / lint / int-test / deploy
-├── ui5.yaml              servidor local: proxy /sap → sistema ABAP (BTP: reentranceTicket), UI5 da CDN
+├── package.json          scripts start / start-mock / build / lint / int-test / deploy (via scripts/sap-env.mjs)
+├── ui5.yaml              servidor local: proxy /sap → sistema ABAP do ui5/.env, UI5 da CDN
 ├── ui5-local.yaml        igual, com UI5 local
 ├── ui5-mock.yaml         mock server com o metadata de localService/
 ├── ui5-deploy.yaml       deploy no ABAP Repository (BSP; no BTP, também a IAM App)
@@ -201,17 +201,48 @@ deve ser repetida nos quatro apps: os arquivos são iguais, a menos do namespace
 ## Executar localmente
 
 ```bash
+cp ui5/.env.example ui5/.env     # uma vez: preencha SAP_URL, SAP_CLIENT etc. (seção abaixo)
 cd ui5/apps-list-reports/<app>   # ou ui5/apps-analiticos/<app>
 npm install
 npm start          # launchpad local (sandbox) com dados reais
-npm run start-mock # dados de mock, sem backend
+npm run start-mock # dados de mock, sem backend (não exige SAP_URL)
 ```
 
 Nos apps de análise (`analise-*`), a suíte QUnit abre com `npm run unit-test`.
 
-O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema BTP ABAP com
+O proxy (`fiori-tools-proxy`) encaminha `/sap` para o sistema de `SAP_URL` com
 `authenticationType: reentranceTicket`: na primeira chamada, o navegador abre o login do BTP. Para um
-sistema On-Premise, troque o backend como em [Sistema On-Premise](#sistema-on-premise).
+sistema On-Premise, troque os valores do `.env` como em [Sistema On-Premise](#sistema-on-premise).
+
+### Configuração do sistema SAP (.env)
+
+URL do sistema, mandante, tipo de autenticação, pacotes e ordem de transporte **não ficam nos arquivos
+`ui5*.yaml`**: eles usam placeholders (`${SAP_URL}`, `${SAP_CLIENT}`...) preenchidos a partir de um `.env`
+que não vai para o Git.
+
+| Arquivo | Versionado | Papel |
+| --- | :---: | --- |
+| `ui5/.env.example` | sim | Modelo com todas as variáveis e comentários |
+| `ui5/.env` | não (`.gitignore`) | Valores do seu sistema, usados por todas as apps e pelo launchpad |
+| `ui5/<grupo>/<app>/.env` | não | Opcional: sobrepõe o `ui5/.env` só naquela app |
+| `ui5/scripts/sap-env.mjs` | sim | Carrega o `.env`, gera `.sap-env.<arquivo>.yaml` (não versionado) e executa o comando |
+
+| Variável | Uso | BTP ABAP environment | On-Premise |
+| --- | --- | --- | --- |
+| `SAP_URL` | `url` do proxy e do deploy | `https://<id>.abap.<região>.hana.ondemand.com` | `https://<host>:<porta>` |
+| `SAP_CLIENT` | `client` (mandante) | `100` | Mandante de desenvolvimento |
+| `SAP_AUTH_TYPE` | `authenticationType` | `reentranceTicket` | `basic` |
+| `FIORI_TOOLS_USER` / `FIORI_TOOLS_PASSWORD` | Credenciais da autenticação `basic` (proxy e deploy) | Não usar | Usuário e senha do sistema |
+| `SAP_PACKAGE_CLIENTES`, `SAP_PACKAGE_ESTOQUE`, `SAP_PACKAGE_PEDIDOS`, `SAP_PACKAGE_REEMBOLSOS` | `package` da BSP no deploy | `ZAVBS_PC_*` (ou o seu prefixo, ex.: `ZPK_PC_*`) | Idem |
+| `SAP_TRANSPORT` | `transport` do deploy | Vazio (`ZLOCAL` sem transporte) | Ordem Workbench |
+
+- Todos os scripts `npm` que usam o sistema (`start*`, `int-test`, `deploy*`, `undeploy`) passam por
+  `node ../../scripts/sap-env.mjs ...` (no launchpad, `../scripts/sap-env.mjs`). Variáveis já definidas no
+  terminal ou no CI/CD têm prioridade sobre os arquivos `.env`.
+- Se faltar uma variável obrigatória, o script para e lista quais faltam. O `ui5-mock.yaml` tem valores padrão
+  e roda sem `.env`.
+- Rodar `fiori run` ou `ui5 serve` direto, ou pelo *Application Info* do SAP Fiori tools, usa o YAML com os
+  placeholders e não alcança o sistema: use os scripts `npm`.
 
 ## Launchpad local
 
@@ -282,10 +313,11 @@ npm run deploy-test   # simula, sem gravar nada
 npm run deploy        # cria/atualiza a BSP ZPC_* e o IAM App ZPC_*_UI5R no pacote ZAVBS_PC_*
 ```
 
-No trial, os pacotes do software component `ZLOCAL` não usam transporte. Em sistemas com
-transporte, preencha `transport:` em `ui5-deploy.yaml`.
+No trial, os pacotes do software component `ZLOCAL` não usam transporte (`SAP_TRANSPORT` vazio). Em
+sistemas com transporte, informe a ordem em `SAP_TRANSPORT` no `ui5/.env`.
 
-O `package:` de cada `ui5-deploy.yaml` usa os pacotes deste repositório (`ZAVBS_PC_*`). O prefixo `ZAVBS` é
+O `package:` de cada `ui5-deploy.yaml` vem das variáveis `SAP_PACKAGE_*` do `ui5/.env`; o `.env.example` traz
+os pacotes deste repositório (`ZAVBS_PC_*`). O prefixo `ZAVBS` é
 uma escolha pessoal do autor, com as iniciais do seu nome completo, e é opcional: no seu projeto, informe os
 pacotes que você criou, com o prefixo que preferir (sugestão genérica: `ZPK_PC_*`; veja
 [`abap/README.md`](../abap/README.md#12-prefixo-dos-pacotes)).
@@ -341,31 +373,20 @@ as apps não abrem até o front-end server ser atualizado.
 pelo deploy); usuário com `S_DEVELOP` no pacote e autorização para o repositório UI5; ordem de transporte
 Workbench.
 
-`ui5.yaml` (proxy do `npm start`):
+`ui5/.env` (proxy do `npm start` e deploy do `npm run deploy`; os arquivos YAML não mudam):
 
-```yaml
-        backend:
-          - path: /sap
-            url: https://s4h2025.empresa.local:44300   # Web Dispatcher ou ICM do sistema DEV
-            client: '100'
+```bash
+SAP_URL=https://s4h2025.empresa.local:44300   # Web Dispatcher ou ICM do sistema DEV
+SAP_CLIENT=100
+SAP_AUTH_TYPE=basic
+FIORI_TOOLS_USER=<usuário>                    # o .env não vai para o Git
+FIORI_TOOLS_PASSWORD=<senha>
+SAP_PACKAGE_PEDIDOS=ZAVBS_PC_PEDIDOS          # ou o seu pacote, ex.: ZPK_PC_PEDIDOS
+SAP_TRANSPORT=S4DK900123                      # ordem Workbench (obrigatória fora do $TMP)
 ```
 
-Sem `authenticationType` (autenticação básica), o navegador pede usuário e senha do sistema na primeira
-chamada. `ui5-deploy.yaml`:
-
-```yaml
-        target:
-          url: https://s4h2025.empresa.local:44300
-          client: "100"
-        credentials:
-          username: env:ABAP_USER                      # nunca grave a senha no arquivo
-          password: env:ABAP_PASSWORD
-        app:
-          name: ZPC_PEDIDOS
-          description: Pedidos de Compras
-          package: ZAVBS_PC_PEDIDOS                    # ou o seu pacote, ex.: ZPK_PC_PEDIDOS
-          transport: S4DK900123                        # ordem Workbench (obrigatória fora do $TMP)
-```
+Sem `FIORI_TOOLS_USER`/`FIORI_TOOLS_PASSWORD`, o navegador pede usuário e senha na primeira chamada do proxy
+e o deploy pergunta as credenciais no terminal.
 
 - No On-Premise o deploy cria **só a aplicação BSP**; não há IAM App `<BSP>_UI5R`. O acesso ao tile vem da
   role `PFCG` (catálogo e espaço do launchpad).
